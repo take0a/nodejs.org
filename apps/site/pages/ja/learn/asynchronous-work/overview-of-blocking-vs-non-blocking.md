@@ -4,40 +4,25 @@ layout: learn
 authors: ovflowd, HassanBahati
 ---
 
-# Overview of Blocking vs Non-Blocking
+# ブロッキングとノンブロッキングの概要
 
-This overview covers the difference between **blocking** and **non-blocking**
-calls in Node.js. This overview will refer to the event loop and libuv but no
-prior knowledge of those topics is required. Readers are assumed to have a
-basic understanding of the JavaScript language and Node.js [callback pattern](/learn/asynchronous-work/javascript-asynchronous-programming-and-callbacks).
+この概要では、Node.jsにおける**ブロッキング**呼び出しと**ノンブロッキング**呼び出しの違いについて説明します。イベントループとlibuvについても言及しますが、これらのトピックに関する事前の知識は必要ありません。読者はJavaScript言語とNode.jsの[コールバックパターン](/learn/asynchronous-work/javascript-asynchronous-programming-and-callbacks)の基礎知識があることを前提としています。
 
-> "I/O" refers primarily to interaction with the system's disk and
-> network supported by [libuv](https://libuv.org/).
+> 「I/O」とは、主に[libuv](https://libuv.org/)によってサポートされているシステムのディスクおよびネットワークとのやり取りを指します。
 
-## Blocking
+## ブロッキング
 
-**Blocking** is when the execution of additional JavaScript in the Node.js
-process must wait until a non-JavaScript operation completes. This happens
-because the event loop is unable to continue running JavaScript while a
-**blocking** operation is occurring.
+**ブロッキング** とは、Node.js プロセスにおける追加の JavaScript の実行が、JavaScript 以外の操作が完了するまで待機しなければならない状態です。これは、**ブロッキング** 操作の実行中はイベントループが JavaScript の実行を継続できないために発生します。
 
-In Node.js, JavaScript that exhibits poor performance due to being CPU intensive
-rather than waiting on a non-JavaScript operation, such as I/O, isn't typically
-referred to as **blocking**. Synchronous methods in the Node.js standard library
-that use libuv are the most commonly used **blocking** operations. Native
-modules may also have **blocking** methods.
+Node.js では、I/O などの JavaScript 以外の操作を待機するのではなく、CPU を集中的に使用することでパフォーマンスが低下する JavaScript は、通常、**ブロッキング** とは呼ばれません。Node.js 標準ライブラリの libuv を使用する同期メソッドは、最も一般的に使用される**ブロッキング** 操作です。ネイティブモジュールにも**ブロッキング** メソッドが存在する場合があります。
 
-All of the I/O methods in the Node.js standard library provide asynchronous
-versions, which are **non-blocking**, and accept callback functions. Some
-methods also have **blocking** counterparts, which have names that end with
-`Sync`.
+Node.js 標準ライブラリのすべての I/O メソッドは、**非ブロッキング** な非同期バージョンを提供しており、コールバック関数を受け入れます。一部のメソッドには、名前が `Sync` で終わる**ブロッキング** メソッドもあります。
 
-## Comparing Code
+## コードの比較
 
-**Blocking** methods execute **synchronously** and **non-blocking** methods
-execute **asynchronously**.
+**ブロッキング**メソッドは**同期**的に実行され、**非ブロッキング**メソッドは**非同期**的に実行されます。
 
-Using the File System module as an example, this is a **synchronous** file read:
+ファイルシステムモジュールを例に挙げると、これは**同期**的なファイル読み取りです。
 
 ```js
 const fs = require('node:fs');
@@ -45,7 +30,7 @@ const fs = require('node:fs');
 const data = fs.readFileSync('/file.md'); // blocks here until file is read
 ```
 
-And here is an equivalent **asynchronous** example:
+以下は同等の **非同期** の例です。
 
 ```js
 const fs = require('node:fs');
@@ -57,14 +42,9 @@ fs.readFile('/file.md', (err, data) => {
 });
 ```
 
-The first example appears simpler than the second but has the disadvantage of
-the second line **blocking** the execution of any additional JavaScript until
-the entire file is read. Note that in the synchronous version if an error is
-thrown it will need to be caught or the process will crash. In the asynchronous
-version, it is up to the author to decide whether an error should throw as
-shown.
+最初の例は2番目の例よりもシンプルに見えますが、2行目ではファイル全体が読み込まれるまで追加のJavaScriptの実行が**ブロック**されるという欠点があります。同期バージョンでは、エラーが発生した場合、それをキャッチしないとプロセスがクラッシュすることに注意してください。非同期バージョンでは、エラーをスローするかどうかは作成者が決定します。
 
-Let's expand our example a little bit:
+例を少し拡張してみましょう。
 
 ```js
 const fs = require('node:fs');
@@ -74,7 +54,7 @@ console.log(data);
 moreWork(); // will run after console.log
 ```
 
-And here is a similar, but not equivalent asynchronous example:
+以下は、同様ですが同等ではない非同期の例です。
 
 ```js
 const fs = require('node:fs');
@@ -89,34 +69,19 @@ fs.readFile('/file.md', (err, data) => {
 moreWork(); // will run before console.log
 ```
 
-In the first example above, `console.log` will be called before `moreWork()`. In
-the second example `fs.readFile()` is **non-blocking** so JavaScript execution
-can continue and `moreWork()` will be called first. The ability to run
-`moreWork()` without waiting for the file read to complete is a key design
-choice that allows for higher throughput.
+上記の最初の例では、`console.log` が `moreWork()` の前に呼び出されます。2番目の例では、`fs.readFile()` が**非ブロッキング** であるため、JavaScript の実行は継続され、`moreWork()` が最初に呼び出されます。ファイルの読み取りが完了するのを待たずに `moreWork()` を実行できる機能は、スループットを向上させるための重要な設計上の選択です。
 
-## Concurrency and Throughput
+## 同時実行性とスループット
 
-JavaScript execution in Node.js is single threaded, so concurrency refers to the
-event loop's capacity to execute JavaScript callback functions after completing
-other work. Any code that is expected to run in a concurrent manner must allow
-the event loop to continue running as non-JavaScript operations, like I/O, are
-occurring.
+Node.js における JavaScript の実行はシングルスレッドです。そのため、同時実行性とは、他の処理を完了した後に JavaScript コールバック関数を実行できるイベントループの能力を指します。同時実行が想定されるコードは、I/O などの JavaScript 以外の操作が行われている間もイベントループの実行を継続できるようにする必要があります。
 
-As an example, let's consider a case where each request to a web server takes
-50ms to complete and 45ms of that 50ms is database I/O that can be done
-asynchronously. Choosing **non-blocking** asynchronous operations frees up that
-45ms per request to handle other requests. This is a significant difference in
-capacity just by choosing to use **non-blocking** methods instead of
-**blocking** methods.
+例として、Web サーバーへの各リクエストの完了に 50 ミリ秒かかり、そのうち 45 ミリ秒が非同期で実行可能なデータベース I/O である場合を考えてみましょう。**ノンブロッキング** 非同期操作を選択すると、リクエストごとに 45 ミリ秒が解放され、他のリクエストを処理できるようになります。これは、**ブロッキング** メソッドではなく **ノンブロッキング** メソッドを使用するだけで、処理能力が大幅に向上することを意味します。
 
-The event loop is different than models in many other languages where additional
-threads may be created to handle concurrent work.
+イベントループは、同時実行処理のために追加のスレッドが作成される可能性のある他の多くの言語のモデルとは異なります。
 
-## Dangers of Mixing Blocking and Non-Blocking Code
+## ブロッキングコードとノンブロッキングコードを混在させる危険性
 
-There are some patterns that should be avoided when dealing with I/O. Let's look
-at an example:
+I/Oを扱う際に避けるべきパターンがいくつかあります。例を見てみましょう。
 
 ```js
 const fs = require('node:fs');
@@ -131,10 +96,7 @@ fs.readFile('/file.md', (err, data) => {
 fs.unlinkSync('/file.md');
 ```
 
-In the above example, `fs.unlinkSync()` is likely to be run before
-`fs.readFile()`, which would delete `file.md` before it is actually read. A
-better way to write this, which is completely **non-blocking** and guaranteed to
-execute in the correct order is:
+上記の例では、`fs.unlinkSync()` が `fs.readFile()` の前に実行される可能性が高く、`file.md` が実際に読み込まれる前に削除されてしまいます。これを完全に **ノンブロッキング** で、正しい順序で実行されることが保証されるより良い方法は、次のとおりです。
 
 ```js
 const fs = require('node:fs');
@@ -154,9 +116,8 @@ fs.readFile('/file.md', (readFileErr, data) => {
 });
 ```
 
-The above places a **non-blocking** call to `fs.unlink()` within the callback of
-`fs.readFile()` which guarantees the correct order of operations.
+上記は、`fs.readFile()` のコールバック内に `fs.unlink()` への **非ブロッキング** 呼び出しを配置することで、正しい操作順序を保証します。
 
-## Additional Resources
+## 追加リソース
 
 - [libuv](https://libuv.org/)

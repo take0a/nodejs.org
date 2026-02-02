@@ -3,25 +3,23 @@ title: Tracing garbage collection
 layout: learn
 ---
 
-# Tracing garbage collection
+# ガベージコレクションのトレース
 
-This guide will go through the fundamentals of garbage collection traces.
+このガイドでは、ガベージコレクションのトレースの基礎について説明します。
 
-By the end of this guide, you'll be able to:
+このガイドを読み終える頃には、以下のことができるようになります。
 
-- Enable traces in your Node.js application
-- Interpret traces
-- Identify potential memory issues in your Node.js application
+- Node.js アプリケーションでトレースを有効にする
+- トレースを解釈する
+- Node.js アプリケーションにおける潜在的なメモリ問題を特定する
 
-There's a lot to learn about how the garbage collector works, but if you learn
-one thing it's that when GC is running, your code is not.
+ガベージコレクターの仕組みについては学ぶべきことがたくさんありますが、特に覚えておくべきことは、GC が実行されている間はコードは実行されていないということです。
 
-You may want to know how often and long the garbage collection runs,
-and what is the outcome.
+ガベージコレクションの実行頻度と実行時間、そしてその結果はどうなるのかを知りたいと思うかもしれません。
 
-## Setup
+## セットアップ
 
-For the proposal of this guide, we'll use this script:
+このガイドでは、以下のスクリプトを使用します。
 
 ```mjs
 // script.mjs
@@ -58,22 +56,19 @@ function summary() {
 })();
 ```
 
-> Even if the leak is evident here, finding the source of a leak
-> could be cumbersome in the context of a real-world application.
+> ここでリークが明らかであっても、実際のアプリケーションではリークの原因を特定するのは困難です。
 
-## Running with garbage collection traces
+## ガベージコレクションのトレース付きで実行
 
-You can see traces for garbage collection in console output of your process
-using the `--trace-gc` flag.
+`--trace-gc` フラグを使用すると、プロセスのコンソール出力でガベージコレクションのトレースを表示できます。
 
 ```console
 $ node --trace-gc script.mjs
 ```
 
-> Note: you can find the source code of this [exercise][]
-> in the Node.js Diagnostics repository.
+> 注: この [exercise][] のソースコードは Node.js Diagnostics リポジトリにあります。
 
-It should output something like:
+次のような出力が得られるはずです。
 
 ```bash
 [39067:0x158008000]     2297 ms: Scavenge 117.5 (135.8) -> 102.2 (135.8) MB, 0.8 / 0.0 ms  (average mu = 0.994, current mu = 0.994) allocation failure
@@ -86,123 +81,113 @@ It should output something like:
 Total: 1000000 entries
 ```
 
-Hard to read? Maybe we should pass in review a few concepts
-and explain the outputs of the `--trace-gc` flag.
+読みにくいですか？ここでいくつかの概念を復習し、`--trace-gc` フラグの出力について説明しましょう。
 
-### Examining a trace with `--trace-gc`
+### `--trace-gc` でトレースを調べる
 
-The `--trace-gc` (or `--trace_gc`, either is fine) flag outputs all garbage collection
-events in the console.
-The composition of each line can be described as:
+`--trace-gc` フラグ（または `--trace_gc` フラグ、どちらでも構いません）は、すべてのガベージコレクションイベントをコンソールに出力します。
+各行の構成は次のように記述できます。
 
 ```bash
 [13973:0x110008000]       44 ms: Scavenge 2.4 (3.2) -> 2.0 (4.2) MB, 0.5 / 0.0 ms  (average mu = 1.000, current mu = 1.000) allocation failure
 ```
 
-| Token value                                           | Interpretation                           |
+| トークン値 | 解釈 |
 | ----------------------------------------------------- | ---------------------------------------- |
-| 13973                                                 | PID of the running process               |
-| 0x110008000                                           | Isolate (JS heap instance)               |
-| 44 ms                                                 | The time since the process started in ms |
-| Scavenge                                              | Type / Phase of GC                       |
-| 2.4                                                   | Heap used before GC in MB                |
-| (3.2)                                                 | Total heap before GC in MB               |
-| 2.0                                                   | Heap used after GC in MB                 |
-| (4.2)                                                 | Total heap after GC in MB                |
-| 0.5 / 0.0 ms (average mu = 1.000, current mu = 1.000) | Time spent in GC in ms                   |
-| allocation failure                                    | Reason for GC                            |
+| 13973 | 実行中のプロセスの PID |
+| 0x110008000 | 分離 (JS ヒープ インスタンス) |
+| 44 ミリ秒 | プロセス開始からの時間 (ミリ秒) |
+| スカベンジ | GC のタイプ / フェーズ |
+| 2.4 | GC 前のヒープ使用量 (MB) |
+| (3.2) | GC 前のヒープ使用量 (MB) |
+| 2.0 | GC 後のヒープ使用量 (MB) |
+| (4.2) | GC 後のヒープ使用量 (MB) |
+| 0.5 / 0.0 ミリ秒 (平均 mu = 1.000、現在の mu = 1.000) | GC にかかった時間 (ミリ秒) |
+| 割り当て失敗 | GC の理由 |
 
-We'll only focus on two events here:
+ここでは、以下の2つのイベントにのみ焦点を当てます。
 
 - Scavenge
 - Mark-sweep
 
-The heap is divided into _spaces_. Amongst these, we have a space called
-the "new" space and another one called the "old" space.
+ヒープは_スペース_に分割されています。これらのスペースの中には、「新しい」スペースと「古い」スペースがあります。
 
-> 👉 In reality, the heap structure is a bit different, but we'll stick
-> to a simpler version for this article. If you want more details
-> we encourage you to look at this [talk of Peter Marshall][] about Orinoco.
+> 👉 実際のヒープ構造は少し異なりますが、この記事ではよりシンプルなバージョンを前提とします。詳細については、Orinocoに関するこちらの[Peter Marshallの講演][]をご覧ください。
 
 ### Scavenge
 
-Scavenge is the name of an algorithm that will perform garbage collection
-into new space. The new space is where objects are created.
-The new space is designed to be small and fast for garbage collection.
+Scavengeとは、新しいスペースにガベージコレクションを実行するアルゴリズムの名前です。新しいスペースは、オブジェクトが作成される場所です。
+新しいスペースは、ガベージコレクションのために小さく高速になるように設計されています。
 
-Let's imagine a Scavenge scenario:
+Scavenge のシナリオを想像してみましょう。
 
-- we allocated `A`, `B`, `C` & `D`.
+- `A`、`B`、`C`、`D` をアロケートしました。
   ```bash
   | A | B | C | D | <unallocated> |
   ```
-- we want to allocate `E`
-- not enough space, the memory is exhausted
-- then, a (garbage) collection is triggered
-- dead objects are collected
-- living object will stay
-- assuming `B` and `D` were dead
+- `E` をアロケートしたい
+- 十分なスペースがないため、メモリが枯渇している
+- その後、（ガベージ）コレクションが起動する
+- 不要なオブジェクトは回収される
+- 生きているオブジェクトはそのまま残る
+- `B` と `D` が不要なオブジェクトだと仮定
   ```bash
   | A | C | <unallocated> |
   ```
-- now we can allocate `E`
+- これで `E` をアロケートすることができます
   ```bash
   | A | C | E | <unallocated> |
   ```
 
-v8 will promote objects, not garbage collected after two Scavenge
-operations to the old space.
+v8 は、古い領域への 2 回の Scavenge 操作の後にガベージ コレクションされるのではなく、オブジェクトを昇格します。
 
 > 👉 Full [Scavenge scenario][]
 
-### Mark-sweep
+### マークスイープ
 
-Mark-sweep is used to collect objects from old space. The old space
-is where objects that survived the new space are living.
+マークスイープは、古い空間からオブジェクトを収集するために使用されます。古い空間とは、新しい空間で生き残ったオブジェクトが生息する場所です。
 
-This algorithm is composed of two phases:
+このアルゴリズムは2つのフェーズで構成されます。
 
-- **Mark**: Will mark still alive objects as black and others as white.
-- **Sweep**: Scans for white objects and converts them to free spaces.
+- **マーク**: まだ生きているオブジェクトを黒、それ以外を白としてマークします。
+- **スイープ**: 白いオブジェクトをスキャンし、それらをフリースペースに変換します。
 
-> 👉 In fact, the Mark and Sweep steps are a bit more elaborate.
-> Please read this [document][] for more details.
+> 👉 実際、マークとスイープのステップはもう少し複雑です。
+> 詳細については、こちらの[document][]をご覧ください。
 
 <img src="https://upload.wikimedia.org/wikipedia/commons/4/4a/Animation_of_the_Naive_Mark_and_Sweep_Garbage_Collector_Algorithm.gif" alt="mark and sweep algorithm"/>
 
-## `--trace-gc` in action
+## `--trace-gc` の動作
 
-### Memory leak
+### メモリリーク
 
-Now, if you return quickly to the previous terminal window:
-you will see many `Mark-sweep` events in the console.
-We also see that the amount of memory collected after
-the event is insignificant.
+さて、先ほどのターミナルウィンドウに戻ると、
+コンソールに多数の `Mark-sweep` イベントが表示されます。
+また、イベント後に収集されたメモリ量はごくわずかであることもわかります。
 
-Now that we are experts in garbage collection! What could we deduce?
+これでガベージコレクションのエキスパートになりました！ 何が推測できるでしょうか？
 
-We probably have a memory leak! But how could we be sure of that?
-(Reminder: it is pretty apparent in this example,
-but what about a real-world application?)
+おそらくメモリリークが発生しているでしょう！ しかし、それをどのように確認できるでしょうか？
+(注意: この例ではかなり明白ですが、実際のアプリケーションではどうでしょうか？)
 
-But how could we spot the context?
+しかし、そのコンテキストをどのように特定できるでしょうか？
 
-### How to get the context of bad allocations
+### 不適切な割り当てのコンテキストを取得する方法
 
-1. Suppose we observe that the old space is continuously increasing.
-2. Reduce [`--max-old-space-size`][] such that the total heap is closer to the limit
-3. Run the program until you hit the out of memory.
-4. The produced log shows the failing context.
-5. If it hits OOM, increment the heap size by ~10% and repeat a few times. If the same pattern is observed, it indicates a memory leak.
-6. If there is no OOM, then freeze the heap size to that value - A packed heap reduces memory footprint and computation latency.
+1. 古い領域が継続的に増加していることが観測されたとします。
+2. ヒープの合計が上限に近づくように、[`--max-old-space-size`][] を減らします。
+3. メモリ不足に達するまでプログラムを実行します。
+4. 生成されたログに、失敗したコンテキストが表示されます。
+5. メモリ不足に達した場合は、ヒープサイズを約10%ずつ増やし、これを数回繰り返します。同じパターンが見られる場合、メモリリークが発生していることを示しています。
+6. メモリ不足が発生していない場合は、ヒープサイズをその値に固定します。ヒープを圧縮すると、メモリフットプリントと計算レイテンシが削減されます。
 
-For example, try to run `script.mjs` with the following command:
+例えば、次のコマンドで `script.mjs` を実行してみてください。
 
 ```bash
 node --trace-gc --max-old-space-size=50 script.mjs
 ```
 
-You should experience an OOM:
+OOM が発生するはずです:
 
 ```bash
 [...]
@@ -212,39 +197,36 @@ You should experience an OOM:
 FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory [...]
 ```
 
-Now, try to it for 100mb:
+では、100MB で試してみましょう:
 
 ```bash
 node --trace-gc --max-old-space-size=100 script.mjs
 ```
 
-You should experience something similar, the only difference
-should be that the last GC trace will contain a bigger heap size.
+同様の現象が発生するはずですが、唯一の違いは、最後の GC トレースにはより大きなヒープ サイズが含まれるという点です。
 
 ```bash
 <--- Last few GCs --->
 [40977:0x128008000]     2066 ms: Mark-sweep (reduce) 99.6 (102.5) -> 99.6 (102.5) MB, 46.7 / 0.0 ms  (+ 0.0 ms in 0 steps since start of marking, biggest step 0.0 ms, walltime since start of marking 47 ms) (average mu = 0.154, current mu = 0.155) allocati[40977:0x128008000]     2123 ms: Mark-sweep (reduce) 99.6 (102.5) -> 99.6 (102.5) MB, 47.7 / 0.0 ms  (+ 0.0 ms in 0 steps since start of marking, biggest step 0.0 ms, walltime since start of marking 48 ms) (average mu = 0.165, current mu = 0.175) allocati
 ```
 
-> Note: In the context of real application, it could be cumbersome to find the leaked object in the code. Heap snapshot could help you to find it. Visit the [guide dedicated to heap snapshot][]
+> 注: 実際のアプリケーションでは、コード内でリークしたオブジェクトを見つけるのは面倒な場合があります。ヒープスナップショットが役立つ場合があります。[guide dedicated to heap snapshot][] をご覧ください。
 
-### Slowness
+### 遅延
 
-How do you assert whether too many garbage collections
-are happening or causing an overhead?
+ガベージコレクションが多すぎるか、オーバーヘッドを引き起こしているかをどのように判断しますか？
 
-1. Review the trace data, precisely the time between consecutive collections.
-2. Review the trace data, specifically around time spent in GC.
-3. If the time between two GC is less than the time spent in GC, the application is severely starving.
-4. If the time between two GCS and the time spent in GC are very high, probably the application can use a smaller heap.
-5. If the time between two GCS is much greater than the time spent in GC, the application is relatively healthy.
+1. トレースデータ、特に連続するガベージコレクション間の時間を確認します。
+2. トレースデータ、特にGCに費やされた時間を確認します。
+3. 2回のGC間の時間がGCに費やされた時間よりも短い場合、アプリケーションのメモリ不足が深刻です。
+4. 2回のGC間の時間とGCに費やされた時間が非常に長い場合、アプリケーションはより小さなヒープを使用できる可能性があります。
+5. 2回のGC間の時間がGCに費やされた時間よりもはるかに長い場合、アプリケーションは比較的健全です。
 
-## Fix the leak
+## リークを修正する
 
-Now let's fix the leak. Instead of using an object to store
-our entries, we could use a file.
+では、リークを修正しましょう。エントリの保存にオブジェクトを使用する代わりに、ファイルを使用することもできます。
 
-Let's modify our script a bit:
+スクリプトを少し変更してみましょう。
 
 ```mjs
 // script-fix.mjs
@@ -282,40 +264,36 @@ async function summary() {
 })();
 ```
 
-Using a `Set` to store data is not a bad practice at all;
-you should just care about the memory footprint of your program.
+`Set` を使用してデータを保存するのは決して悪い習慣ではありません。プログラムのメモリ使用量に注意するだけで十分です。
 
-> Note: you can find the source code of this [exercise][]
-> in the Node.js Diagnostics repository.
+> 注: この [exercise][] のソースコードは、Node.js Diagnostics リポジトリにあります。
 
-Now, let's execute this script.
+それでは、このスクリプトを実行してみましょう。
 
 ```
 node --trace-gc script-fix.mjs
 ```
 
-You should observe two things:
+次の2点に注意してください。
 
-- Mark-sweep events appear less frequently
-- the memory footprint doesn't exceed 25MB versus more than 130MB with the first script.
+- マークスイープイベントの発生頻度が低い
+- メモリ使用量が最初のスクリプトでは130MBを超えていたのに対し、新しいバージョンでは25MBを超えていない。
 
-It makes a lot of sense as the new version puts less pressure on
-the memory than the first one.
+新しいバージョンは最初のバージョンよりもメモリへの負荷が低いため、これは非常に理にかなっています。
 
-**Takeaway**: What do you think about improving this script?
-You probably see that the new version of the script is slow.
-What if we use a `Set` again and write its content into a
-file only when the memory reaches a specific size?
+**まとめ**: このスクリプトの改善点についてどう思いますか？
+新しいバージョンのスクリプトは遅いことに気付いたかもしれません。
+`Set` を再び使用し、メモリが特定のサイズに達した場合にのみその内容をファイルに書き込むようにしたらどうでしょうか？
 
-> [`getheapstatistics`][] API could help you.
+> [`getheapstatistics`][] APIが役立つかもしれません。
 
-## Bonus: Trace garbage collection programmatically
+## ボーナス: プログラムでガベージコレクションをトレースする
 
-### Using `v8` module
+### `v8` モジュールの使用
 
-You might want to avoid getting traces from the entire lifetime of your process.
-In that case, set the flag from within the process.
-The `v8` module exposes an API to put flags on the fly.
+プロセスの全期間にわたるトレースを取得したくない場合があります。
+その場合は、プロセス内からフラグを設定します。
+`v8` モジュールは、フラグをオンザフライで設定するためのAPIを公開しています。
 
 ```js
 import v8 from 'v8';
@@ -327,10 +305,9 @@ v8.setFlagsFromString('--trace-gc');
 v8.setFlagsFromString('--notrace-gc');
 ```
 
-### Using performance hooks
+### パフォーマンスフックの使用
 
-In Node.js, you can use [performance hooks][] to trace
-garbage collection.
+Node.js では、[performance hooks][] を使用してガベージコレクションをトレースできます。
 
 ```cjs
 const { PerformanceObserver } = require('node:perf_hooks');
@@ -359,12 +336,11 @@ obs.observe({ entryTypes: ['gc'] });
 obs.disconnect();
 ```
 
-### Examining a trace with performance hooks
+### パフォーマンスフックを使ったトレースの調査
 
-You can get GC statistics as [PerformanceEntry][] from the callback in
-[PerformanceObserver][].
+[PerformanceObserver][] のコールバックから [PerformanceEntry][] として GC 統計を取得できます。
 
-For example:
+例:
 
 ```json
 {
@@ -376,17 +352,16 @@ For example:
 }
 ```
 
-| Property  | Interpretation                                                                                   |
+| Property  | Interpretation                                                       |
 | --------- | ------------------------------------------------------------------------------------------------ |
-| name      | The name of the performance entry.                                                               |
-| entryType | The type of the performance entry.                                                               |
-| startTime | The high-resolution millisecond timestamp is marking the starting time of the Performance Entry. |
-| duration  | The total number of milliseconds elapsed for this entry.                                         |
-| kind      | The type of garbage collection operation that occurred.                                          |
-| flags     | The additional information about GC.                                                             |
+| name | パフォーマンス エントリの名前。 |
+| entryType | パフォーマンス エントリのタイプ。 |
+| startTime | 高解像度のミリ秒単位のタイムスタンプは、パフォーマンス エントリの開始時刻を示します。 |
+| duration | このエントリの経過時間の合計 (ミリ秒単位)。 |
+| kind | 発生したガベージ コレクション操作のタイプ。 |
+| flags | GC に関する追加情報。 |
 
-For more information, you can refer to
-[the documentation about performance hooks][performance hooks].
+詳細については、[パフォーマンス フックに関するドキュメント][performance hooks]を参照してください。
 
 [PerformanceEntry]: https://nodejs.org/api/perf_hooks.html#perf_hooks_class_performanceentry
 [PerformanceObserver]: https://nodejs.org/api/perf_hooks.html#perf_hooks_class_performanceobserver

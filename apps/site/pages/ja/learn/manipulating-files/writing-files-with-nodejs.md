@@ -4,11 +4,11 @@ layout: learn
 authors: flaviocopes, MylesBorins, fhemberger, LaRuaNa, ahmadawais, clean99, ovflowd, vaishnav-mk
 ---
 
-# Writing files with Node.js
+# Node.js でファイルを書き込む
 
-## Writing a file
+## ファイルを書き込む
 
-The easiest way to write to files in Node.js is to use the `fs.writeFile()` API.
+Node.js でファイルに書き込む最も簡単な方法は、`fs.writeFile()` API を使用することです。
 
 ```js
 const fs = require('node:fs');
@@ -24,9 +24,9 @@ fs.writeFile('/Users/joe/test.txt', content, err => {
 });
 ```
 
-### Writing a file synchronously
+### ファイルの同期書き込み
 
-Alternatively, you can use the synchronous version `fs.writeFileSync()`:
+代わりに、同期バージョンの `fs.writeFileSync()` を使用することもできます。
 
 ```js
 const fs = require('node:fs');
@@ -41,7 +41,7 @@ try {
 }
 ```
 
-You can also use the promise-based `fsPromises.writeFile()` method offered by the `fs/promises` module:
+`fs/promises` モジュールが提供する promise ベースの `fsPromises.writeFile()` メソッドを使用することもできます。
 
 ```js
 const fs = require('node:fs/promises');
@@ -58,32 +58,32 @@ async function example() {
 example();
 ```
 
-By default, this API will **replace the contents of the file** if it does already exist.
+デフォルトでは、この API は **ファイルの内容を置き換えます**（ファイルが既に存在する場合）。
 
-**You can modify the default by specifying a flag:**
+**フラグを指定することでデフォルトを変更できます。**
 
 ```js
 fs.writeFile('/Users/joe/test.txt', content, { flag: 'a+' }, err => {});
 ```
 
-#### The flags you'll likely use are
+#### おそらく使用するフラグは以下のとおりです。
 
-| Flag | Description                                                                                                                | File gets created if it doesn't exist |
-| ---- | -------------------------------------------------------------------------------------------------------------------------- | :-----------------------------------: |
-| `r+` | This flag opens the file for **reading** and **writing**                                                                   |                  ❌                   |
-| `w+` | This flag opens the file for **reading** and **writing** and it also positions the stream at the **beginning** of the file |                  ✅                   |
-| `a`  | This flag opens the file for **writing** and it also positions the stream at the **end** of the file                       |                  ✅                   |
-| `a+` | This flag opens the file for **reading** and **writing** and it also positions the stream at the **end** of the file       |                  ✅                   |
+| フラグ | 説明 | ファイルが存在しない場合は作成されます |
+| ---- | -------------------------------------------------------------------------------------------------------------------------------- | :-----------------------------------: |
+| `r+` | このフラグはファイルを **読み取り** と **書き込み** 用に開きます | ❌ |
+| `w+` | このフラグはファイルを **読み取り** と **書き込み** 用に開き、ストリームをファイルの **先頭** に配置します | ✅ |
+| `a` | このフラグはファイルを **書き込み** 用に開き、ストリームをファイルの **末尾** に配置します | ✅ |
+| `a+` | このフラグはファイルを **読み取り** と **書き込み** 用に開き、ストリームをファイルの **末尾** に配置します | ✅ |
 
-- You can find more information about the flags in the [fs documentation](https://nodejs.org/api/fs.html#file-system-flags).
+- フラグの詳細については、[fs ドキュメント](https://nodejs.org/api/fs.html#file-system-flags) を参照してください。
 
-## Appending content to a file
+## ファイルへのコンテンツの追加
 
-Appending to files is handy when you don't want to overwrite a file with new content, but rather add to it.
+ファイルへのコンテンツの追加は、ファイルを新しいコンテンツで上書きするのではなく、追加したい場合に便利です。
 
-### Examples
+### 例
 
-A handy method to append content to the end of a file is `fs.appendFile()` (and its `fs.appendFileSync()` counterpart):
+ファイルの末尾にコンテンツを追加する便利なメソッドは、`fs.appendFile()` (および対応する `fs.appendFileSync()`) です。
 
 ```js
 const fs = require('node:fs');
@@ -99,9 +99,9 @@ fs.appendFile('file.log', content, err => {
 });
 ```
 
-#### Example with Promises
+#### Promise の例
 
-Here is a `fsPromises.appendFile()` example:
+`fsPromises.appendFile()` の例を以下に示します。
 
 ```js
 const fs = require('node:fs/promises');

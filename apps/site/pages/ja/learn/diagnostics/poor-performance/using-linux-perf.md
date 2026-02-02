@@ -3,24 +3,21 @@ title: Using Linux Perf
 layout: learn
 ---
 
-# Using Linux Perf
+# Linux Perf の使用
 
-[Linux Perf](https://perf.wiki.kernel.org/index.php/Main_Page) provides low level CPU profiling with JavaScript,
-native and OS level frames.
+[Linux Perf](https://perf.wiki.kernel.org/index.php/Main_Page) は、JavaScript、ネイティブ、OS レベルのフレームを用いた低レベルの CPU プロファイリングを提供します。
 
-**Important**: this tutorial is only available on Linux.
+**重要**: このチュートリアルは Linux でのみ利用可能です。
 
-## How To
+## 使用方法
 
-Linux Perf is usually available through the `linux-tools-common` package. Through either `--perf-basic-prof` or
-`--perf-basic-prof-only-functions` we are able to start a Node.js application supporting _perf_events_.
+Linux Perf は通常、`linux-tools-common` パッケージから入手できます。`--perf-basic-prof` または `--perf-basic-prof-only-functions` のいずれかを使用することで、_perf_events_ をサポートする Node.js アプリケーションを起動できます。
 
-`--perf-basic-prof` will always write to a file (/tmp/perf-PID.map), which can lead to infinite disk growth.
-If that’s a concern either use the module: [linux-perf](https://www.npmjs.com/package/linux-perf)
-or `--perf-basic-prof-only-functions`.
+`--perf-basic-prof` は常にファイル (/tmp/perf-PID.map) に書き込むため、ディスクサイズが無限に大きくなる可能性があります。
+それが懸念される場合は、モジュール [linux-perf](https://www.npmjs.com/package/linux-perf)
+または `--perf-basic-prof-only-functions` を使用してください。
 
-The main difference between both is that `--perf-basic-prof-only-functions` produces less output, it is a viable option
-for production profiling.
+両者の主な違いは、`--perf-basic-prof-only-functions` の方が出力が少ないことです。これは、本番環境でのプロファイリングに適したオプションです。
 
 ```console
 # Launch the application an get the PID
@@ -28,19 +25,17 @@ $ node --perf-basic-prof-only-functions index.js &
 [1] 3870
 ```
 
-Then record events based in the desired frequency:
+次に、希望する頻度に基づいてイベントを記録します。
 
 ```console
 $ sudo perf record -F 99 -p 3870 -g
 ```
 
-In this phase, you may want to use a load test in the application in order to generate more records for a reliable
-analysis. When the job is done, close the perf process by sending a SIGINT (Ctrl-C) to the command.
+このフェーズでは、信頼性の高い分析のためにより多くのレコードを生成するために、アプリケーションで負荷テストを実行することをお勧めします。ジョブが完了したら、コマンドにSIGINT (Ctrl-C) を送信して perf プロセスを終了してください。
 
-The `perf` will generate a file inside the `/tmp` folder, usually called `/tmp/perf-PID.map`
-(in above example: `/tmp/perf-3870.map`) containing the traces for each function called.
+`perf` は、`/tmp` フォルダ内に、通常 `/tmp/perf-PID.map` (上記の例では `/tmp/perf-3870.map`) というファイルを生成します。このファイルには、呼び出された各関数のトレースが含まれます。
 
-To aggregate those results in a specific file execute:
+これらの結果を特定のファイルに集約するには、次のコマンドを実行します。
 
 ```console
 $ sudo perf script > perfs.out
@@ -67,17 +62,13 @@ node 3870 25147.878454:          1 cycles:
 ....
 ```
 
-The raw output can be a bit hard to understand so typically the raw file is used to generate flamegraphs for a better
-visualization.
+生の出力は理解しにくい場合があるため、通常は生のファイルを使用してフレームグラフを生成し、より視覚的にわかりやすくします。
 
-![Example nodejs flamegraph](https://user-images.githubusercontent.com/26234614/129488674-8fc80fd5-549e-4a80-8ce2-2ba6be20f8e8.png)
+![Node.js フレームグラフの例](https://user-images.githubusercontent.com/26234614/129488674-8fc80fd5-549e-4a80-8ce2-2ba6be20f8e8.png)
 
-To generate a flamegraph from this result, follow [this tutorial](/learn/diagnostics/flame-graphs#create-a-flame-graph-with-system-perf-tools)
-from step 6.
+この結果からフレームグラフを生成するには、[こちらのチュートリアル](/learn/diagnostics/flame-graphs#create-a-flame-graph-with-system-perf-tools)の手順6以降に従ってください。
 
-Because `perf` output is not a Node.js specific tool, it might have issues with how JavaScript code is optimized in
-Node.js. See [perf output issues](/learn/diagnostics/flame-graphs#perf-output-issues) for a
-further reference.
+`perf` 出力は Node.js 専用のツールではないため、Node.js における JavaScript コードの最適化方法に問題が発生する可能性があります。詳細については、[perf 出力の問題](/learn/diagnostics/flame-graphs#perf-output-issues) を参照してください。
 
 ## Useful Links
 

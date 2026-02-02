@@ -4,15 +4,15 @@ layout: learn
 authors: flaviocopes, MylesBorins, fhemberger, LaRuaNa, ahmadawais, ovflowd
 ---
 
-# The Node.js Event emitter
+# Node.js イベントエミッター
 
-If you worked with JavaScript in the browser, you know how much of the interaction of the user is handled through events: mouse clicks, keyboard button presses, reacting to mouse movements, and so on.
+ブラウザでJavaScriptを扱ったことがある方なら、マウスのクリック、キーボードのボタンの押下、マウスの動きへの反応など、ユーザーインタラクションの多くがイベントによって処理されていることをご存知でしょう。
 
-On the backend side, Node.js offers us the option to build a similar system using the [`events` module](https://nodejs.org/api/events.html).
+バックエンド側では、Node.jsは[`events`モジュール](https://nodejs.org/api/events.html)を使用して同様のシステムを構築するオプションを提供しています。
 
-This module, in particular, offers the `EventEmitter` class, which we'll use to handle our events.
+このモジュールは、イベント処理に使用する`EventEmitter`クラスを提供しています。
 
-You initialize that using
+これを初期化するには、以下を使用します。
 
 ```cjs
 const EventEmitter = require('node:events');
@@ -26,12 +26,12 @@ import EventEmitter from 'node:events';
 const eventEmitter = new EventEmitter();
 ```
 
-This object exposes, among many others, the `on` and `emit` methods.
+このオブジェクトは、`on` メソッドや `emit` メソッドなど、多くのメソッドを公開しています。
 
-- `emit` is used to trigger an event
-- `on` is used to add a callback function that's going to be executed when the event is triggered
+- `emit` はイベントをトリガーするために使用されます。
+- `on` は、イベントがトリガーされたときに実行されるコールバック関数を追加するために使用されます。
 
-For example, let's create a `start` event, and as a matter of providing a sample, we react to that by just logging to the console:
+例えば、`start` イベントを作成し、サンプルとして、コンソールにログを出力するだけでイベントに反応してみましょう。
 
 ```js
 eventEmitter.on('start', () => {
@@ -39,15 +39,15 @@ eventEmitter.on('start', () => {
 });
 ```
 
-When we run
+実行すると
 
 ```js
 eventEmitter.emit('start');
 ```
 
-the event handler function is triggered, and we get the console log.
+イベントハンドラー関数がトリガーされ、コンソールログが出力されます。
 
-You can pass arguments to the event handler by passing them as additional arguments to `emit()`:
+`emit()` に追加の引数として渡すことで、イベントハンドラーに引数を渡すことができます。
 
 ```js
 eventEmitter.on('start', number => {
@@ -57,7 +57,7 @@ eventEmitter.on('start', number => {
 eventEmitter.emit('start', 23);
 ```
 
-Multiple arguments:
+複数の引数:
 
 ```js
 eventEmitter.on('start', (start, end) => {
@@ -67,10 +67,10 @@ eventEmitter.on('start', (start, end) => {
 eventEmitter.emit('start', 1, 100);
 ```
 
-The EventEmitter object also exposes several other methods to interact with events, like
+EventEmitter オブジェクトは、イベントを操作するための他のメソッドもいくつか公開しています。
 
-- `once()`: add a one-time listener
-- `removeListener()` / `off()`: remove an event listener from an event
-- `removeAllListeners()`: remove all listeners for an event
+- `once()`: 1回限りのリスナーを追加します。
+- `removeListener()` / `off()`: イベントからイベントリスナーを削除します。
+- `removeAllListeners()`: イベントのすべてのリスナーを削除します。
 
-You can read more about these methods in the [official documentation](https://nodejs.org/api/events.html).
+これらのメソッドの詳細については、[公式ドキュメント](https://nodejs.org/api/events.html) をご覧ください。

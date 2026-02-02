@@ -4,13 +4,13 @@ layout: learn
 authors: benhalverson, LankyMoose
 ---
 
-# Using the Fetch API with Undici in Node.js
+# Node.js で Undici の Fetch API を使用する
 
-## Introduction
+## はじめに
 
-[Undici](https://undici.nodejs.org) is an HTTP client library that powers the fetch API in Node.js. It was written from scratch and does not rely on the built-in HTTP client in Node.js. It includes a number of features that make it a good choice for high-performance applications.
+[Undici](https://undici.nodejs.org) は、Node.js の fetch API を強化する HTTP クライアントライブラリです。Undici はゼロから開発されており、Node.js の組み込み HTTP クライアントに依存しません。高パフォーマンスアプリケーションに最適な機能を多数備えています。
 
-For information on Undici's specification compliance, see the [Undici documentation](https://undici.nodejs.org/#/?id=specification-compliance-1).
+Undici の仕様準拠については、[Undici ドキュメント](https://undici.nodejs.org/#/?id=specification-compliance-1) をご覧ください。
 
 ## Basic GET Usage
 
@@ -63,21 +63,21 @@ async function main() {
 main().catch(console.error);
 ```
 
-## Customizing the Fetch API with Undici
+## Undici による Fetch API のカスタマイズ
 
-Undici allows you to customize the Fetch API by providing options to the `fetch` function. For example, you can set custom headers, set the request method, and set the request body. Here is an example of how you can customize the Fetch API with Undici:
+Undici では、`fetch` 関数にオプションを指定することで、Fetch API をカスタマイズできます。例えば、カスタムヘッダー、リクエストメソッド、リクエストボディを設定できます。Undici で Fetch API をカスタマイズする方法の例を以下に示します。
 
-The [fetch](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) function takes two arguments: the URL to fetch and an options object. The options object is the [Request](https://undici.nodejs.org/#/docs/api/Dispatcher?id=parameter-requestoptions) object that you can use to customize the request. The function returns a [Promises](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Using_promises) that resolves to a [Response](https://undici.nodejs.org/#/docs/api/Dispatcher?id=parameter-responsedata) object.
+[fetch](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) 関数は、フェッチする URL とオプションオブジェクトの 2 つの引数を取ります。オプションオブジェクトは、リクエストをカスタマイズするために使用できる [Request](https://undici.nodejs.org/#/docs/api/Dispatcher?id=parameter-requestoptions) オブジェクトです。この関数は、[Promises](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Using_promises) を返し、これは [Response](https://undici.nodejs.org/#/docs/api/Dispatcher?id=parameter-responsedata) オブジェクトに解決されます。
 
-In the following example, we are sending a POST request to the Ollama API with a JSON payload. Ollama is a cli tool that allows you to run LLM's (Large Language Models) on your local machine. You can download it [here](https://ollama.com/download)
+以下の例では、JSON ペイロードを含む POST リクエストを Ollama API に送信しています。Ollama は、ローカルマシンで LLM (Large Language Models) を実行できる CLI ツールです。[こちら](https://ollama.com/download) からダウンロードできます。
 
 ```bash
 ollama run mistral
 ```
 
-This will download the `mistral` model and run it on your local machine.
+これにより、`mistral` モデルがダウンロードされ、ローカルマシン上で実行されます。
 
-With a pool, you can reuse connections to the same server, which can improve performance. Here is an example of how you can use a pool with Undici:
+プールを使用すると、同じサーバーへの接続を再利用できるため、パフォーマンスが向上します。Undici でプールを使用する例を以下に示します。
 
 ```js
 import { Pool } from 'undici';
@@ -130,9 +130,9 @@ try {
 }
 ```
 
-## Streaming Responses with Undici
+## Undici を使用したレスポンスのストリーミング
 
-[Streams](https://nodejs.org/docs/v22.14.0/api/stream.html#stream) is a feature in Node.js that allows you to read and write chunks of data.
+[Streams](https://nodejs.org/docs/v22.14.0/api/stream.html#stream) は、Node.js の機能で、データのチャンクを読み書きできます。
 
 ```js
 import { Writable } from 'node:stream';

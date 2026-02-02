@@ -3,188 +3,141 @@ title: Debugging Node.js
 layout: learn
 ---
 
-# Debugging Node.js
+# Node.js のデバッグ
 
-This guide will help you get started debugging your Node.js apps and scripts.
+このガイドは、Node.js アプリとスクリプトのデバッグを始めるのに役立ちます。
 
-## Enable Inspector
+## インスペクターを有効にする
 
-When started with the `--inspect` switch, a Node.js process listens for a
-debugging client. By default, it will listen at host and port 127.0.0.1:9229.
-Each process is also assigned a unique [UUID][].
+`--inspect` スイッチを指定して起動すると、Node.js プロセスはデバッグクライアントをリッスンします。デフォルトでは、ホストとポート番号 127.0.0.1:9229 をリッスンします。
+各プロセスには一意の [UUID][] も割り当てられます。
 
-Inspector clients must know and specify host address, port, and UUID to connect.
-A full URL will look something like
-`ws://127.0.0.1:9229/0f2c936f-b1cd-4ac9-aab3-f63b0f33d55e`.
+インスペクタークライアントは、接続するためにホストアドレス、ポート番号、および UUID を認識し、指定する必要があります。
+完全な URL は `ws://127.0.0.1:9229/0f2c936f-b1cd-4ac9-aab3-f63b0f33d55e` のようになります。
 
-Node.js will also start listening for debugging messages if it receives a
-`SIGUSR1` signal. (`SIGUSR1` is not available on Windows.) In Node.js 7 and
-earlier, this activates the legacy Debugger API. In Node.js 8 and later, it will
-activate the Inspector API.
+Node.js は `SIGUSR1` シグナルを受信すると、デバッグメッセージのリッスンも開始します。(`SIGUSR1` は Windows では使用できません。) Node.js 7 以前では、これによりレガシーのデバッガー API が有効化されます。Node.js 8 以降では、インスペクター API が有効化されます。
 
-## Security Implications
+## セキュリティへの影響
 
-Since the debugger has full access to the Node.js execution environment, a
-malicious actor able to connect to this port may be able to execute arbitrary
-code on behalf of the Node.js process. It is important to understand the security
-implications of exposing the debugger port on public and private networks.
+デバッガはNode.js実行環境への完全なアクセス権を持つため、このポートに接続できる悪意のある攻撃者は、Node.jsプロセスに代わって任意のコードを実行できる可能性があります。パブリックネットワークおよびプライベートネットワーク上でデバッガポートを公開することによるセキュリティへの影響を理解することが重要です。
 
-### Exposing the debug port publicly is unsafe
+### デバッグポートを公開することは安全ではありません。
 
-If the debugger is bound to a public IP address, or to 0.0.0.0, any clients that
-can reach your IP address will be able to connect to the debugger without any
-restriction and will be able to run arbitrary code.
+デバッガーがパブリックIPアドレス、または0.0.0.0にバインドされている場合、そのIPアドレスにアクセスできるすべてのクライアントがデバッガーに制限なく接続し、任意のコードを実行できるようになります。
 
-By default `node --inspect` binds to 127.0.0.1. You explicitly need to provide a
-public IP address or 0.0.0.0, etc., if you intend to allow external connections
-to the debugger. Doing so may expose you to a potentially significant security
-threat. We suggest you ensure appropriate firewalls and access controls are in place
-to prevent a security exposure.
+デフォルトでは、`node --inspect` は127.0.0.1にバインドされます。デバッガーへの外部接続を許可する場合は、パブリックIPアドレスまたは0.0.0.0などを明示的に指定する必要があります。そうしないと、重大なセキュリティ上の脅威にさらされる可能性があります。セキュリティ上のリスクを防ぐため、適切なファイアウォールとアクセス制御を導入することをお勧めします。
 
-See the section on '[Enabling remote debugging scenarios](#enabling-remote-debugging-scenarios)' on some advice on how
-to safely allow remote debugger clients to connect.
+リモートデバッガークライアントの接続を安全に許可する方法については、「[リモートデバッグシナリオの有効化](#enabling-remote-debugging-scenarios)」セクションを参照してください。
 
-### Local applications have full access to the inspector
+### ローカルアプリケーションはインスペクタにフルアクセスできます。
 
-Even if you bind the inspector port to 127.0.0.1 (the default), any applications
-running locally on your machine will have unrestricted access. This is by design
-to allow local debuggers to be able to attach conveniently.
+インスペクタのポートを127.0.0.1（デフォルト）にバインドした場合でも、ローカルマシンで実行されているアプリケーションは無制限にアクセスできます。これは、ローカルデバッガが簡単にアタッチできるようにするための設計です。
 
-### Browsers, WebSockets and same-origin policy
+### ブラウザ、WebSocket、同一オリジンポリシー
 
-Websites open in a web-browser can make WebSocket and HTTP requests under the
-browser security model. An initial HTTP connection is necessary to obtain a
-unique debugger session id. The same-origin-policy prevents websites from being
-able to make this HTTP connection. For additional security against
-[DNS rebinding attacks](https://en.wikipedia.org/wiki/DNS_rebinding), Node.js
-verifies that the 'Host' headers for the connection either
-specify an IP address or `localhost` precisely.
+Webブラウザで開いたウェブサイトは、ブラウザのセキュリティモデルに基づいてWebSocketおよびHTTPリクエストを送信できます。一意のデバッガセッションIDを取得するには、最初のHTTP接続が必要です。同一オリジンポリシーは、ウェブサイトがこのHTTP接続を確立できないようにします。[DNSリバインディング攻撃](https://en.wikipedia.org/wiki/DNS_rebinding)に対するセキュリティを強化するため、Node.jsは
+接続の「Host」ヘッダーにIPアドレスまたは「localhost」が正確に指定されていることを確認します。
 
-These security policies disallow connecting to a remote debug server by
-specifying the hostname. You can work-around this restriction by specifying
-either the IP address or by using ssh tunnels as described below.
+これらのセキュリティポリシーは、ホスト名を指定してリモートデバッグサーバーに接続することを禁止します。この制限を回避するには、IPアドレスを指定するか、以下で説明するSSHトンネルを使用します。
 
-## Inspector Clients
+## Inspector クライアント
 
-A minimal CLI debugger is available with `node inspect myscript.js`.
-Several commercial and open source tools can also connect to the Node.js Inspector.
+`node inspect myscript.js` で、最小限の CLI デバッガーが利用できます。
+いくつかの商用ツールやオープンソースツールも Node.js Inspector に接続できます。
 
-### Chrome DevTools 55+, Microsoft Edge
+### Chrome DevTools 55+、Microsoft Edge
 
-#### Option 1: Use the built-in DevTools UI
+#### オプション 1: 組み込みの DevTools UI を使用する
 
-- Open `chrome://inspect` (`edge://inspect` in Microsoft Edge) in your browser.
-- Click the Configure button and ensure your target host and port are listed.
-- Your Node.js application should appear in the Remote Target list.
+- ブラウザで `chrome://inspect` (Microsoft Edge の場合は `edge://inspect`) を開きます。
+- [構成] ボタンをクリックし、ターゲットホストとポートがリストされていることを確認します。
+- Node.js アプリケーションが [リモートターゲット] リストに表示されます。
 
-#### Option 2: Connect manually
+#### オプション 2: 手動で接続する
 
-- Visit `http://localhost:<inspect-port>/json/list`. It should return a JSON object containing a `devtoolsFrontendUrl`.
-- Copy the `devtoolsFrontendUrl` value from the response and paste it into your browser's address bar.
+- `http://localhost:<inspect-port>/json/list` にアクセスします。`devtoolsFrontendUrl` を含む JSON オブジェクトが返されます。
+- レスポンスから `devtoolsFrontendUrl` の値をコピーし、ブラウザーのアドレスバーに貼り付けます。
 
-See [Chrome DevTools Frontend](https://github.com/ChromeDevTools/devtools-frontend) and [Microsoft Edge DevTools Guide](https://learn.microsoft.com/microsoft-edge/devtools-guide-chromium/) for more information.
+詳細については、[Chrome DevTools フロントエンド](https://github.com/ChromeDevTools/devtools-frontend) および [Microsoft Edge DevTools ガイド](https://learn.microsoft.com/microsoft-edge/devtools-guide-chromium/) をご覧ください。
 
-### Visual Studio Code 1.10+
+### Visual Studio Code 1.10 以降
 
-- In the Debug panel, click the settings icon to open `.vscode/launch.json`.
-  Select "Node.js" for initial setup.
+- デバッグパネルで設定アイコンをクリックし、`.vscode/launch.json` を開きます。初期設定では「Node.js」を選択してください。
 
-See https://code.visualstudio.com/docs/nodejs/nodejs-debugging for more information.
+詳しくは https://code.visualstudio.com/docs/nodejs/nodejs-debugging をご覧ください。
 
-### Visual Studio 2017+
+### Visual Studio 2017 以降
 
-- Choose "Debug > Start Debugging" from the menu or hit F5.
-- [Detailed instructions](https://github.com/Microsoft/nodejstools/wiki/Debugging).
+- メニューから「デバッグ > デバッグの開始」を選択するか、F5 キーを押します。
+- [詳細な手順](https://github.com/Microsoft/nodejstools/wiki/Debugging)
 
-### JetBrains WebStorm and other JetBrains IDEs
+### JetBrains WebStorm およびその他の JetBrains IDE
 
-- Create a new Node.js debug configuration and hit Debug. `--inspect` will be used
-  by default for Node.js 7+. To disable uncheck `js.debugger.node.use.inspect` in
-  the IDE Registry. To learn more about running and debugging Node.js in WebStorm and other JetBrains IDEs,
-  check out [WebStorm online help](https://www.jetbrains.com/help/webstorm/running-and-debugging-node-js.html).
+- 新しい Node.js デバッグ構成を作成し、「デバッグ」をクリックします。Node.js 7 以降では、デフォルトで `--inspect` が使用されます。無効にするには、IDE レジストリで `js.debugger.node.use.inspect` のチェックを外してください。WebStorm およびその他の JetBrains IDE での Node.js の実行とデバッグの詳細については、[WebStorm オンラインヘルプ](https://www.jetbrains.com/help/webstorm/running-and-debugging-node-js.html) をご覧ください。
 
 ### chrome-remote-interface
 
-- Library to ease connections to [Inspector Protocol][] endpoints.
+- [Inspector Protocol][] エンドポイントへの接続を容易にするライブラリ。
 
-See https://github.com/cyrus-and/chrome-remote-interface for more information.
+詳細については、https://github.com/cyrus-and/chrome-remote-interface をご覧ください。
 
-### Eclipse IDE with Eclipse Wild Web Developer extension
+### Eclipse Wild Web Developer 拡張機能を搭載した Eclipse IDE
 
-- From a .js file, choose "Debug As... > Node program", or
-- Create a Debug Configuration to attach debugger to running Node.js application (already started with `--inspect`).
+- .js ファイルから、「デバッグ... > Node プログラム」を選択するか、
+- 実行中の Node.js アプリケーションにデバッガーをアタッチするためのデバッグ構成を作成します（`--inspect` で既に起動済み）。
 
-See https://eclipseide.org/ for more information.
+詳細については、https://eclipseide.org/ をご覧ください。
 
-## Command-line options
+## コマンドラインオプション
 
-The following table lists the impact of various runtime flags on debugging:
+以下の表は、さまざまなランタイムフラグがデバッグに与える影響を示しています。
 
-| Flag                               | Meaning                                                                                                                                                   |
-| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| --inspect                          | Enable inspector agent; Listen on default address and port (127.0.0.1:9229)                                                                               |
-| --inspect=\[host:port]             | Enable inspector agent; Bind to address or hostname `host` (default: 127.0.0.1); Listen on port `port` (default: 9229)                                    |
-| --inspect-brk                      | Enable inspector agent; Listen on default address and port (127.0.0.1:9229); Break before user code starts                                                |
-| --inspect-brk=\[host:port]         | Enable inspector agent; Bind to address or hostname `host` (default: 127.0.0.1); Listen on port `port` (default: 9229); Break before user code starts     |
-| --inspect-wait                     | Enable inspector agent; Listen on default address and port (127.0.0.1:9229); Wait for debugger to be attached.                                            |
-| --inspect-wait=\[host:port]        | Enable inspector agent; Bind to address or hostname `host` (default: 127.0.0.1); Listen on port `port` (default: 9229); Wait for debugger to be attached. |
-| --disable-sigusr1                  | Disable the ability of starting a debugging session by sending a SIGUSR1 signal to the process.                                                           |
-| node inspect script.js             | Spawn child process to run user's script under --inspect flag; and use main process to run CLI debugger.                                                  |
-| node inspect --port=xxxx script.js | Spawn child process to run user's script under --inspect flag; and use main process to run CLI debugger. Listen on port `port` (default: 9229)            |
+| フラグ | 意味 |
+| ------ | ------- |
+| --inspect | インスペクタ エージェントを有効にします。デフォルトのアドレスとポート (127.0.0.1:9229) でリッスンします。 |
+| --inspect=\[host:port] | インスペクタ エージェントを有効にします。アドレスまたはホスト名 `host` (デフォルト: 127.0.0.1) にバインドします。ポート `port` (デフォルト: 9229) でリッスンします。 |
+| --inspect-brk | インスペクタ エージェントを有効にします。デフォルトのアドレスとポート (127.0.0.1:9229) でリッスンします。ユーザー コードの開始前にブレークします。 |
+| --inspect-brk=\[host:port] | インスペクタ エージェントを有効にします。アドレスまたはホスト名 `host` (デフォルト: 127.0.0.1) にバインドします。ポート `port` (デフォルト: 9229) でリッスンします。ユーザー コードの開始前にブレークします。 |
+| --inspect-wait |インスペクタ エージェントを有効にします。デフォルトのアドレスとポート (127.0.0.1:9229) を listen します。デバッガがアタッチされるまで待機します。 |
+| --inspect-wait=\[host:port] | インスペクタ エージェントを有効にします。アドレスまたはホスト名 `host` (デフォルト: 127.0.0.1) にバインドします。ポート `port` (デフォルト: 9229) を listen します。デバッガがアタッチされるまで待機します。 |
+| --disable-sigusr1 | プロセスに SIGUSR1 シグナルを送信してデバッグ セッションを開始する機能を無効にします。 |
+| node inspect script.js | --inspect フラグでユーザのスクリプトを実行する子プロセスを生成し、メイン プロセスを使用して CLI デバッガを実行します。 |
+| node inspect --port=xxxx script.js | --inspect フラグでユーザのスクリプトを実行する子プロセスを生成し、メイン プロセスを使用して CLI デバッガを実行します。ポート `port` (デフォルト: 9229) を listen します。 |
 
-## Enabling remote debugging scenarios
+## リモートデバッグの有効化
 
-We recommend that you never have the debugger listen on a public IP address. If
-you need to allow remote debugging connections we recommend the use of ssh
-tunnels instead. We provide the following example for illustrative purposes only.
-Please understand the security risk of allowing remote access to a privileged
-service before proceeding.
+デバッガーをパブリックIPアドレスでリッスンさせないことを推奨します。リモートデバッグ接続を許可する必要がある場合は、代わりにSSHトンネルを使用することをお勧めします。以下の例は説明のみを目的としています。
+続行する前に、特権サービスへのリモートアクセスを許可することによるセキュリティリスクを理解してください。
 
-Let's say you are running Node.js on a remote machine, remote.example.com, that
-you want to be able to debug. On that machine, you should start the node process
-with the inspector listening only to localhost (the default).
+デバッグを可能にするリモートマシン（remote.example.com）でNode.jsを実行しているとします。そのマシンでは、インスペクターがlocalhost（デフォルト）のみをリッスンするようにNodeプロセスを開始する必要があります。
 
 ```bash
 node --inspect server.js
 ```
 
-Now, on your local machine from where you want to initiate a debug client
-connection, you can setup an ssh tunnel:
+これで、デバッグ クライアント接続を開始するローカル マシンで、SSH トンネルを設定できます。
 
 ```bash
 ssh -L 9221:localhost:9229 user@remote.example.com
 ```
 
-This starts a ssh tunnel session where a connection to port 9221 on your local
-machine will be forwarded to port 9229 on remote.example.com. You can now attach
-a debugger such as Chrome DevTools or Visual Studio Code to localhost:9221,
-which should be able to debug as if the Node.js application was running locally.
+これにより、SSHトンネルセッションが開始され、ローカルマシンのポート9221への接続がremote.example.comのポート9229に転送されます。これで、Chrome DevToolsやVisual Studio Codeなどのデバッガーをlocalhost:9221にアタッチできるようになりました。これにより、Node.jsアプリケーションがローカルで実行されているかのようにデバッグできるようになります。
 
-## Legacy Debugger
+## レガシーデバッガー
 
-**The legacy debugger has been deprecated as of Node.js 7.7.0. Please use
-`--inspect` and Inspector instead.**
+**レガシーデバッガーはNode.js 7.7.0以降で非推奨となりました。代わりに `--inspect` と Inspector を使用してください。**
 
-When started with the **--debug** or **--debug-brk** switches in version 7 and
-earlier, Node.js listens for debugging commands defined by the discontinued
-V8 Debugging Protocol on a TCP port, by default `5858`. Any debugger client
-which speaks this protocol can connect to and debug the running process; a
-couple popular ones are listed below.
+バージョン7以前で **--debug** または **--debug-brk** スイッチを指定して起動した場合、Node.jsは廃止されたV8デバッグプロトコルで定義されたデバッグコマンドをTCPポート（デフォルトでは `5858`）でリッスンします。このプロトコルをサポートするデバッガークライアントであれば、実行中のプロセスに接続してデバッグできます。以下に、よく知られているデバッガークライアントをいくつか示します。
 
-The V8 Debugging Protocol is no longer maintained or documented.
+V8デバッグプロトコルは、メンテナンスもドキュメント化も終了しました。
 
 ### Built-in Debugger
 
-Start `node debug script_name.js` to start your script under the builtin
-command-line debugger. Your script starts in another Node.js process started with
-the `--debug-brk` option, and the initial Node.js process runs the `_debugger.js`
-script and connects to your target. See [docs](https://nodejs.org/dist/latest/docs/api/debugger.html) for more information.
+Start `node debug script_name.js` to start your script under the builtin command-line debugger. Your script starts in another Node.js process started with the `--debug-brk` option, and the initial Node.js process runs the `_debugger.js` script and connects to your target. See [docs](https://nodejs.org/dist/latest/docs/api/debugger.html) for more information.
 
 ### node-inspector
 
-Debug your Node.js app with Chrome DevTools by using an intermediary process
-which translates the [Inspector Protocol][] used in Chromium to the V8 Debugger
-protocol used in Node.js. See https://github.com/node-inspector/node-inspector for more information.
+Chrome DevTools で Node.js アプリをデバッグするには、Chromium で使用される [Inspector Protocol][] を Node.js で使用される V8 デバッガープロトコルに変換する中間プロセスを使用します。詳細については、https://github.com/node-inspector/node-inspector をご覧ください。
 
 [Inspector Protocol]: https://chromedevtools.github.io/debugger-protocol-viewer/v8/
 [UUID]: https://tools.ietf.org/html/rfc4122

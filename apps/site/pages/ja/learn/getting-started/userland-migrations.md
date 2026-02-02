@@ -4,59 +4,59 @@ layout: learn
 authors: JakobJingleheimer, AugustinMauroy
 ---
 
-# Userland Migrations
+# ユーザーランドの移行
 
-Node.js offers migrations for "userland" code (anything outside the node executable) to help adopt new features and handle breaking changes. These are built in collaboration with [Codemod](https://codemod.com), a platform focused on making it easy to build, share, and run codemods.
+Node.js は、新機能の導入や互換性を破る変更への対応を支援するために、「ユーザーランド」コード（Node 実行ファイル外のあらゆるもの）の移行機能を提供しています。これらの移行機能は、[Codemod](https://codemod.com) との共同開発です。Codemod は、コードモッドの構築、共有、実行を容易にすることを目的としたプラットフォームです。
 
-Official migrations are published under the `@nodejs` scope within the [Codemod registry](https://codemod.link/nodejs-official). These have been reviewed and/or authored by Node.js members.
+公式の移行機能は、[Codemod レジストリ](https://codemod.link/nodejs-official) 内の `@nodejs` スコープで公開されています。これらは Node.js メンバーによってレビューおよび作成されています。
 
-## Goal
+## 目標
 
-The Node.js Userland Migrations team seeks to help developers migrate their codebases to the latest Node.js versions, making it easier to handle deprecations, new features, and breaking changes.
+Node.js ユーザーランド移行チームは、開発者がコードベースを最新の Node.js バージョンに移行し、非推奨、新機能、互換性を破る変更への対応を容易にできるよう支援します。
 
-## How to use a codemod
+## Codemod の使い方
 
-To use a codemod, you can run the following command in your terminal:
+Codemod を使用するには、ターミナルで次のコマンドを実行します。
 
 ```bash
 npx codemod <codemod-name>
 ```
 
-Replace `<codemod-name>` with the name of the codemod you want to run. For example, if you want to run the `@nodejs/import-assertions-to-attributes` codemod on your project, you would run:
+`<codemod-name>` を実行したいコードモジュールの名前に置き換えます。例えば、プロジェクトで `@nodejs/import-assertions-to-attributes` コードモジュールを実行したい場合は、以下のように実行します。
 
 ```bash
 npx codemod @nodejs/import-assertions-to-attributes
 ```
 
-## Good Practices
+## グッドプラクティス
 
-- **Run migrations in a separate branch**: If you are using a version control system like Git, it is a good practice to run migrations in a separate branch. This allows you to review the changes before merging them into your main branch.
-- **Review changes**: After running a migration, review the changes made to your codebase. Ensure that the migration has not introduced any unintended side effects or issues.
-- **Test your code**: After running a migration, it is important to test your code to ensure that everything is working as expected. Run your test suite and check for any errors or failures
-- **Format and or lint your code**: After running a migration, it is a good practice to format and lint your code. This ensures that your code follows the project's coding standards and is easier to read and maintain.
+- **マイグレーションは別のブランチで実行する**：Gitなどのバージョン管理システムを使用している場合は、マイグレーションを別のブランチで実行することをお勧めします。これにより、メインブランチにマージする前に変更点を確認できます。
+- **変更内容を確認する**：マイグレーション実行後、コードベースに加えられた変更内容を確認してください。マイグレーションによって意図しない副作用や問題が発生していないことを確認してください。
+- **コードをテストする**：マイグレーション実行後、コードをテストして、すべてが期待どおりに動作していることを確認することが重要です。テストスイートを実行し、エラーや障害がないか確認してください。
+- **コードをフォーマットおよびlintする**：マイグレーション実行後、コードをフォーマットおよびlintすることはグッドプラクティスです。これにより、コードがプロジェクトのコーディング規約に準拠し、読みやすく保守しやすくなります。
 
-## Understanding Codemods Registry
+## Codemods レジストリについて
 
-The [Codemod registry](https://codemod.link/nodejs-official) provides a list of available codemods for Node.js. Some codemods may not be included in the following resources but are still available because they are not related to a specific migration to a Node.js version. Since we only list codemods for End-Of-Life (EOL) deprecations, you may need to explore the registry for other codemods that could be useful for your migrations.
+[Codemod レジストリ](https://codemod.link/nodejs-official) は、Node.js で利用可能な Codemod のリストを提供しています。一部の Codemod は、以下のリソースに含まれていない可能性がありますが、特定の Node.js バージョンへの移行とは関係がないため、引き続き利用可能です。リストにはサポート終了 (EOL) の Codemod のみが含まれているため、移行に役立つ可能性のある他の Codemod については、レジストリを調べる必要がある場合があります。
 
-> Please note that if you are logged into the Codemod platform, you can like these posts. This helps us to see what users find valuable.
+> Codemodプラットフォームにログインしている場合は、これらの投稿に「いいね！」することができます。これにより、ユーザーが何を価値あるものと感じているかを把握するのに役立ちます。
 
-## Feedback
+## フィードバック
 
-If you have any feedback or suggestions for improvements, please open a discussion on the [Node.js Userland Migrations repository](https://github.com/nodejs/userland-migrations/discussions).
+フィードバックや改善のご提案がございましたら、[Node.js ユーザーランド移行リポジトリ](https://github.com/nodejs/userland-migrations/discussions) でディスカッションを開始してください。
 
-## Follow the Userland Migrations Progression
+## ユーザーランド移行の進捗状況を追跡する
 
-You can follow the progress of userland migrations on our [GitHub project board](https://github.com/orgs/nodejs/projects/13/views/1).
+ユーザーランド移行の進捗状況は、[GitHub プロジェクトボード](https://github.com/orgs/nodejs/projects/13/views/1) で確認できます。
 
-This board tracks:
+このボードでは以下の項目を追跡しています。
 
-- Codemod kind (deprecation, breaking change, ecosystem)
-- Node.js version
-- Status (backlog, todo, in progress, done, not planned) _If you want to contribute, please check the "todo" column_
+- CodeMod の種類 (非推奨、互換性のない変更、エコシステム)
+- Node.js のバージョン
+- ステータス (バックログ、ToDo、進行中、完了、計画なし) _貢献したい場合は、「ToDo」列を確認してください_
 
-## Migrations guides
+## 移行ガイド
 
-You can find all migrations guide on the [migration guides section](/blog/migrations).
+すべての移行ガイドは、[移行ガイドセクション](/blog/migrations)でご覧いただけます。
 
-Please also note that migration guides for major-major releases only contain end-of-life [deprecations](https://nodejs.org/docs/latest/api/deprecations.html) and breaking changes.
+また、メジャーリリースの移行ガイドには、サポート終了となる[非推奨](https://nodejs.org/docs/latest/api/deprecations.html)と互換性のない変更のみが記載されていることにご注意ください。

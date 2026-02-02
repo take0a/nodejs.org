@@ -4,25 +4,25 @@ layout: learn
 authors: flaviocopes, potch, MylesBorins, RomainLanz, virkt25, Trott, onel0p3z, ollelauribostrom, MarkPieszak, fhemberger, LaRuaNa, FrozenPandaz, mcollina, amiller-gh, ahmadawais, saqibameen, dangen-effy, aymen94, benhalverson
 ---
 
-# Introduction to Node.js
+# Node.js入門
 
-Node.js is an open-source and cross-platform JavaScript runtime environment. It is a popular tool for almost any kind of project!
+Node.js はオープンソースでクロスプラットフォームな JavaScript ランタイム環境です。ほぼあらゆるプロジェクトで人気のツールです。
 
-Node.js runs the V8 JavaScript engine, the core of Google Chrome, outside of the browser. This allows Node.js to be very performant.
+Node.js は、Google Chrome の中核である V8 JavaScript エンジンをブラウザの外部で実行します。これにより、Node.js は非常に高いパフォーマンスを実現します。
 
-A Node.js app runs in a single process, without creating a new thread for every request. Node.js provides a set of asynchronous I/O primitives in its standard library that prevent JavaScript code from blocking. In addition, libraries in Node.js are generally written using non-blocking paradigms. Accordingly, blocking behavior is the exception rather than the norm in Node.js.
+Node.js アプリは単一プロセスで実行され、リクエストごとに新しいスレッドを作成する必要はありません。Node.js は標準ライブラリに、JavaScript コードのブロッキングを防ぐための非同期 I/O プリミティブを提供しています。さらに、Node.js のライブラリは一般的に非ブロッキングパラダイムを使用して記述されています。そのため、Node.js ではブロッキング動作は例外であり、一般的ではありません。
 
-When Node.js performs an I/O operation, like reading from the network, accessing a database or the filesystem, instead of blocking the thread and wasting CPU cycles waiting, Node.js will resume the operations when the response comes back.
+Node.js がネットワークからの読み取り、データベースやファイルシステムへのアクセスなどの I/O 操作を実行する際、スレッドをブロックして CPU サイクルを無駄に待機させるのではなく、レスポンスが返ってくると操作を再開します。
 
-This allows Node.js to handle thousands of concurrent connections with a single server without introducing the burden of managing thread concurrency, which could be a significant source of bugs.
+これにより、Node.js は単一のサーバーで数千の同時接続を処理できます。スレッドの同時実行性を管理する負担は、バグの大きな原因となる可能性があります。
 
-Node.js has a unique advantage because millions of frontend developers that write JavaScript for the browser are now able to write the server-side code in addition to the client-side code without the need to learn a completely different language.
+Node.js には独自の利点があります。ブラウザ用の JavaScript を記述する何百万人ものフロントエンド開発者が、全く異なる言語を習得することなく、クライアントサイドのコードに加えてサーバーサイドのコードも記述できるようになったのです。
 
-In Node.js the new ECMAScript standards can be used without problems, as you don't have to wait for all your users to update their browsers - you are in charge of deciding which ECMAScript version to use by changing the Node.js version, and you can also enable specific experimental features by running Node.js with flags.
+Node.js では、すべてのユーザーがブラウザを更新するのを待つ必要がないため、新しい ECMAScript 標準を問題なく使用できます。Node.js のバージョンを変更することで、使用する ECMAScript のバージョンを決定できます。また、フラグを指定して Node.js を実行することで、特定の試験的な機能を有効にすることもできます。
 
-## An Example Node.js Application
+## Node.js アプリケーションの例
 
-The most common example Hello World of Node.js is a web server:
+Node.js の Hello World の最も一般的な例は、Web サーバーです。
 
 ```cjs
 const { createServer } = require('node:http');
@@ -58,43 +58,43 @@ server.listen(port, hostname, () => {
 });
 ```
 
-To run this snippet, save it as a `server.js` file and run `node server.js` in your terminal.
-If you use mjs version of the code, you should save it as a `server.mjs` file and run `node server.mjs` in your terminal.
+このスニペットを実行するには、`server.js` ファイルとして保存し、ターミナルで `node server.js` を実行してください。
+mjs バージョンのコードを使用する場合は、`server.mjs` ファイルとして保存し、ターミナルで `node server.mjs` を実行してください。
 
-This code first includes the Node.js [`http` module](https://nodejs.org/api/http.html).
+このコードは、まず Node.js の [`http` モジュール](https://nodejs.org/api/http.html) をインクルードします。
 
-Node.js has a fantastic [standard library](https://nodejs.org/api/), including first-class support for networking.
+Node.js には、ネットワークのファーストクラスサポートを含む、優れた [標準ライブラリ](https://nodejs.org/api/) があります。
 
-The `createServer()` method of `http` creates a new HTTP server and returns it.
+`http` の `createServer()` メソッドは、新しい HTTP サーバーを作成して返します。
 
-The server is set to listen on the specified port and host name. When the server is ready, the callback function is called, in this case informing us that the server is running.
+サーバーは指定されたポートとホスト名でリッスンするように設定されています。サーバーの準備が完了すると、コールバック関数が呼び出され、この場合はサーバーが稼働中であることを通知します。
 
-Whenever a new request is received, the [`request` event](https://nodejs.org/api/http.html#http_event_request) is called, providing two objects: a request (an [`http.IncomingMessage`](https://nodejs.org/api/http.html#http_class_http_incomingmessage) object) and a response (an [`http.ServerResponse`](https://nodejs.org/api/http.html#http_class_http_serverresponse) object).
+新しいリクエストを受信するたびに、[`request` イベント](https://nodejs.org/api/http.html#http_event_request) が呼び出され、リクエスト（[`http.IncomingMessage`](https://nodejs.org/api/http.html#http_class_http_incomingmessage) オブジェクト）とレスポンス（[`http.ServerResponse`](https://nodejs.org/api/http.html#http_class_http_serverresponse) オブジェクト）の2つのオブジェクトが提供されます。
 
-Those 2 objects are essential to handle the HTTP call.
+これら2つのオブジェクトは、HTTP 呼び出しを処理するために不可欠です。
 
-The first provides the request details. In this simple example, this is not used, but you could access the request headers and request data.
+最初のオブジェクトはリクエストの詳細を提供します。このシンプルな例では使用されていませんが、リクエストヘッダーとリクエストデータにアクセスできます。
 
-The second is used to return data to the caller.
+2番目は呼び出し元にデータを返すために使用されます。
 
-In this case with:
+この場合、次のようになります。
 
 ```js
 res.statusCode = 200;
 ```
 
-we set the `statusCode` property to `200`, to indicate a successful response.
+`statusCode` プロパティを `200` に設定し、レスポンスが成功したことを示します。
 
-We set the `Content-Type` header:
+`Content-Type` ヘッダーを設定します。
 
 ```js
 res.setHeader('Content-Type', 'text/plain');
 ```
 
-and we close the response, adding the content as an argument to `end()`:
+そして、コンテンツを `end()` の引数として追加して、レスポンスを閉じます。
 
 ```js
 res.end('Hello World\n');
 ```
 
-If you haven't already done so, [download](https://nodejs.org/en/download) Node.js.
+まだ行っていない場合は、[ダウンロード](https://nodejs.org/en/download) Node.js してください。

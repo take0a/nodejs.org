@@ -4,28 +4,28 @@ layout: learn
 authors: JakobJingleheimer
 ---
 
-# Publishing a TypeScript package
+# TypeScript パッケージの公開
 
-This article covers items regarding TypeScript publishing specifically. Publishing means distributed as a package via npm (or other package manager); this is not about compiling an app / server to be run in production (such as a PWA and/or endpoint server).
+この記事では、TypeScript の公開に関する項目について具体的に説明します。公開とは、npm（またはその他のパッケージマネージャー）経由でパッケージとして配布することを意味します。本番環境で実行するためのアプリやサーバー（PWA やエンドポイントサーバーなど）をコンパイルすることではありません。
 
-Some important things to note:
+重要な注意事項：
 
-- Everything from [Publishing a package](../modules/publishing-a-package) applies here.
-  - Fields like `main` operate on _published_ content, so when TypeScript source-code is transpiled to JavaScript, JavaScript is the published content and `main` would point to a JavaScript file with a JavaScript file extension (ex `main.ts` → `"main": "main.js"`).
+- [パッケージの公開](../modules/publishing-a-package) のすべてがここに適用されます。
+  - `main` などのフィールドは公開されたコンテンツに対して操作されるため、TypeScript ソースコードが JavaScript にトランスパイルされると、JavaScript が公開されたコンテンツとなり、`main` は JavaScript ファイル拡張子を持つ JavaScript ファイルを指します（例：`main.ts` → `"main": "main.js"`）。
 
-  - Fields like `scripts.test` operate on source-code, so they would use the file extensions of the source code (ex `"test": "node --test './src/**/*.test.ts'`).
+  - `scripts.test` などのフィールドはソースコードに対して操作されるため、ソースコードのファイル拡張子を使用します（例：`"test": "node --test './src/**/*.test.ts'`）。
 
-- Node runs TypeScript code via a process called "[type stripping](https://nodejs.org/api/typescript.html#type-stripping)", wherein node (via [Amaro](https://github.com/nodejs/amaro)) removes TypeScript-specific syntax, leaving behind vanilla JavaScript (which node already understands). This behaviour is enabled by default as of node version 22.18.0.
-  - Node does **not** strip types in `node_modules` because it can cause significant performance issues for the official TypeScript compiler (`tsc`) and parts of VS Code, so the TypeScript maintainers would like to discourage people publishing raw TypeScript, at least for now.
+- Node.jsはTypeScriptコードを「[type stripping](https://nodejs.org/api/typescript.html#type-stripping)」と呼ばれるプロセスで実行します。このプロセスでは、Node.js（[Amaro](https://github.com/nodejs/amaro)経由）がTypeScript固有の構文を削除し、Node.jsが既に理解している標準のJavaScriptを残します。この動作は、Node.jsバージョン22.18.0以降、デフォルトで有効になっています。
+  - Node.jsは`node_modules`内の型を削除しません。これは、公式TypeScriptコンパイラ（`tsc`）とVS Codeの一部で重大なパフォーマンス問題を引き起こす可能性があるためです。そのため、TypeScriptのメンテナーは、少なくとも現時点では、生のTypeScriptを公開することを推奨していません。
 
-- Consuming TypeScript-specific features like `enum` in node still requires a flag ([`--experimental-transform-types`](https://nodejs.org/api/typescript.html#typescript-features)). There are often better alternatives for these anyway.
-  - To ensure TypeScript-specific features are _not_ present (so your code can just run in node), set the [`erasableSyntaxOnly`](https://devblogs.microsoft.com/typescript/announcing-typescript-5-8-beta/#the---erasablesyntaxonly-option) config option in TypeScript version 5.8+.
+- Node.jsで`enum`などのTypeScript固有の機能を使用するには、引き続きフラグ（[`--experimental-transform-types`](https://nodejs.org/api/typescript.html#typescript-features)）が必要です。いずれにせよ、これらよりも優れた代替手段がしばしば存在します。
+  - TypeScript 固有の機能が存在しない（つまりコードを Node.js で実行できない）ようにするには、TypeScript バージョン 5.8 以降で [`erasableSyntaxOnly`](https://devblogs.microsoft.com/typescript/announce-typescript-5-8-beta/#the---erasablesyntaxonly-option) 構成オプションを設定してください。
 
-- Use [dependabot](https://docs.github.com/en/code-security/dependabot) to keep your dependencies current, including those in github actions. It's a very easy set-and-forget configuration.
+- GitHub Actions 内の依存関係も含め、依存関係を最新の状態に保つには [dependabot](https://docs.github.com/en/code-security/dependabot) を使用してください。これは非常に簡単な設定で、一度設定すれば後は不要です。
 
-- `.nvmrc` comes from [`nvm`](https://github.com/nvm-sh/nvm), a multi-version manager for node. It allows you to specify the version of node the project should generally use.
+- `.nvmrc` は Node.js のマルチバージョンマネージャーである [`nvm`](https://github.com/nvm-sh/nvm) から取得されます。これにより、プロジェクトで一般的に使用する Node.js のバージョンを指定できます。
 
-A directory overview of a repository would look something like:
+リポジトリのディレクトリ概要は次のようになります。
 
 ```text displayName="Files co-located"
 example-ts-pkg/
@@ -88,7 +88,7 @@ example-ts-pkg/
 └ tsconfig.json
 ```
 
-And a directory overview of its published package would look something like:
+公開されたパッケージのディレクトリの概要は次のようになります。
 
 ```text displayName="Fully flat"
 example-ts-pkg/
@@ -117,13 +117,13 @@ example-ts-pkg/
 └ README.md
 ```
 
-A note about directory organisation: There are a few common practices for placing tests. Principle of least knowledge says to co-locate them (put them adjacent to implementation). Sometimes, that's in the same directory, or within a drawer like a `__test__` (also adjacent to the implementation, "Files co-located but segregated"). Alternatively, some opt to create a `test/` sibling to `src/` ("'src' and 'test' fully segregated"), either with a mirrored structure or a "junk drawer".
+ディレクトリ構成に関する注意点：テストの配置には、いくつかの一般的な方法があります。最小知識の原則では、テストは実装と隣接して配置することが推奨されています。場合によっては、同じディレクトリ内に配置するか、`__test__` のような引き出し内に配置することもあります（これも実装と隣接しており、「ファイルは同一場所に配置されながらも分離されている」という意味です）。あるいは、`src/` の兄弟である `test/` を作成する方法もあります（「'src' と 'test' は完全に分離されている」という意味です）。これは、ミラー構造または「ジャンク引き出し」のいずれかで実現されます。
 
-## What to do with your types
+## 型の扱い方
 
-### Treat types like a test
+### 型をテストのように扱う
 
-The purpose of types is to warn an implementation will not work:
+型の目的は、実装が動作しないことを警告することです。
 
 ```ts
 // @errors: 2322
@@ -131,11 +131,11 @@ const foo = 'a';
 const bar: number = 1 + foo;
 ```
 
-TypeScript has warned that the above code will not behave as intended, just like a unit test warns that code does not behave as intended. They are complementary and verify different things—you should have both.
+TypeScript は、上記のコードが意図したとおりに動作しないことを警告しています。これは、ユニットテストがコードが意図したとおりに動作しないことを警告するのと同じです。これらは補完的なものであり、異なることを検証するため、両方を使用する必要があります。
 
-Your editor (e.g. VS Code) likely has built-in support for TypeScript, displaying errors as you work. If not, and/or you missed those, CI will have your back.
+お使いのエディター（例：VS Code）には、TypeScript のサポートが組み込まれている可能性があり、作業中にエラーが表示されます。そうでない場合、またはエラーを見逃した場合は、CI が役立ちます。
 
-The following [GitHub Action](https://github.com/features/actions) sets up a CI task to automatically check (and require) types pass inspection for a PR into the `main` branch.
+以下の [GitHub Action](https://github.com/features/actions) は、`main` ブランチへの PR で型が検査に合格していることを自動的にチェック（および要求）する CI タスクを設定します。
 
 ```yaml displayName=".github/workflows/ci.yml"
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
@@ -254,15 +254,15 @@ jobs:
 }
 ```
 
-Note that test files may well have a different `tsconfig.json` applied (hence why they are excluded in the above sample).
+テストファイルには異なる `tsconfig.json` が適用されている可能性があることに注意してください（上記のサンプルでは除外されているのはこのためです）。
 
-### Generate type declarations
+### 型宣言を生成する
 
-Type declarations (`.d.ts` and friends) provide type information as a sidecar file, allowing the execution code to be vanilla JavaScript whilst still having types.
+型宣言（`.d.ts` など）は、サイドカーファイルとして型情報を提供します。これにより、実行コードは型を持ちながらも、バニラ JavaScript で記述できます。
 
-Since these are generated based on source code, they can be built as part of your publication process and do not need to be checked into your repository.
+型宣言はソースコードに基づいて生成されるため、公開プロセスの一環としてビルドすることができ、リポジトリにチェックインする必要はありません。
 
-Take the following example, where the type declarations are generated just before publishing to the npm registry.
+次の例では、npm レジストリに公開する直前に型宣言が生成されています。
 
 ```yaml displayName=".github/workflows/publish.yml"
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
@@ -314,16 +314,16 @@ src
 test
 ```
 
-You'll want to publish a package compiled to support all Node.js LTS versions since you don't know which version the consumer will be running; the `tsconfig`s in this article support node 18.x and later.
+ユーザーがどのバージョンの Node.js LTS を実行するかわからないため、すべての Node.js LTS バージョンをサポートするようにコンパイルされたパッケージを公開する必要があります。この記事の `tsconfig` は Node.js 18.x 以降をサポートしています。
 
-`npm publish` will automatically run [`prepack` beforehand](https://docs.npmjs.com/cli/using-npm/scripts#npm-publish). `npm` will also run `prepack` automatically before `npm pack --dry-run` (so you can easily see what your published package will be without actually publishing it). **Beware**, [`node --run` does _not_ do that](../command-line/run-nodejs-scripts-from-the-command-line.md#using-the---run-flag). You can't use `node --run` for this step, so that caveat does not apply here, but it can for other steps.
+`npm publish` は [`prepack` を事前に自動的に実行します](https://docs.npmjs.com/cli/using-npm/scripts#npm-publish)。`npm` は `npm pack --dry-run` の前にも `prepack` を自動的に実行します (そのため、実際に公開しなくても、公開されるパッケージの内容を簡単に確認できます)。**注意** : [`node --run` はそれを_実行しません_](../command-line/run-nodejs-scripts-from-the-command-line.md#using-the---run-flag)。この手順では `node --run` を使用できないため、この注意事項はここでは適用されませんが、他の手順では適用されます。
 
-The steps to actually publish to npm will be included in a separate article (there are several pros and cons beyond the scope of this article).
+実際に npm に公開する手順については、別の記事で説明します (この記事の範囲外には、長所と短所がいくつかあります)。
 
-#### Breaking this down
+#### 詳細
 
-Generating type declarations is deterministic: you'll get the same output from the same input, every time. So there is no need to commit these to git.
+型宣言の生成は決定論的です。つまり、同じ入力から毎回同じ出力が得られます。そのため、型宣言をgitにコミットする必要はありません。
 
-[`npm publish`](https://docs.npmjs.com/cli/commands/npm-publish) grabs everything applicable and available at the moment the command is run; so generating type declarations immediately before means those are available and will get picked up.
+[`npm publish`](https://docs.npmjs.com/cli/commands/npm-publish) は、コマンド実行時に適用可能かつ利用可能なすべてのものを取得します。そのため、直前に型宣言を生成しておけば、それらは利用可能であり、取得されます。
 
-By default, `npm publish` grabs (almost) everything (see [Files included in package](https://docs.npmjs.com/cli/commands/npm-publish#files-included-in-package)). In order to keep your published package minimal (see the "Heaviest Objects in the Universe" meme about `node_modules`), you want to exclude certain files (like tests and test fixtures) from packaging. Add these to the opt-out list specified in [`.npmignore`](https://docs.npmjs.com/cli/using-npm/developers#keeping-files-out-of-your-package); ensure the `!*.d.ts` exception is listed, or the generated type declartions will not be published! Alternatively, you can use [package.json "files"](https://docs.npmjs.com/cli/configuring-npm/package-json#files) to create an opt-in (if a mistake is made accidentally omitting a file, your package may be broken for downstream users, so this is a less safe option).
+デフォルトでは、`npm publish` は（ほぼ）すべてを取得します（[パッケージに含まれるファイル](https://docs.npmjs.com/cli/commands/npm-publish#files-included-in-package) を参照）。公開パッケージを最小限に保つには（`node_modules` に関する「宇宙で最も重いオブジェクト」ミームを参照）、特定のファイル（テストやテストフィクスチャなど）をパッケージ化から除外する必要があります。これらを [`.npmignore`](https://docs.npmjs.com/cli/using-npm/developers#keeping-files-out-of-your-package) で指定されたオプトアウトリストに追加します。`!*.d.ts` 例外がリストされていることを確認してください。リストされていない場合、生成された型宣言は公開されません。または、[package.json "files"](https://docs.npmjs.com/cli/configuring-npm/package-json#files) を使用してオプトインを作成することもできます（誤ってファイルを省略すると、下流のユーザーに対してパッケージが壊れる可能性があるため、このオプションはあまり安全ではありません）。

@@ -3,15 +3,10 @@ title: Using Inspector
 layout: learn
 ---
 
-# Using Inspector
+# Inspector の使用
 
-In a local environment, we usually speak about live debugging where we attach a
-debugger to our application and we add breakpoints to suspend the program
-execution. Then we step through the code paths and inspect our heap over the
-different steps. Using the live debugger in production is usually not an option
-as we have limited access to the machine and we cannot interrupt the execution
-of the application as it handles a business-critical workload.
+ローカル環境では通常、ライブデバッグと呼ばれます。これは、アプリケーションにデバッガーをアタッチし、ブレークポイントを設定してプログラムの実行を一時停止するものです。次に、コードパスをステップ実行し、各ステップごとにヒープを検査します。本番環境では、マシンへのアクセスが制限されており、ビジネスクリティカルなワークロードを処理するアプリケーションの実行を中断できないため、ライブデバッガーを使用することは通常できません。
 
-## How To
+## 方法
 
-[Debugging Node.js](/learn/getting-started/debugging)
+[Node.js のデバッグ](/learn/getting-started/debugging)

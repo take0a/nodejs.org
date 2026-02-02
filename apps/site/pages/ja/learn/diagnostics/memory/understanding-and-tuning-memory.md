@@ -4,29 +4,29 @@ layout: learn
 authors: avivkeller
 ---
 
-# Understanding and Tuning Memory
+# メモリの理解とチューニング
 
-Node.js, built on Google's V8 JavaScript engine, offers a powerful runtime for running JavaScript on the server side. However, as your applications grow, managing memory becomes a critical task for maintaining optimal performance and managing problems like memory leaks or crashes. In this article, we'll explore how to monitor, manage, and optimize memory usage within Node.js. We'll also cover important V8 concepts like the heap and garbage collection and discuss how to use command-line flags to fine-tune memory behavior.
+Google の V8 JavaScript エンジンをベースに構築された Node.js は、サーバーサイドで JavaScript を実行するための強力なランタイムを提供します。しかし、アプリケーションの規模が大きくなるにつれて、最適なパフォーマンスを維持し、メモリリークやクラッシュなどの問題に対処するために、メモリ管理が重要なタスクになります。この記事では、Node.js 内でメモリ使用量を監視、管理、最適化する方法を解説します。また、ヒープやガベージコレクションといった V8 の重要な概念についても解説し、コマンドラインフラグを使用してメモリの動作を微調整する方法についても説明します。
 
-## How V8 Manages Memory
+## V8 のメモリ管理方法
 
-At its core, V8 divides memory into several parts, with two primary areas being the **heap** and the **stack**. Understanding these spaces, especially how the heap is managed, is key to improving memory usage in your app.
+V8 は基本的にメモリを複数の部分に分割しており、主要な領域は **ヒープ** と **スタック** です。これらの領域、特にヒープの管理方法を理解することが、アプリのメモリ使用量を改善する鍵となります。
 
-### The Heap
+### ヒープ
 
-V8's memory management is based on the generational hypothesis, the idea that most objects die young. Therefore, it separates the heap into generations to optimize garbage collection:
+V8 のメモリ管理は、ほとんどのオブジェクトは早く消滅するという世代仮説に基づいています。そのため、ガベージコレクションを最適化するために、ヒープを世代に分割しています。
 
-1. **New Space**: This is where new, short-lived objects are allocated. Objects here are expected to "die young", so garbage collection occurs frequently, allowing memory to be reclaimed quickly.
+1. **New Space**：これは、新しく短命なオブジェクトが割り当てられる場所です。この領域にあるオブジェクトは「早く消滅する」と想定されているため、ガベージコレクションが頻繁に発生し、メモリを迅速に回収できます。
 
-   For example, let's say you have an API that receives 1,000 requests per second. Each request generates a temporary object like `{ name: 'John', age: 30 }`, which is discarded once the request is processed. If you leave the New Space size at the default, V8 will frequently perform minor garbage collections to clear these small objects, ensuring that memory usage remains manageable.
+   例えば、1 秒あたり 1,000 件のリクエストを受信する API があるとします。各リクエストは `{ name: 'John', age: 30 }` のような一時オブジェクトを生成し、リクエストが処理されるとこのオブジェクトは破棄されます。New Space のサイズをデフォルトのままにしておくと、V8 はこれらの小さなオブジェクトをクリアするために頻繁にマイナーガベージコレクションを実行し、メモリ使用量を管理可能な範囲に保ちます。
 
-2. **Old Space**: Objects that survive multiple garbage collection cycles in the New Space are promoted to the Old Space. These are usually long-lived objects, such as user sessions, cache data, or persistent state. Because these objects tend to last longer, garbage collection in this space occurs less often but is more resource-intensive.
+2. **Old Space**：New Space で複数のガベージコレクションサイクルを生き延びたオブジェクトは、Old Space に昇格されます。これらは通常、ユーザーセッション、キャッシュデータ、永続状態などの長命なオブジェクトです。これらのオブジェクトは保存期間が長くなる傾向があるため、この領域でのガベージコレクションは頻度は低くなりますが、リソースを大量に消費します。
 
-   Let's say you are running an application that tracks user sessions. Each session might store data like `{ userId: 'abc123', timestamp: '2025-04-10T12:00:00', sessionData: {...} }`, which needs to persist in memory as long as the user is active. As the number of concurrent users grows, the Old Space could fill up, causing out-of-memory errors or slower response times due to inefficient garbage collection cycles.
+   ユーザーセッションを追跡するアプリケーションを実行しているとします。各セッションには、`{ userId: 'abc123', timestamp: '2025-04-10T12:00:00', sessionData: {...} }` のようなデータが保存される可能性があり、これらのデータはユーザーがアクティブである限りメモリ内に保持される必要があります。同時ユーザー数が増加すると、Old Space がいっぱいになり、メモリ不足エラーが発生したり、ガベージコレクションサイクルの効率が悪くなったりして応答時間が遅くなったりする可能性があります。
 
-In V8, memory for JavaScript objects, arrays, and functions is allocated in the **heap**. The size of the heap is not fixed, and exceeding the available memory can result in an "out-of-memory" error, causing your application to crash.
+V8 では、JavaScript オブジェクト、配列、関数のメモリは **ヒープ** に割り当てられます。ヒープのサイズは固定されておらず、使用可能なメモリを超えると「メモリ不足」エラーが発生し、アプリケーションがクラッシュする可能性があります。
 
-To check the current heap size limit, you can use the `v8` module.
+現在のヒープサイズの制限を確認するには、`v8` モジュールを使用します。
 
 ```cjs
 const v8 = require('node:v8');
@@ -36,35 +36,35 @@ const heapSizeInGB = heap_size_limit / (1024 * 1024 * 1024);
 console.log(`${heapSizeInGB} GB`);
 ```
 
-This will output the maximum heap size in gigabytes, which is based on your system's available memory.
+これにより、システムの利用可能なメモリに基づいて、最大ヒープサイズがギガバイト単位で出力されます。
 
-### The Stack
+### スタック
 
-In addition to the heap, V8 also uses the **stack** for memory management. The stack is a region of memory used to store local variables and function call information. Unlike the heap, which is managed by V8's garbage collector, the stack operates on a Last In, First Out (LIFO) principle.
+ヒープに加えて、V8 はメモリ管理に **スタック** も使用します。スタックは、ローカル変数と関数呼び出し情報を格納するために使用されるメモリ領域です。V8 のガベージコレクタによって管理されるヒープとは異なり、スタックは後入れ先出し (LIFO) の原則に基づいて動作します。
 
-Whenever a function is called, a new frame is pushed onto the stack. When the function returns, its frame is popped off. The stack is much smaller in size compared to the heap, but it is faster for memory allocation and deallocation. However, the stack has a limited size, and excessive use of memory (such as with deep recursion) can result in a **stack overflow**.
+関数が呼び出されるたびに、新しいフレームがスタックにプッシュされます。関数が戻ると、そのフレームはポップオフされます。スタックはヒープに比べてサイズがはるかに小さいですが、メモリの割り当てと解放は高速です。ただし、スタックのサイズには制限があり、メモリを過度に使用すると (深い再帰など)、**スタックオーバーフロー** が発生する可能性があります。
 
-## Monitoring Memory Usage
+## メモリ使用量のモニタリング
 
-Before tuning memory usage, it's important to understand how much memory your application is consuming. Node.js and V8 provide several tools for monitoring memory usage.
+メモリ使用量を調整する前に、アプリケーションが消費しているメモリ量を把握することが重要です。Node.js と V8 には、メモリ使用量をモニタリングするためのツールがいくつか用意されています。
 
-### Using `process.memoryUsage()`
+### `process.memoryUsage()` の使用
 
-The `process.memoryUsage()` method provides insights into how much memory your Node.js process is using. It returns an object with details like:
+`process.memoryUsage()` メソッドは、Node.js プロセスが使用しているメモリ量に関する情報を提供します。このメソッドは、次のような詳細情報を含むオブジェクトを返します。
 
-- **`rss`** (Resident Set Size): The total memory allocated to your process, including heap and other areas.
-- **`heapTotal`**: The total memory allocated for the heap.
-- **`heapUsed`**: The memory currently in use within the heap.
-- **`external`**: Memory used by external resources like bindings to C++ libraries.
-- **`arrayBuffers`**: Memory allocated to various Buffer-like objects.
+- **`rss`** (Resident Set Size): プロセスに割り当てられたメモリの総量（ヒープ領域などを含む）。
+- **`heapTotal`**: ヒープに割り当てられたメモリの総量。
+- **`heapUsed`**: ヒープ内で現在使用中のメモリ。
+- **`external`**: C++ ライブラリへのバインディングなどの外部リソースによって使用されているメモリ。
+- **`arrayBuffers`**: さまざまな Buffer のようなオブジェクトに割り当てられたメモリ。
 
-Here's how to use `process.memoryUsage()` to monitor memory usage in your application:
+`process.memoryUsage()` を使用してアプリケーションのメモリ使用量を監視する方法は次のとおりです。
 
 ```javascript
 console.log(process.memoryUsage());
 ```
 
-The output will show how much memory is being used in each area:
+出力には、各領域で使用されているメモリの量が表示されます。
 
 ```json
 {
@@ -76,75 +76,75 @@ The output will show how much memory is being used in each area:
 }
 ```
 
-By monitoring these values over time, you can identify if memory usage is increasing unexpectedly. For instance, if `heapUsed` steadily grows without being released, it could indicate a memory leak in your application.
+これらの値を経時的に監視することで、メモリ使用量が予期せず増加しているかどうかを特定できます。例えば、`heapUsed` が解放されることなく着実に増加している場合、アプリケーションでメモリリークが発生している可能性があります。
 
-## Command-Line Flags for Memory Tuning
+## メモリチューニングのためのコマンドラインフラグ
 
-Node.js offers several command-line flags to fine-tune memory-related settings, allowing you to optimize memory usage in your application.
+Node.js には、メモリ関連の設定を微調整するためのコマンドラインフラグがいくつか用意されており、アプリケーションのメモリ使用量を最適化できます。
 
 ### `--max-old-space-size`
 
-This flag sets a limit on the size of the **Old Space** in the V8 heap, where long-lived objects are stored. If your application uses a significant amount of memory, you might need to adjust this limit.
+このフラグは、V8 ヒープ内の **Old Space** のサイズに制限を設定します。この領域には、長期間保存されるオブジェクトが格納されます。アプリケーションが大量のメモリを使用する場合は、この制限を調整する必要があるかもしれません。
 
-For example, lets say your application handles a steady stream of incoming requests, each of which generates a large object. Over time, if these objects are not cleared, the Old Space could become overloaded, causing crashes or slower response times.
+例えば、アプリケーションが大量のリクエストを継続的に処理し、そのたびに大きなオブジェクトが生成される場合を考えてみましょう。時間が経つにつれて、これらのオブジェクトがクリアされないと、Old Space が過負荷になり、クラッシュや応答時間の遅延が発生する可能性があります。
 
-You can increase the Old Space size by setting the `--max-old-space-size` flag:
+`--max-old-space-size` フラグを設定することで、Old Space のサイズを増やすことができます。
 
 ```bash
 node --max-old-space-size=4096 app.js
 ```
 
-This sets the Old Space size to 4096 MB (4 GB), which is particularly useful if your application is handling a large amount of persistent data, like caching or user session information.
+これにより、Old Space のサイズが 4096 MB (4 GB) に設定されます。これは、アプリケーションがキャッシュやユーザーセッション情報などの大量の永続データを処理する場合に特に便利です。
 
 ### `--max-semi-space-size`
 
-This flag controls the size of the **New Space** in the V8 heap. New Space is where newly created objects are allocated and garbage collected frequently. Increasing this size can reduce the frequency of minor garbage collection cycles.
+このフラグは、V8 ヒープ内の **New Space** のサイズを制御します。New Space は、新しく作成されたオブジェクトが割り当てられ、頻繁にガベージコレクションされる場所です。このサイズを増やすと、マイナーガベージコレクションサイクルの頻度を減らすことができます。
 
-For example, if you have an API that receives a large number of requests, each creating small objects like `{ name: 'Alice', action: 'login' }`, you may notice performance degradation due to frequent garbage collection. By increasing the New Space size, you can reduce the frequency of these collections and improve overall performance.
+例えば、大量のリクエストを受け取り、それぞれが `{ name: 'Alice', action: 'login' }` のような小さなオブジェクトを作成する API がある場合、頻繁なガベージコレクションによってパフォーマンスが低下する可能性があります。New Space のサイズを増やすことで、これらのコレクションの頻度を減らし、全体的なパフォーマンスを向上させることができます。
 
 ```bash
 node --max-semi-space-size=64 app.js
 ```
 
-This increases the New Space to 64 MB, allowing for more objects to reside in memory before triggering garbage collection. This is particularly useful in high-throughput environments where object creation and destruction are frequent.
+これにより、新規領域が 64 MB に増加し、ガベージコレクションをトリガーする前にメモリ内に保持できるオブジェクト数が増えます。これは、オブジェクトの作成と破棄が頻繁に行われる高スループット環境で特に役立ちます。
 
 ### `--gc-interval`
 
-This flag adjusts how frequently garbage collection cycles occur. By default, V8 determines the best interval, but you can override this setting in some scenarios where you need more control over memory cleanup.
+このフラグは、ガベージコレクションサイクルの発生頻度を調整します。デフォルトでは V8 が最適な間隔を決定しますが、メモリクリーンアップをより細かく制御する必要があるシナリオでは、この設定をオーバーライドできます。
 
-For example, in a real-time application like a stock trading platform, you may want to minimize the impact of garbage collection by reducing the frequency of collections, ensuring the application can process data without significant pauses.
+例えば、株式取引プラットフォームのようなリアルタイムアプリケーションでは、ガベージコレクションの頻度を減らすことで、アプリケーションが大きな停止なしにデータを処理できるようにすることで、ガベージコレクションの影響を最小限に抑えたい場合があります。
 
 ```bash
 node --gc-interval=100 app.js
 ```
 
-This setting forces V8 to attempt garbage collection every 100 ms. You may need to adjust this interval for specific use cases, but be cautious: setting the interval too low can cause performance degradation due to excessive garbage collection cycles.
+この設定により、V8 は 100 ミリ秒ごとにガベージコレクションを試行するようになります。特定のユースケースではこの間隔を調整する必要がある場合がありますが、間隔を短くしすぎると、ガベージコレクションサイクルが過剰に発生し、パフォーマンスが低下する可能性があるので注意が必要です。
 
 ### `--expose-gc`
 
-With the `--expose-gc` flag, you can manually trigger garbage collection from within your application code. This can be helpful in specific scenarios, like after processing a large batch of data, where you want to reclaim memory before continuing with further operations.
+`--expose-gc` フラグを使用すると、アプリケーションコード内から手動でガベージコレクションを開始できます。これは、大量のデータを処理した後など、次の処理に進む前にメモリを解放したい場合など、特定のシナリオで役立ちます。
 
-To expose `gc`, start your app with:
+`gc` を公開するには、アプリを次のコマンドで起動します。
 
 ```bash
 node --expose-gc app.js
 ```
 
-Then, within your application code, you can call `global.gc()` to manually trigger garbage collection:
+次に、アプリケーション コード内で `global.gc()` を呼び出して、ガベージ コレクションを手動でトリガーできます。
 
 ```javascript
 global.gc();
 ```
 
-Keep in mind that manually triggering garbage collection **does not disable** the normal GC algorithm. V8 will still perform automatic garbage collection as needed. Manual calls are supplemental and should be used with caution, as overuse can negatively impact performance.
+手動でガベージコレクションを開始しても、通常のGCアルゴリズムが**無効になるわけではない**ことにご注意ください。V8は必要に応じて自動ガベージコレクションを実行します。手動呼び出しは補助的なものであり、過度に使用するとパフォーマンスに悪影響を与える可能性があるため、注意して使用する必要があります。
 
-## Additional Resources
+## 追加リソース
 
-To dive deeper into how V8 handles memory, check out these posts by the V8 team:
+V8のメモリ処理方法について詳しくは、V8チームによる以下の投稿をご覧ください。
 
-- [Trash talk: the Orinoco garbage collector](https://v8.dev/blog/trash-talk)
-- [Orinoco: young generation garbage collection](https://v8.dev/blog/orinoco-parallel-scavenger)
+- [Trash talk: Orinoco ガベージコレクター](https://v8.dev/blog/trash-talk)
+- [Orinoco: 若い世代のガベージコレクション](https://v8.dev/blog/orinoco-parallel-scavenger)
 
-## Putting It All Together
+## まとめ
 
-By adjusting settings for the Old Space and New Space sizes, selectively triggering garbage collection, and configuring heap limits, you can optimize your application’s memory usage and improve its overall performance. These tools give you the power to better manage memory in high-demand scenarios and maintain stability as your applications scale.
+Old SpaceとNew Spaceのサイズ設定を調整し、ガベージコレクションを個別に開始し、ヒープ制限を構成することで、アプリケーションのメモリ使用量を最適化し、全体的なパフォーマンスを向上させることができます。これらのツールを使用することで、メモリ使用量の多いシナリオでもメモリをより適切に管理し、アプリケーションのスケールに合わせて安定性を維持できます。

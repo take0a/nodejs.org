@@ -4,102 +4,102 @@ layout: learn
 authors: flaviocopes, MylesBorins, LaRuaNa, jgb-solutions, amiller-gh, ahmadawais
 ---
 
-# An introduction to the npm package manager
+# npm パッケージマネージャーの紹介
 
-## Introduction to npm
+## npm 入門
 
-`npm` is the standard package manager for Node.js.
+`npm` は Node.js の標準パッケージマネージャーです。
 
-In September 2022 over 2.1 million packages were reported being listed in the npm registry, making it the biggest single language code repository on Earth, and you can be sure there is a package for (almost!) everything.
+2022年9月時点で、npm レジストリには210万以上のパッケージが登録されていると報告されており、世界最大の単一言語コードリポジトリとなっています。ほぼあらゆる言語のパッケージが見つかるはずです。
 
-It started as a way to download and manage dependencies of Node.js packages, but it has since become a tool used also in frontend JavaScript.
+npm は Node.js パッケージの依存関係をダウンロードおよび管理するための手段として始まりましたが、現在ではフロントエンド JavaScript でも利用されるツールとなっています。
 
-> [**Yarn**](https://yarnpkg.com) and [**pnpm**](https://pnpm.io) are alternatives to npm cli. You can check them out as well.
+> [**Yarn**](https://yarnpkg.com) と [**pnpm**](https://pnpm.io) は npm cli の代替ツールです。ぜひご確認ください。
 
-## Packages
+## パッケージ
 
-`npm` installs, updates and manages downloads of dependencies of your project. Dependencies are pre-built pieces of code, such as libraries and packages, that your Node.js application needs to work.
+`npm` は、プロジェクトの依存関係のインストール、更新、ダウンロード管理を行います。依存関係とは、Node.js アプリケーションの動作に必要な、ライブラリやパッケージなどの事前に構築されたコードです。
 
-### Installing all dependencies
+### すべての依存関係のインストール
 
-If a project has a `package.json` file, by running
+プロジェクトに`package.json`ファイルがある場合は、
 
 ```bash
 npm install
 ```
 
-it will install everything the project needs, in the `node_modules` folder, creating it if it's not existing already.
+を実行することで、プロジェクトに必要なものがすべて `node_modules` フォルダにインストールされ、まだ存在しない場合は作成されます。
 
-### Installing a single package
+### 単一パッケージのインストール
 
-You can also install a specific package by running
+特定のパッケージをインストールするには、次のコマンドを実行します。
 
 ```bash
 npm install <package-name>
 ```
 
-Furthermore, since npm 5, this command adds `<package-name>` to the `package.json` file _dependencies_. Before version 5, you needed to add the flag `--save`.
+さらに、npm 5以降では、このコマンドは`<package-name>`を`package.json`ファイルの_dependencies_に追加します。バージョン5より前では、`--save`フラグを追加する必要がありました。
 
-Often you'll see more flags added to this command:
+このコマンドには、他にもフラグが追加されていることがよくあります。
 
-- `--save-dev` installs and adds the entry to the `package.json` file _devDependencies_
-- `--no-save` installs but does not add the entry to the `package.json` file _dependencies_
-- `--save-optional` installs and adds the entry to the `package.json` file _optionalDependencies_
-- `--no-optional` will prevent optional dependencies from being installed
+- `--save-dev` はインストールを行い、`package.json` ファイル _devDependencies_ にエントリを追加します。
+- `--no-save` はインストールを行いますが、`package.json` ファイル _dependencies_ にエントリを追加しません。
+- `--save-optional` はインストールを行い、`package.json` ファイル _optionalDependencies_ にエントリを追加します。
+- `--no-optional` はオプションの依存関係がインストールされないようにします。
 
-Shorthands of the flags can also be used:
+フラグの短縮形も使用できます:
 
 - \-S: `--save`
 - \-D: `--save-dev`
 - \-O: `--save-optional`
 
-The difference between _devDependencies_ and _dependencies_ is that the former contains development tools, like a testing library, while the latter is bundled with the app in production.
+_devDependencies_ と _dependencies_ の違いは、前者はテストライブラリなどの開発ツールを含むのに対し、後者は本番環境でアプリにバンドルされている点です。
 
-As for the _optionalDependencies_ the difference is that build failure of the dependency will not cause installation to fail. But it is your program's responsibility to handle the lack of the dependency. Read more about [optional dependencies](https://docs.npmjs.com/cli/configuring-npm/package-json#optionaldependencies).
+_optionalDependencies_ の違いは、依存関係のビルドが失敗してもインストールは失敗しないという点です。ただし、依存関係の不足に対処するのはプログラム側の役割です。[optional dependencies](https://docs.npmjs.com/cli/configuring-npm/package-json#optionaldependencies) の詳細については、こちらをご覧ください。
 
-### Updating packages
+### パッケージのアップデート
 
-Updating is also made easy, by running
+アップデートも簡単に実行できます。
 
 ```bash
 npm update
 ```
 
-`npm` will check all packages for a newer version that satisfies your versioning constraints.
+`npm` は、バージョン制約を満たす新しいバージョンがないか、すべてのパッケージをチェックします。
 
-You can specify a single package to update as well:
+更新するパッケージを 1 つだけ指定することもできます。
 
 ```bash
 npm update <package-name>
 ```
 
-## Versioning
+## バージョン管理
 
-In addition to plain downloads, `npm` also manages **versioning**, so you can specify any specific version of a package, or require a version higher or lower than what you need.
+通常のダウンロードに加えて、`npm` は **バージョン管理** も管理します。そのため、パッケージの特定のバージョンを指定したり、必要なバージョンよりも高いバージョンまたは低いバージョンを要求したりできます。
 
-Many times you'll find that a library is only compatible with a major release of another library.
+多くの場合、ライブラリは別のライブラリのメジャーリリースとのみ互換性があります。
 
-Or a bug in the latest release of a lib, still unfixed, is causing an issue.
+あるいは、ライブラリの最新リリースにまだ修正されていないバグがあり、それが問題を引き起こしている場合もあります。
 
-Specifying an explicit version of a library also helps to keep everyone on the same exact version of a package, so that the whole team runs the same version until the `package.json` file is updated.
+ライブラリのバージョンを明示的に指定することで、全員が同じバージョンのパッケージを使用するようになり、`package.json` ファイルが更新されるまで、チーム全体で同じバージョンを実行できるようになります。
 
-In all those cases, versioning helps a lot, and `npm` follows the semantic versioning (semver) standard.
+これらのすべてのケースでバージョン管理は非常に役立ち、`npm` はセマンティックバージョニング (semver) 標準に準拠しています。
 
-You can install a specific version of a package, by running
+特定のバージョンのパッケージをインストールするには、以下のコマンドを実行します。
 
 ```bash
 npm install <package-name>@<version>
 ```
 
-## Running Tasks
+## タスクの実行
 
-The package.json file supports a format for specifying command line tasks that can be run by using
+package.jsonファイルは、以下のコマンドで実行できるコマンドラインタスクを指定するためのフォーマットをサポートしています。
 
 ```bash
 npm run <task-name>
 ```
 
-For example:
+例えば:
 
 ```json
 {
@@ -110,7 +110,7 @@ For example:
 }
 ```
 
-It's very common to use this feature to run Webpack:
+Webpack を実行するためにこの機能を使用するのは非常に一般的です:
 
 ```json
 {
@@ -122,7 +122,7 @@ It's very common to use this feature to run Webpack:
 }
 ```
 
-So instead of typing those long commands, which are easy to forget or mistype, you can run
+忘れたり、間違えたりしやすい長いコマンドを入力する代わりに、以下のように実行できます。
 
 ```console
 $ npm run watch

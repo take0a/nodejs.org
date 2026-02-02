@@ -3,19 +3,14 @@ title: Anatomy of an HTTP Transaction
 layout: learn
 ---
 
-# Anatomy of an HTTP Transaction
+# HTTPトランザクションの仕組み
 
-The purpose of this guide is to impart a solid understanding of the process of
-Node.js HTTP handling. We'll assume that you know, in a general sense, how HTTP
-requests work, regardless of language or programming environment. We'll also
-assume a bit of familiarity with Node.js [`EventEmitters`][] and [`Streams`][].
-If you're not quite familiar with them, it's worth taking a quick read through
-the API docs for each of those.
+このガイドの目的は、Node.jsにおけるHTTP処理のプロセスをしっかりと理解してもらうことです。言語やプログラミング環境に関わらず、HTTPリクエストの仕組みを大まかに理解していることを前提としています。また、Node.jsの[`EventEmitters`][]と[`Streams`][]についてもある程度の知識があることを前提としています。
+これらの機能についてよく知らない場合は、それぞれのAPIドキュメントをざっと読んでみることをお勧めします。
 
-## Create the Server
+## サーバーの作成
 
-Any node web server application will at some point have to create a web server
-object. This is done by using [`createServer`][].
+Node.js の Web サーバーアプリケーションでは、いずれ Web サーバーオブジェクトを作成する必要があります。これは [`createServer`][] を使って行います。
 
 ```cjs
 const http = require('node:http');
@@ -33,11 +28,7 @@ const server = http.createServer((request, response) => {
 });
 ```
 
-The function that's passed in to [`createServer`][] is called once for every
-HTTP request that's made against that server, so it's called the request
-handler. In fact, the [`Server`][] object returned by [`createServer`][] is an
-[`EventEmitter`][], and what we have here is just shorthand for creating a
-`server` object and then adding the listener later.
+[`createServer`][] に渡される関数は、そのサーバーに対して行われるHTTPリクエストごとに1回呼び出されるため、リクエストハンドラーと呼ばれます。実際、[`createServer`][] によって返される [`Server`][] オブジェクトは [`EventEmitter`][] であり、ここで使用しているのは、`server` オブジェクトを作成し、その後リスナーを追加するための簡略化です。
 
 ```js
 const server = http.createServer();
@@ -46,59 +37,38 @@ server.on('request', (request, response) => {
 });
 ```
 
-When an HTTP request hits the server, Node calls the request handler function
-with a few handy objects for dealing with the transaction, `request` and
-`response`. We'll get to those shortly.
+HTTPリクエストがサーバーに到達すると、Node.jsはトランザクションを処理するための便利なオブジェクト（`request`と`response`）を使ってリクエストハンドラー関数を呼び出します。これらについては後ほど説明します。
 
-In order to actually serve requests, the [`listen`][] method needs to be called
-on the `server` object. In most cases, all you'll need to pass to `listen` is
-the port number you want the server to listen on. There are some other options
-too, so consult the [API reference][].
+実際にリクエストを処理するには、`server`オブジェクトの[`listen`][]メソッドを呼び出す必要があります。ほとんどの場合、`listen`に渡すのはサーバーがリッスンするポート番号だけです。他にもいくつかのオプションがありますので、[APIリファレンス][]を参照してください。
 
-## Method, URL and Headers
+## メソッド、URL、ヘッダー
 
-When handling a request, the first thing you'll probably want to do is look at
-the method and URL, so that appropriate actions can be taken. Node.js makes this
-relatively painless by putting handy properties onto the `request` object.
+リクエストを処理する際、まず最初にすべきことは、メソッドとURLを確認して適切なアクションを実行することです。Node.jsでは、`request`オブジェクトに便利なプロパティを設定することで、この処理を比較的簡単に行うことができます。
 
 ```js
 const { method, url } = request;
 ```
 
-> The `request` object is an instance of [`IncomingMessage`][].
+> `request` オブジェクトは [`IncomingMessage`][] のインスタンスです。
 
-The `method` here will always be a normal HTTP method/verb. The `url` is the
-full URL without the server, protocol or port. For a typical URL, this means
-everything after and including the third forward slash.
+ここでの `method` は常に通常の HTTP メソッド/動詞です。`url` はサーバー、プロトコル、ポート番号を除いた完全な URL です。一般的な URL では、これは 3 番目のスラッシュ以降のすべてを指します。
 
-Headers are also not far away. They're in their own object on `request` called
-`headers`.
+ヘッダーもそれほど遠くありません。`request` 内の `headers` という独自のオブジェクトに含まれています。
 
 ```js
 const { headers } = request;
 const userAgent = headers['user-agent'];
 ```
 
-It's important to note here that all headers are represented in lower-case only,
-regardless of how the client actually sent them. This simplifies the task of
-parsing headers for whatever purpose.
+ここで重要なのは、クライアントが実際にどのように送信したかに関わらず、すべてのヘッダーは小文字のみで表現されるということです。これにより、どのような目的であれヘッダーの解析作業が簡素化されます。
 
-If some headers are repeated, then their values are overwritten or joined
-together as comma-separated strings, depending on the header. In some cases,
-this can be problematic, so [`rawHeaders`][] is also available.
+ヘッダーが重複している場合、ヘッダーに応じて、値は上書きされるか、カンマ区切りの文字列として結合されます。場合によっては、この方法が問題となる可能性があるため、[`rawHeaders`][] も利用可能です。
 
-## Request Body
+## リクエストボディ
 
-When receiving a `POST` or `PUT` request, the request body might be important to
-your application. Getting at the body data is a little more involved than
-accessing request headers. The `request` object that's passed in to a handler
-implements the [`ReadableStream`][] interface. This stream can be listened to or
-piped elsewhere just like any other stream. We can grab the data right out of
-the stream by listening to the stream's `'data'` and `'end'` events.
+`POST` または `PUT` リクエストを受信する際、リクエストボディはアプリケーションにとって重要になる場合があります。ボディデータの取得は、リクエストヘッダーへのアクセスよりも少し複雑です。ハンドラーに渡される `request` オブジェクトは [`ReadableStream`][] インターフェースを実装しています。このストリームは、他のストリームと同様に、リッスンしたり、他の場所にパイプしたりできます。ストリームの `'data'` イベントと `'end'` イベントをリッスンすることで、ストリームから直接データを取得できます。
 
-The chunk emitted in each `'data'` event is a [`Buffer`][]. If you know it's
-going to be string data, the best thing to do is collect the data in an array,
-then at the `'end'`, concatenate and stringify it.
+各 `'data'` イベントで出力されるチャンクは [`Buffer`][] です。文字列データになることが分かっている場合は、データを配列にまとめて `'end'` で連結し、文字列化するのが最善策です。
 
 ```js
 let body = [];
@@ -112,22 +82,13 @@ request
   });
 ```
 
-> This may seem a tad tedious, and in many cases, it is. Luckily,
-> there are modules like [`concat-stream`][] and [`body`][] on [`npm`][] which can
-> help hide away some of this logic. It's important to have a good understanding
-> of what's going on before going down that road, and that's why you're here!
+> これは少し面倒に思えるかもしれませんし、多くの場合、実際面倒です。幸いなことに、[`npm`][] には [`concat-stream`][] や [`body`][] といったモジュールがあり、これらのロジックの一部を隠蔽することができます。この方法を試す前に、何が起こっているのかをよく理解しておくことが重要です。だからこそ、あなたはここにいるのです！
 
-## A Quick Thing About Errors
+## エラーについて
 
-Since the `request` object is a [`ReadableStream`][], it's also an
-[`EventEmitter`][] and behaves like one when an error happens.
+`request` オブジェクトは [`ReadableStream`][] であるため、[`EventEmitter`][] でもあり、エラー発生時には EventEmitter として動作します。
 
-An error in the `request` stream presents itself by emitting an `'error'` event
-on the stream. **If you don't have a listener for that event, the error will be
-_thrown_, which could crash your Node.js program.** You should therefore add an
-`'error'` listener on your request streams, even if you just log it and
-continue on your way. (Though it's probably best to send some kind of HTTP error
-response. More on that later.)
+`request` ストリームでエラーが発生すると、ストリームに `'error'` イベントが発行されます。**このイベントのリスナーがない場合、エラーが _throw_ され、Node.js プログラムがクラッシュする可能性があります。** したがって、ログに記録してそのまま処理を続行する場合でも、リクエストストリームに `'error'` リスナーを追加する必要があります。(ただし、何らかの HTTP エラーレスポンスを送信するのが最善策です。これについては後ほど詳しく説明します。)
 
 ```js
 request.on('error', err => {
@@ -136,15 +97,11 @@ request.on('error', err => {
 });
 ```
 
-There are other ways of [handling these errors][] such as
-other abstractions and tools, but always be aware that errors can and do happen,
-and you're going to have to deal with them.
+他の抽象化やツールなど、[これらのエラーを処理する][]方法は他にもありますが、エラーは発生する可能性があり、実際に発生するので、対処する必要があることを常に認識しておく必要があります。
 
-## What We've Got so Far
+## これまでの内容
 
-At this point, we've covered creating a server, and grabbing the method, URL,
-headers and body out of requests. When we put that all together, it might look
-something like this:
+ここまでで、サーバーの作成と、リクエストからメソッド、URL、ヘッダー、本文を取得する方法について説明しました。これらをすべてまとめると、次のようになります。
 
 ```cjs
 const http = require('node:http');
@@ -192,50 +149,38 @@ http
   .listen(8080); // Activates this server, listening on port 8080.
 ```
 
-If we run this example, we'll be able to _receive_ requests, but not _respond_
-to them. In fact, if you hit this example in a web browser, your request would
-time out, as nothing is being sent back to the client.
+この例を実行すると、リクエストを_受信_することはできますが、_応答_することはできません。実際、この例をWebブラウザで実行すると、クライアントに何も返されないため、リクエストはタイムアウトします。
 
-So far we haven't touched on the `response` object at all, which is an instance
-of [`ServerResponse`][], which is a [`WritableStream`][]. It contains many
-useful methods for sending data back to the client. We'll cover that next.
+ここまで、`response`オブジェクトについては全く触れていませんでした。これは[`ServerResponse`][]のインスタンスであり、[`WritableStream`][]です。このオブジェクトには、クライアントにデータを返送するための便利なメソッドが多数含まれています。これについては次に説明します。
 
-## HTTP Status Code
+## HTTPステータスコード
 
-If you don't bother setting it, the HTTP status code on a response will always
-be 200. Of course, not every HTTP response warrants this, and at some point
-you'll definitely want to send a different status code. To do that, you can set
-the `statusCode` property.
+設定しない場合、レスポンスのHTTPステータスコードは常に200になります。もちろん、すべてのHTTPレスポンスでこの値が必要なわけではなく、場合によっては異なるステータスコードを送信したい場合もあるでしょう。そのためには、`statusCode`プロパティを設定します。
 
 ```js
 response.statusCode = 404; // Tell the client that the resource wasn't found.
 ```
 
-There are some other shortcuts to this, as we'll see soon.
+他にもショートカットがいくつかありますが、後ほど説明します。
 
-## Setting Response Headers
+## レスポンスヘッダーの設定
 
-Headers are set through a convenient method called [`setHeader`][].
+ヘッダーは、[`setHeader`][] という便利なメソッドを使って設定されます。
 
 ```js
 response.setHeader('Content-Type', 'application/json');
 response.setHeader('X-Powered-By', 'bacon');
 ```
 
-When setting the headers on a response, the case is insensitive on their names.
-If you set a header repeatedly, the last value you set is the value that gets
-sent.
+レスポンスにヘッダーを設定する際、ヘッダー名の大文字と小文字は区別されません。
+ヘッダーを繰り返し設定した場合、最後に設定した値が送信されます。
 
-## Explicitly Sending Header Data
+## ヘッダーデータの明示的な送信
 
-The methods of setting the headers and status code that we've already discussed
-assume that you're using "implicit headers". This means you're counting on node
-to send the headers for you at the correct time before you start sending body
-data.
+これまで説明したヘッダーとステータスコードの設定方法は、「暗黙的なヘッダー」の使用を前提としています。つまり、ボディデータの送信を開始する前に、Node.jsが適切なタイミングでヘッダーを送信してくれることを期待しているということです。
 
-If you want, you can _explicitly_ write the headers to the response stream.
-To do this, there's a method called [`writeHead`][], which writes the status
-code and the headers to the stream.
+必要であれば、レスポンスストリームにヘッダーを明示的に書き込むこともできます。
+これを行うには、[`writeHead`][] というメソッドを使用します。このメソッドは、ステータスコードとヘッダーをストリームに書き込みます。
 
 ```js
 response.writeHead(200, {
@@ -244,13 +189,11 @@ response.writeHead(200, {
 });
 ```
 
-Once you've set the headers (either implicitly or explicitly), you're ready to
-start sending response data.
+ヘッダーを（暗黙的または明示的に）設定したら、応答データの送信を開始する準備が整います。
 
-## Sending Response Body
+## レスポンス本文の送信
 
-Since the `response` object is a [`WritableStream`][], writing a response body
-out to the client is just a matter of using the usual stream methods.
+`response` オブジェクトは [`WritableStream`][] であるため、レスポンス本文をクライアントに書き出すには、通常のストリームメソッドを使用するだけです。
 
 ```js
 response.write('<html>');
@@ -261,29 +204,22 @@ response.write('</html>');
 response.end();
 ```
 
-The `end` function on streams can also take in some optional data to send as the
-last bit of data on the stream, so we can simplify the example above as follows.
+ストリームの `end` 関数は、ストリームの最後のデータビットとして送信するオプションのデータも取得できるため、上記の例を次のように簡略化できます。
 
 ```js
 response.end('<html><body><h1>Hello, World!</h1></body></html>');
 ```
 
-> It's important to set the status and headers _before_ you start
-> writing chunks of data to the body. This makes sense, since headers come before
-> the body in HTTP responses.
+> ボディにデータを書き込む前に、ステータスとヘッダーを設定することが重要です。HTTPレスポンスではヘッダーがボディよりも先に送信されるため、これは理にかなっています。
 
-## Another Quick Thing About Errors
+## エラーについてもう一つ注意点
 
-The `response` stream can also emit `'error'` events, and at some point you're
-going to have to deal with that as well. All of the advice for `request` stream
-errors still applies here.
+`response` ストリームは `'error'` イベントを発行する可能性があり、いずれはこれにも対処する必要が出てきます。`request` ストリームのエラーに関するアドバイスはすべて、ここでも適用されます。
 
-## Put It All Together
+## すべてをまとめる
 
-Now that we've learned about making HTTP responses, let's put it all together.
-Building on the earlier example, we're going to make a server that sends back
-all of the data that was sent to us by the user. We'll format that data as JSON
-using `JSON.stringify`.
+HTTPレスポンスの作成方法を学んだので、次はすべてをまとめてみましょう。
+先ほどの例を基に、ユーザーから送信されたすべてのデータを返すサーバーを作成します。`JSON.stringify` を使って、データをJSON形式に変換します。
 
 ```cjs
 const http = require('node:http');
@@ -365,12 +301,9 @@ http
   .listen(8080);
 ```
 
-## Echo Server Example
+## エコーサーバーの例
 
-Let's simplify the previous example to make a simple echo server, which just
-sends whatever data is received in the request right back in the response. All
-we need to do is grab the data from the request stream and write that data to
-the response stream, similar to what we did previously.
+前の例を簡略化して、リクエストで受信したデータをそのままレスポンスで返すシンプルなエコーサーバーを作成しましょう。必要なのは、リクエストストリームからデータを取得し、そのデータをレスポンスストリームに書き込むだけです。これは、前の例と同じです。
 
 ```cjs
 const http = require('node:http');
@@ -408,13 +341,12 @@ http
   .listen(8080);
 ```
 
-Now let's tweak this. We want to only send an echo under the following
-conditions:
+では、これを微調整してみましょう。以下の条件に該当する場合にのみ echo を送信します。
 
-- The request method is POST.
-- The URL is `/echo`.
+- リクエストメソッドが POST の場合。
+- URL が `/echo` の場合。
 
-In any other case, we want to simply respond with a 404.
+それ以外の場合は、単に 404 を返します。
 
 ```cjs
 const http = require('node:http');
@@ -462,15 +394,11 @@ http
   .listen(8080);
 ```
 
-> By checking the URL in this way, we're doing a form of "routing".
-> Other forms of routing can be as simple as `switch` statements or as complex as
-> whole frameworks like [`express`][]. If you're looking for something that does
-> routing and nothing else, try [`router`][].
+> このようにURLをチェックすることで、ある種の「ルーティング」を行っています。
+> ルーティングには、`switch` 文のように単純なものから、[`express`][] のようなフレームワーク全体を使うほど複雑なものまで、様々な種類があります。ルーティングだけを行うものをお探しの場合は、[`router`][] をお試しください。
 
-Great! Now let's take a stab at simplifying this. Remember, the `request` object
-is a [`ReadableStream`][] and the `response` object is a [`WritableStream`][].
-That means we can use [`pipe`][] to direct data from one to the other. That's
-exactly what we want for an echo server!
+素晴らしい！では、これをもっとシンプルにしてみましょう。`request` オブジェクトは [`ReadableStream`][] で、`response` オブジェクトは [`WritableStream`][] であることを覚えておいてください。
+つまり、[`pipe`][] を使って一方から他方へデータを渡すことができるということです。まさにこれがエコーサーバーに必要な機能です！
 
 ```cjs
 const http = require('node:http');
@@ -502,18 +430,13 @@ http
   .listen(8080);
 ```
 
-Yay streams!
+ストリーム、最高！
 
-We're not quite done yet though. As mentioned multiple times in this guide,
-errors can and do happen, and we need to deal with them.
+でも、まだ終わりではありません。このガイドで何度も触れたように、エラーは発生する可能性があり、実際に発生するので、対処する必要があります。
 
-To handle errors on the request stream, we'll log the error to `stderr` and send
-a 400 status code to indicate a `Bad Request`. In a real-world application,
-though, we'd want to inspect the error to figure out what the correct status code
-and message would be. As usual with errors, you should consult the
-[`Error` documentation][].
+リクエストストリームのエラーを処理するには、エラーを `stderr` に出力し、`Bad Request` を示す 400 ステータスコードを送信します。ただし、実際のアプリケーションでは、エラーを検査して、正しいステータスコードとメッセージを特定する必要があります。エラーについては、通常どおり [`Error` ドキュメント][] を参照してください。
 
-On the response, we'll just log the error to `stderr`.
+レスポンスでは、エラーを `stderr` に出力します。
 
 ```cjs
 const http = require('node:http');
@@ -561,20 +484,16 @@ http
   .listen(8080);
 ```
 
-We've now covered most of the basics of handling HTTP requests. At this point,
-you should be able to:
+これで、HTTP リクエスト処理の基本のほとんどを学習しました。ここまでで、以下のことができるようになっているはずです。
 
-- Instantiate an HTTP server with a request handler function, and have it listen
-  on a port.
-- Get headers, URL, method and body data from `request` objects.
-- Make routing decisions based on URL and/or other data in `request` objects.
-- Send headers, HTTP status codes and body data via `response` objects.
-- Pipe data from `request` objects and to `response` objects.
-- Handle stream errors in both the `request` and `response` streams.
+- リクエストハンドラ関数を使用して HTTP サーバーをインスタンス化し、ポートを listen する。
+- `request` オブジェクトからヘッダー、URL、メソッド、および本文データを取得する。
+- `request` オブジェクト内の URL やその他のデータに基づいてルーティングを決定する。
+- `response` オブジェクトを介して、ヘッダー、HTTP ステータスコード、および本文データを送信する。
+- `request` オブジェクトから `response` オブジェクトにデータをパイプする。
+- `request` ストリームと `response` ストリームの両方でストリームエラーを処理する。
 
-From these basics, Node.js HTTP servers for many typical use cases can be
-constructed. There are plenty of other things these APIs provide, so be sure to
-read through the API docs for [`EventEmitters`][], [`Streams`][], and [`HTTP`][].
+これらの基本から、多くの一般的なユースケースに対応する Node.js HTTP サーバーを構築できます。これらの API は他にも多くの機能を提供しているので、[`EventEmitters`][]、[`Streams`][]、[`HTTP`][] の API ドキュメントを必ずお読みください。
 
 [`EventEmitters`]: https://nodejs.org/api/events.html
 [`Streams`]: https://nodejs.org/api/stream.html

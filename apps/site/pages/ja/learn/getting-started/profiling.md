@@ -3,20 +3,13 @@ title: Profiling Node.js Applications
 layout: learn
 ---
 
-# Profiling Node.js Applications
+# Node.js アプリケーションのプロファイリング
 
-Profiling a Node.js application involves measuring its performance by analyzing
-the CPU, memory, and other runtime metrics while the application is running.
-This helps in identifying bottlenecks, high CPU usage, memory leaks, or slow
-function calls that may impact the application's efficiency, responsiveness
-and scalability.
+Node.js アプリケーションのプロファイリングでは、アプリケーション実行中の CPU、メモリ、その他のランタイムメトリックを分析してパフォーマンスを測定します。
+これは、アプリケーションの効率、応答性、スケーラビリティに影響を与える可能性のあるボトルネック、CPU 使用率の高さ、メモリリーク、または低速な関数呼び出しを特定するのに役立ちます。
 
-There are many third party tools available for profiling Node.js applications
-but, in many cases, the easiest option is to use the Node.js built-in profiler.
-The built-in profiler uses the [profiler inside V8][] which samples the stack at
-regular intervals during program execution. It records the results of these
-samples, along with important optimization events such as jit compiles, as a
-series of ticks:
+Node.js アプリケーションのプロファイリングには多くのサードパーティ製ツールがありますが、多くの場合、最も簡単な方法は Node.js の組み込みプロファイラーを使用することです。
+組み込みプロファイラーは、プログラム実行中に一定の間隔でスタックをサンプリングする [V8 内部のプロファイラー][] を使用します。これらのサンプリング結果と、JIT コンパイルなどの重要な最適化イベントを、一連のティックとして記録します。
 
 ```
 code-creation,LazyCompile,0,0x2d5000a337a0,396,"bp native array.js:1153:16",0x289f644df68,~
@@ -26,15 +19,11 @@ code-creation,Stub,2,0x2d5000a33d40,182,"DoubleToIStub"
 code-creation,Stub,2,0x2d5000a33e00,507,"NumberToStringStub"
 ```
 
-In the past, you needed the V8 source code to be able to interpret the ticks.
-Luckily, tools have been introduced since Node.js 4.4.0 that facilitate the
-consumption of this information without separately building V8 from source.
-Let's see how the built-in profiler can help provide insight into application
-performance.
+以前は、ティックを解釈するには V8 のソースコードが必要でした。
+幸いなことに、Node.js 4.4.0 以降では、V8 をソースから別途ビルドすることなく、この情報を容易に利用できるツールが導入されました。
+組み込みのプロファイラーがアプリケーションのパフォーマンスに関する洞察をどのように提供するかを見てみましょう。
 
-To illustrate the use of the tick profiler, we will work with a simple Express
-application. Our application will have two handlers, one for adding new users to
-our system:
+ティックプロファイラーの使い方を説明するために、シンプルな Express アプリケーションを操作します。このアプリケーションには 2 つのハンドラーがあり、1 つはシステムに新しいユーザーを追加するためのものです。
 
 ```js
 app.get('/newUser', (req, res) => {
@@ -56,7 +45,7 @@ app.get('/newUser', (req, res) => {
 });
 ```
 
-and another for validating user authentication attempts:
+もう 1 つはユーザー認証の試行を検証するためのものです。
 
 ```js
 app.get('/auth', (req, res) => {
@@ -80,26 +69,22 @@ app.get('/auth', (req, res) => {
 });
 ```
 
-_Please note that these are NOT recommended handlers for authenticating users in
-your Node.js applications and are used purely for illustration purposes. You
-should not be trying to design your own cryptographic authentication mechanisms
-in general. It is much better to use existing, proven authentication solutions._
+_これらのハンドラは、Node.js アプリケーションでユーザーを認証するための推奨ハンドラではなく、あくまでも説明目的で使用されていることにご注意ください。一般的に、独自の暗号化認証メカニズムを設計しようとすべきではありません。既存の実績のある認証ソリューションを使用する方がはるかに優れています。_
 
-Now assume that we've deployed our application and users are complaining about
-high latency on requests. We can easily run the app with the built-in profiler:
+さて、アプリケーションをデプロイし、ユーザーからリクエストのレイテンシが高いという苦情が寄せられていると仮定します。組み込みのプロファイラーを使えば、簡単にアプリを実行できます。
 
 ```
 NODE_ENV=production node --prof app.js
 ```
 
-and put some load on the server using `ab` (ApacheBench):
+そして、`ab` (ApacheBench) を使用してサーバーに負荷をかけます。
 
 ```
 curl -X GET "http://localhost:8080/newUser?username=matt&password=password"
 ab -k -c 20 -n 250 "http://localhost:8080/auth?username=matt&password=password"
 ```
 
-and get an ab output of:
+次の ab の出力が得られます。
 
 ```
 Concurrency Level:      20
@@ -128,27 +113,17 @@ Percentage of the requests served within a certain time (ms)
  100%   4225 (longest request)
 ```
 
-From this output, we see that we're only managing to serve about 5 requests per
-second and that the average request takes just under 4 seconds round trip. In a
-real-world example, we could be doing lots of work in many functions on behalf
-of a user request but even in our simple example, time could be lost compiling
-regular expressions, generating random salts, generating unique hashes from user
-passwords, or inside the Express framework itself.
+この出力から、1秒あたり約5件のリクエストしか処理できておらず、平均的なリクエストの往復処理時間はわずか4秒弱であることがわかります。実際の例では、ユーザーリクエストに対応するために多くの関数で多くの処理を実行する可能性がありますが、このシンプルな例でさえ、正規表現のコンパイル、ランダムソルトの生成、ユーザーパスワードからの一意のハッシュの生成、あるいはExpressフレームワーク自体の処理などで時間が浪費される可能性があります。
 
-Since we ran our application using the `--prof` option, a tick file was generated
-in the same directory as your local run of the application. It should have the
-form `isolate-0xnnnnnnnnnnnn-v8.log` (where `n` is a digit).
+`--prof` オプションを使用してアプリケーションを実行したため、アプリケーションのローカル実行と同じディレクトリに tick ファイルが生成されました。このファイルは `isolate-0xnnnnnnnnnnnn-v8.log` (`n` は数字) という形式です。
 
-In order to make sense of this file, we need to use the tick processor bundled
-with the Node.js binary. To run the processor, use the `--prof-process` flag:
+このファイルを理解するには、Node.js バイナリにバンドルされている tick プロセッサを使用する必要があります。このプロセッサを実行するには、`--prof-process` フラグを使用します。
 
 ```
 node --prof-process isolate-0xnnnnnnnnnnnn-v8.log > processed.txt
 ```
 
-Opening processed.txt in your favorite text editor will give you a few different
-types of information. The file is broken up into sections which are again broken
-up by language. First, we look at the summary section and see:
+お気に入りのテキストエディタでprocessed.txtを開くと、いくつかの異なる種類の情報が表示されます。ファイルは複数のセクションに分かれており、さらに言語ごとに分かれています。まず、summary セクションを見てみましょう。
 
 ```
  [Summary]:
@@ -160,11 +135,7 @@ up by language. First, we look at the summary section and see:
     215    0.6%          Unaccounted
 ```
 
-This tells us that 97% of all samples gathered occurred in C++ code and that
-when viewing other sections of the processed output we should pay most attention
-to work being done in C++ (as opposed to JavaScript). With this in mind, we next
-find the \[C++\] section which contains information about which C++ functions are
-taking the most CPU time and see:
+これは、収集されたサンプルの97%がC++コードで発生していることを示しています。処理された出力の他のセクションを見る際には、JavaScriptではなくC++で行われている作業に最も注意を払う必要があることがわかります。これを念頭に置き、次に、どのC++関数が最もCPU時間を消費しているかに関する情報を含む\[C++\]セクションを見つけ、次の点を確認します。
 
 ```
  [C++]:
@@ -174,15 +145,7 @@ taking the most CPU time and see:
    3165    8.4%    8.6%  _malloc_zone_malloc
 ```
 
-We see that the top 3 entries account for 72.1% of CPU time taken by the
-program. From this output, we immediately see that at least 51.8% of CPU time is
-taken up by a function called PBKDF2 which corresponds to our hash generation
-from a user's password. However, it may not be immediately obvious how the lower
-two entries factor into our application (or if it is we will pretend otherwise
-for the sake of example). To better understand the relationship between these
-functions, we will next look at the \[Bottom up (heavy) profile\] section which
-provides information about the primary callers of each function. Examining this
-section, we find:
+上位3つのエントリが、プログラムのCPU時間の72.1%を占めていることがわかります。この出力から、CPU時間の少なくとも51.8%がPBKDF2という関数によって消費されていることがすぐにわかります。この関数は、ユーザーのパスワードからハッシュを生成する関数です。しかし、下位2つのエントリがアプリケーションにどのように影響するかはすぐには分かりません（仮にそうであったとしても、例としてそうではないと仮定します）。これらの関数間の関係をより深く理解するために、次に各関数の主な呼び出し元に関する情報を提供する\[Bottom up (heavy) profile\]セクションを見てみましょう。このセクションを調べると、次のことがわかります。
 
 ```
    ticks parent  name
@@ -199,29 +162,13 @@ section, we find:
    3161  100.0%      LazyCompile: *exports.pbkdf2Sync crypto.js:552:30
 ```
 
-Parsing this section takes a little more work than the raw tick counts above.
-Within each of the "call stacks" above, the percentage in the parent column
-tells you the percentage of samples for which the function in the row above was
-called by the function in the current row. For example, in the middle "call
-stack" above for \_sha1_block_data_order, we see that `_sha1_block_data_order` occurred
-in 11.9% of samples, which we knew from the raw counts above. However, here, we
-can also tell that it was always called by the pbkdf2 function inside the
-Node.js crypto module. We see that similarly, `_malloc_zone_malloc` was called
-almost exclusively by the same pbkdf2 function. Thus, using the information in
-this view, we can tell that our hash computation from the user's password
-accounts not only for the 51.8% from above but also for all CPU time in the top
-3 most sampled functions since the calls to `_sha1_block_data_order` and
-`_malloc_zone_malloc` were made on behalf of the pbkdf2 function.
+このセクションの解析には、上記の生のティックカウントよりも少し手間がかかります。
+上記の各「コールスタック」において、親列のパーセンテージは、現在の行の関数によって前の行の関数が呼び出されたサンプルの割合を示しています。例えば、上記の中央の「コールスタック」の \_sha1_block_data_order では、`_sha1_block_data_order` がサンプルの 11.9% で発生していることがわかります。これは上記の生のカウントから分かっていました。しかし、ここでは、`_sha1_block_data_order` が常に Node.js 暗号モジュール内の pbkdf2 関数によって呼び出されていたこともわかります。
+同様に、`_malloc_zone_malloc` もほぼ例外なく同じ pbkdf2 関数によって呼び出されていたことがわかります。したがって、このビューの情報を使用すると、ユーザーのパスワードからのハッシュ計算は、上記の 51.8% だけでなく、上位 3 つの最も多くサンプリングされた関数の CPU 時間すべてを占めていることがわかります。これは、`_sha1_block_data_order` と `_malloc_zone_malloc` の呼び出しが pbkdf2 関数によって行われたためです。
 
-At this point, it is very clear that the password-based hash generation should
-be the target of our optimization. Thankfully, you've fully internalized the
-[benefits of asynchronous programming][] and you realize that the work to
-generate a hash from the user's password is being done in a synchronous way and
-thus tying down the event loop. This prevents us from working on other incoming
-requests while computing a hash.
+この時点で、パスワードベースのハッシュ生成が最適化の対象となるべきであることは明らかです。幸いなことに、[非同期プログラミングの利点][] を十分に理解しており、ユーザーのパスワードからハッシュを生成する作業が同期的に行われ、イベントループが固定されていることを理解しています。これにより、ハッシュ計算中に他の受信リクエストを処理することができなくなります。
 
-To remedy this issue, you make a small modification to the above handlers to use
-the asynchronous version of the pbkdf2 function:
+この問題を解決するには、上記のハンドラーに小さな変更を加えて、pbkdf2 関数の非同期バージョンを使用します。
 
 ```js
 app.get('/auth', (req, res) => {
@@ -251,8 +198,7 @@ app.get('/auth', (req, res) => {
 });
 ```
 
-A new run of the ab benchmark above with the asynchronous version of your app
-yields:
+上記の ab ベンチマークをアプリの非同期バージョンで新たに実行すると、次の結果が得られます。
 
 ```
 Concurrency Level:      20
@@ -281,16 +227,12 @@ Percentage of the requests served within a certain time (ms)
  100%   1079 (longest request)
 ```
 
-Yay! Your app is now serving about 20 requests per second, roughly 4 times more
-than it was with the synchronous hash generation. Additionally, the average
-latency is down from the 4 seconds before to just over 1 second.
+やった！アプリは現在、1秒あたり約20件のリクエストを処理できるようになっています。これは、同期ハッシュ生成を使用していた場合と比べて約4倍の速度です。さらに、平均レイテンシは以前の4秒から1秒強に短縮されています。
 
-Hopefully, through the performance investigation of this (admittedly contrived)
-example, you've seen how the V8 tick processor can help you gain a better
-understanding of the performance of your Node.js applications.
+この（確かに不自然な）例のパフォーマンス調査を通して、V8 tickプロセッサがNode.jsアプリケーションのパフォーマンスをより深く理解する上でどのように役立つかご理解いただけたかと思います。
 
-You may also find [how to create a flame graph][diagnostics flamegraph] helpful.
+[フレームグラフの作成方法][診断フレームグラフ]も参考になるかもしれません。
 
-[profiler inside V8]: https://v8.dev/docs/profile
-[benefits of asynchronous programming]: https://nodesource.com/blog/why-asynchronous
-[diagnostics flamegraph]: /learn/diagnostics/flame-graphs
+[V8 内部のプロファイラー]: https://v8.dev/docs/profile
+[非同期プログラミングの利点]: https://nodesource.com/blog/why-asynchronous
+[診断フレームグラフ]: /learn/diagnostics/flame-graphs

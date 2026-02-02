@@ -4,27 +4,27 @@ layout: learn
 authors: flaviocopes, MylesBorins, LaRuaNa, amiller-gh, ahmadawais, ovflowd
 ---
 
-# JavaScript Asynchronous Programming and Callbacks
+# JavaScript の非同期プログラミングとコールバック
 
-## Asynchronicity in Programming Languages
+## プログラミング言語における非同期性
 
-Computers are asynchronous by design.
+コンピュータは設計上、非同期です。
 
-Asynchronous means that things can happen independently of the main program flow.
+非同期とは、メインのプログラムフローとは独立して処理が実行されることを意味します。
 
-In the current consumer computers, every program runs for a specific time slot and then it stops its execution to let another program continue their execution. This thing runs in a cycle so fast that it's impossible to notice. We think our computers run many programs simultaneously, but this is an illusion (except on multiprocessor machines).
+現在のコンシューマー向けコンピュータでは、すべてのプログラムは特定の時間枠で実行され、その後、別のプログラムが実行を継続できるように実行を停止します。この動作は非常に高速で、気づかないほどです。私たちはコンピュータが多くのプログラムを同時に実行していると考えていますが、これは錯覚です（マルチプロセッサマシンを除く）。
 
-Programs internally use _interrupts_, a signal that's emitted to the processor to gain the attention of the system.
+プログラムは内部的に _割り込み_ を使用します。割り込みとは、システムに注意を促すためにプロセッサに送信される信号です。
 
-Let's not go into the internals of this now, but just keep in mind that it's normal for programs to be asynchronous and halt their execution until they need attention, allowing the computer to execute other things in the meantime. When a program is waiting for a response from the network, it cannot halt the processor until the request finishes.
+ここではその内部構造には立ち入りませんが、プログラムが非同期で、必要な処理が行われるまで実行を停止し、その間にコンピュータが他の処理を実行できるようにするのは正常な動作であることを覚えておいてください。プログラムがネットワークからの応答を待っている場合、要求が完了するまでプロセッサを停止することはできません。
 
-Normally, programming languages are synchronous and some provide a way to manage asynchronicity in the language or through libraries. C, Java, C#, PHP, Go, Ruby, Swift, and Python are all synchronous by default. Some of them handle async operations by using threads, spawning a new process.
+通常、プログラミング言語は同期型ですが、言語自体またはライブラリを通じて非同期性を管理する手段を提供する言語もあります。C、Java、C#、PHP、Go、Ruby、Swift、Python はすべてデフォルトで同期型です。一部の言語では、スレッドを使用して新しいプロセスを生成することで非同期操作を処理します。
 
 ## JavaScript
 
-JavaScript is **synchronous** by default and is single threaded. This means that code cannot create new threads and run in parallel.
+JavaScript はデフォルトで **同期** され、シングルスレッドです。つまり、コードは新しいスレッドを作成して並列実行することはできません。
 
-Lines of code are executed in series, one after another, for example:
+コード行は、例えば次のように、順番に連続して実行されます。
 
 ```js
 const a = 1;
@@ -34,15 +34,15 @@ console.log(c);
 doSomething();
 ```
 
-But JavaScript was born inside the browser, its main job, in the beginning, was to respond to user actions, like `onClick`, `onMouseOver`, `onChange`, `onSubmit` and so on. How could it do this with a synchronous programming model?
+しかし、JavaScriptはブラウザ内で誕生しました。当初の主な役割は、`onClick`、`onMouseOver`、`onChange`、`onSubmit` といったユーザーアクションへの応答でした。同期プログラミングモデルでこれをどのように実現できるのでしょうか？
 
-The answer was in its environment. The **browser** provides a way to do it by providing a set of APIs that can handle this kind of functionality.
+答えはブラウザの環境にあります。**ブラウザ**は、この種の機能を処理できる一連のAPIを提供することで、これを実現する手段を提供しています。
 
-More recently, Node.js introduced a non-blocking I/O environment to extend this concept to file access, network calls and so on.
+最近では、Node.jsがノンブロッキングI/O環境を導入し、この概念をファイルアクセスやネットワーク呼び出しなどに拡張しました。
 
-## Callbacks
+## コールバック
 
-You can't know when a user is going to click a button. So, you **define an event handler for the click event**. This event handler accepts a function, which will be called when the event is triggered:
+ユーザーがいつボタンをクリックするかは予測できません。そこで、**クリックイベント用のイベントハンドラーを定義**します。このイベントハンドラーは、イベントが発生した際に呼び出される関数を受け取ります。
 
 ```js
 document.getElementById('button').addEventListener('click', () => {
@@ -50,11 +50,11 @@ document.getElementById('button').addEventListener('click', () => {
 });
 ```
 
-This is the so-called **callback**.
+これはいわゆる**コールバック**です。
 
-A callback is a simple function that's passed as a value to another function, and will only be executed when the event happens. We can do this because JavaScript has first-class functions, which can be assigned to variables and passed around to other functions (called **higher-order functions**)
+コールバックとは、別の関数に値として渡される単純な関数で、イベントが発生したときにのみ実行されます。JavaScript には第一級関数があり、変数に代入したり、他の関数（**高階関数**と呼ばれます）に渡したりできるため、これが可能になります。
 
-It's common to wrap all your client code in a `load` event listener on the `window` object, which runs the callback function only when the page is ready:
+一般的には、すべてのクライアントコードを `window` オブジェクトの `load` イベントリスナーでラップし、ページの準備が完了したときにのみコールバック関数を実行します。
 
 ```js
 window.addEventListener('load', () => {
@@ -63,9 +63,9 @@ window.addEventListener('load', () => {
 });
 ```
 
-Callbacks are used everywhere, not just in DOM events.
+コールバックは、DOM イベントだけでなく、あらゆる場面で使用されます。
 
-One common example is by using timers:
+よくある例として、タイマーの使用が挙げられます。
 
 ```js
 setTimeout(() => {
@@ -73,7 +73,7 @@ setTimeout(() => {
 }, 2000);
 ```
 
-XHR requests also accept a callback, in this example by assigning a function to a property that will be called when a particular event occurs (in this case, the state of the request changes):
+XHR リクエストはコールバックも受け入れます。この例では、特定のイベントが発生したとき (この場合は、リクエストの状態が変化したとき) に呼び出される関数をプロパティに割り当てます。
 
 ```js
 const xhr = new XMLHttpRequest();
@@ -90,11 +90,11 @@ xhr.open('GET', 'https://yoursite.com');
 xhr.send();
 ```
 
-### Handling errors in callbacks
+### コールバックでのエラー処理
 
-How do you handle errors with callbacks? One very common strategy is to use what Node.js adopted: the first parameter in any callback function is the error object: **error-first callbacks**
+コールバックでエラーを処理するにはどうすればよいでしょうか？ 非常に一般的な戦略の一つは、Node.js で採用されている方法、つまりコールバック関数の最初の引数にエラーオブジェクトを指定することです。**エラーファーストコールバック**
 
-If there is no error, the object is `null`. If there is an error, it contains some description of the error and other information.
+エラーがない場合、オブジェクトは `null` です。エラーが発生した場合、オブジェクトにはエラーの説明やその他の情報が含まれます。
 
 ```js
 const fs = require('node:fs');
@@ -111,11 +111,11 @@ fs.readFile('/file.json', (err, data) => {
 });
 ```
 
-### The problem with callbacks
+### コールバックの問題点
 
-Callbacks are great for simple cases!
+コールバックは単純なケースでは最適です！
 
-However every callback adds a level of nesting, and when you have lots of callbacks, the code starts to be complicated very quickly:
+しかし、コールバックごとにネストレベルが追加されるため、コールバックの数が増えると、コードはすぐに複雑になってしまいます。
 
 ```js
 window.addEventListener('load', () => {
@@ -129,10 +129,10 @@ window.addEventListener('load', () => {
 });
 ```
 
-This is just a simple 4-levels code, but I've seen much more levels of nesting and it's not fun.
+これは単純な4階層のコードですが、もっと多くの階層のネストを見たことがありますが、面白くありません。
 
-How do we solve this?
+どうすれば解決できるでしょうか？
 
-### Alternatives to callbacks
+### コールバックの代替
 
-Starting with ES6, JavaScript introduced several features that help us with asynchronous code that do not involve using callbacks: Promises (ES6) and Async/Await (ES2017).
+ES6以降、JavaScriptでは、コールバックを使わずに非同期コードを書くのに役立つ機能がいくつか導入されました。Promise（ES6）とAsync/Await（ES2017）です。

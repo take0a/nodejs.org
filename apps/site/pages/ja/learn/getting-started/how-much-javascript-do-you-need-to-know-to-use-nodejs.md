@@ -4,37 +4,37 @@ layout: learn
 authors: flaviocopes, ollelauribostrom, MylesBorins, fhemberger, LaRuaNa, ahmadawais, elanandkumar, ovflowd, vaishnav-mk
 ---
 
-# How much JavaScript do you need to know to use Node.js?
+# Node.jsを使うには、どの程度のJavaScriptの知識が必要ですか？
 
-As a beginner, it's hard to get to a point where you are confident enough in your programming abilities. While learning to code, you might also be confused at where does JavaScript end, and where Node.js begins, and vice versa.
+初心者にとって、プログラミング能力に十分な自信を持てるようになるまでには時間がかかります。コーディングを学習しているうちに、JavaScriptとNode.jsの境界が曖昧になることもあるでしょう。
 
-### What is recommended to learn before diving deep with Node.js?
+### Node.js を深く理解する前に学ぶべきことは何ですか?
 
-- [Lexical Structure](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar)
-- [Expressions](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators)
-- [Data Types](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Data_structures)
-- [Classes](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes)
-- [Variables](https://developer.mozilla.org/en-US/docs/Learn/JavaScript/First_steps/Variables#what_is_a_variable)
-- [Functions](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Functions)
-- [`this` operator](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/this)
-- [Arrow Functions](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/Arrow_functions)
-- [Loops](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Loops_and_iteration)
-- [Scopes](https://developer.mozilla.org/en-US/docs/Glossary/Scope)
-- [Arrays](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)
-- [Template Literals](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals)
-- [Strict Mode](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Strict_mode)
-- [ECMAScript 2015 (ES6) and beyond](/learn/getting-started/ecmascript-2015-es6-and-beyond)
-- [Asynchronous JavaScript](https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Async_JS)
+- [語彙構造](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar)
+- [式](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators)
+- [データ型](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Data_structures)
+- [クラス](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes)
+- [変数](https://developer.mozilla.org/en-US/docs/Learn/JavaScript/First_steps/Variables#what_is_a_variable)
+- [関数](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Functions)
+- [`this`演算子](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/this)
+- [Arrow 関数](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/Arrow_functions)
+- [ループ](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Loops_and_iteration)
+- [スコープ](https://developer.mozilla.org/en-US/docs/Glossary/Scope)
+- [配列](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)
+- [テンプレートリテラル](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals)
+- [Strict モード](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Strict_mode)
+- [ECMAScript 2015 (ES6) 以降](/learn/getting-started/ecmascript-2015-es6-and-beyond)
+- [非同期 JavaScript](https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Async_JS)
 
-With those concepts in mind, you are well on your road to become a proficient JavaScript developer, in both the browser and in Node.js.
+これらの概念を念頭に置くと、ブラウザーと Node.js の両方で熟練した JavaScript 開発者になるための道を順調に歩んでいることになります。
 
-#### Asynchronous Programming
+#### 非同期プログラミング
 
-The following concepts are also key to understand asynchronous programming, which is one of the fundamental parts of Node.js:
+Node.js の基本的な構成要素の一つである非同期プログラミングを理解するには、以下の概念も重要です。
 
-- [Asynchronous programming and callbacks](https://developer.mozilla.org/en-US/docs/Learn/JavaScript/Asynchronous/Introducing)
-- [Timers](https://developer.mozilla.org/en-US/docs/Web/API/setTimeout)
-- [Promises](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Using_promises)
-- [Async and Await](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function)
-- [Closures](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Closures)
-- [The Event Loop](https://developer.mozilla.org/en-US/docs/Web/JavaScript/EventLoop)
+- [非同期プログラミングとコールバック](https://developer.mozilla.org/en-US/docs/Learn/JavaScript/Asynchronous/Introducing)
+- [タイマー](https://developer.mozilla.org/en-US/docs/Web/API/setTimeout)
+- [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Using_promises)
+- [Async と Await](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function)
+- [クロージャ](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Closures)
+- [イベントループ](https://developer.mozilla.org/en-US/docs/Web/JavaScript/EventLoop)

@@ -4,22 +4,22 @@ layout: learn
 authors: JakobJingleheimer
 ---
 
-# Publishing a package
+# パッケージの公開
 
-All the provided `package.json` configurations (not specifically marked “does not work”) work in Node.js 12.22.x (v12 latest, the oldest supported line) and 17.2.0 current latest at the time[^1], and for grins, with webpack 5.53.0 and 5.63.0 respectively. These are available: [JakobJingleheimer/nodejs-module-config-examples](https://github.com/JakobJingleheimer/nodejs-module-config-examples).
+提供されているすべての `package.json` 設定（「動作しない」と明記されていないもの）は、Node.js 12.22.x（v12 最新、サポートされている最も古いバージョン）と、当時の最新バージョンである 17.2.0[^1] で動作します。ちなみに、webpack はそれぞれ 5.53.0 と 5.63.0 でも動作します。これらの設定は [JakobJingleheimer/nodejs-module-config-examples](https://github.com/JakobJingleheimer/nodejs-module-config-examples) から入手できます。
 
-For curious cats, [How did we get here](#how-did-we-get-here) and [Down the rabbit-hole](#down-the-rabbit-hole) provide background and deeper explanations.
+好奇心旺盛な方は、[How did we get here](#how-did-we-get-here) と [Down the rabbit-hole](#down-the-rabbit-hole) で背景とより詳しい説明をご覧ください。
 
-## Pick your fix
+## 修正方法を選択してください
 
-There are 2 main options, which cover almost all use-cases:
+ほぼすべてのユースケースをカバーする2つの主な選択肢があります。
 
-- Write source code and publish in CJS (you use `require()`); CJS is consumable by both CJS and ESM (in all versions of node). Skip to [CJS source and distribution](#cjs-source-and-distribution).
-- Write source code and publish in ESM (you use `import`, and don't use top-level `await`); ESM is consumable by both ESM and CJS (in node 22.x and 23.x; see [`require()` an ES Module](https://nodejs.org/api/modules.html#loading-ecmascript-modules-using-require)). Skip to [ESM source and distribution](#esm-source-and-distribution).
+- ソースコードをCJSで記述して公開する（`require()`を使用します）。CJSはCJSとESMの両方で使用できます（Node.jsのすべてのバージョン）。[CJSのソースコードと配布](#cjs-source-and-distribution)に進んでください。
+- ソースコードをESMで記述して公開する（`import`を使用し、トップレベルの`await`は使用しません）。ESMはESMとCJSの両方で使用できます（Node.js 22.xおよび23.xの場合。[ESモジュールの`require()`](https://nodejs.org/api/modules.html#loading-ecmascript-modules-using-require)を参照してください）。[ESMのソースコードと配布](#esm-source-and-distribution)に進んでください。
 
-It's generally best to publish only 1 format, either CJS _or_ ESM. Not both. Publishing multiple formats can result in the [dual-package hazard](#the-dual-package-hazard), as well as other drawbacks.
+一般的には、CJSまたはESMのいずれか1つの形式のみを公開するのが最善です。両方を公開する必要はありません。複数の形式で公開すると、[二重パッケージの危険性](#二重パッケージの危険性)やその他のデメリットが発生する可能性があります。
 
-There are other options available, mostly for historical purposes.
+主に歴史的目的のために、他にも選択肢があります。
 
 <table>
   <thead>
@@ -56,11 +56,11 @@ There are other options available, mostly for historical purposes.
   </tbody>
 </table>
 
-### CJS source and distribution
+### CJS のソースと配布
 
-The most minimal configuration may be only [`"name"`](https://nodejs.org/api/packages.html#name). But the less arcane, the better: Essentially just declare the package’s exports via the `"exports"` field/field-set.
+最小限の設定は [`"name"`](https://nodejs.org/api/packages.html#name) のみで十分でしょう。しかし、難解でないほど良いでしょう。基本的には、`"exports"` フィールド/フィールドセットを使用してパッケージのエクスポートを宣言するだけです。
 
-**Working example**: [cjs-with-cjs-distro](https://github.com/JakobJingleheimer/nodejs-module-config-examples/tree/main/packages/cjs/cjs-distro)
+**動作例**: [cjs-with-cjs-distro](https://github.com/JakobJingleheimer/nodejs-module-config-examples/tree/main/packages/cjs/cjs-distro)
 
 ```json displayName="Minimal package.json"
 {
@@ -81,17 +81,17 @@ The most minimal configuration may be only [`"name"`](https://nodejs.org/api/pac
 }
 ```
 
-Note that `packageJson.exports["."] = filepath` is shorthand for `packageJson.exports["."].default = filepath`
+`packageJson.exports["."] = filepath` は `packageJson.exports["."].default = filepath` の省略形であることに注意してください。
 
-### ESM source and distribution
+### ESM のソースと配布
 
-Simple, tried, and true.
+シンプルで、実績があり、確実な方法です。
 
-Note that since Node.js v23.0.0, it is possible to `require` static ESM (code that does not use top-level `await`). See [Loading ECMAScript modules using `require()`](https://nodejs.org/api/modules.html#loading-ecmascript-modules-using-require) for details.
+Node.js v23.0.0 以降では、静的 ESM（トップレベルの `await` を使用しないコード）を `require` できるようになりました。詳細は、[`require()` を使用した ECMAScript モジュールのロード](https://nodejs.org/api/modules.html#loading-ecmascript-modules-using-require) を参照してください。
 
-This is almost exactly the same as the CJS-CJS configuration above with 1 small difference: the [`"type"`](https://nodejs.org/api/packages.html#type) field.
+これは、上記の CJS-CJS 構成とほぼ同じですが、[`"type"`](https://nodejs.org/api/packages.html#type) フィールドという小さな違いが 1 つあります。
 
-**Working example**: [esm-with-esm-distro](https://github.com/JakobJingleheimer/nodejs-module-config-examples/tree/main/packages/esm/esm-distro)
+**動作例**: [esm-with-esm-distro](https://github.com/JakobJingleheimer/nodejs-module-config-examples/tree/main/packages/esm/esm-distro)
 
 ```json displayName="Minimal package.json"
 {
@@ -113,13 +113,13 @@ This is almost exactly the same as the CJS-CJS configuration above with 1 small 
 }
 ```
 
-Note that ESM now _is_ “backwards” compatible with CJS: a CJS module now _can_ [`require()` an ES Module](https://nodejs.org/api/modules.html#loading-ecmascript-modules-using-require) without a flag as of 23.0.0 and 22.12.0.
+ESM は CJS と「後方」互換性を持つようになりました。23.0.0 および 22.12.0 以降、CJS モジュールはフラグなしで [ES モジュールを `require()` できる](https://nodejs.org/api/modules.html#loading-ecmascript-modules-using-require) ようになりました。
 
-### CJS source and only ESM distribution
+### CJS ソースと ESM のみのディストリビューション
 
-This takes a small bit of finesse but is also pretty straight-forward. This may be the choice pick of older projects targetting newer standards, or authors who merely prefer CJS but are publishing for a different environment.
+これは少し工夫が必要ですが、非常に簡単です。新しい標準をターゲットとする古いプロジェクトや、CJS を好むものの異なる環境向けに公開する開発者にとって、これは最適な選択肢となるでしょう。
 
-**Working example**: [cjs-with-esm-distro](https://github.com/JakobJingleheimer/nodejs-module-config-examples/tree/main/packages/cjs/esm-distro)
+**動作例**: [cjs-with-esm-distro](https://github.com/JakobJingleheimer/nodejs-module-config-examples/tree/main/packages/cjs/esm-distro)
 
 ```json displayName="Minimal package.json"
 {
@@ -140,17 +140,17 @@ This takes a small bit of finesse but is also pretty straight-forward. This may 
 }
 ```
 
-The [`.mjs`](https://nodejs.org/api/esm.html#enabling) file extension is a trump-card: it will override **any** other configuration and the file will be treated as ESM. Using this file extension is necessary because `packageJson.exports.import` does **NOT** signify that the file is ESM (contrary to common, if not universal, misperception), only that it is the file to be used when the package is imported (ESM _can_ import CJS. See [Gotchas](#gotchas) below).
+[`.mjs`](https://nodejs.org/api/esm.html#enabling) ファイル拡張子は切り札です。**他のすべての**設定を上書きし、ファイルを ESM として扱います。このファイル拡張子を使用する必要があるのは、`packageJson.exports.import` はファイルが ESM であることを示すのではなく（一般的な誤解とは反対に）、パッケージのインポート時に使用されるファイルであることを示すだけだからです（ESM は CJS をインポートできます。以下の [Gotchas](#gotchas) を参照してください）。
 
-### CJS source and both CJS & ESM distribution
+### CJS ソースと CJS および ESM ディストリビューション
 
-In order to _directly_ supply both audiences (so that your distribution works "natively" in either), you have a few options:
+両方の対象に _直接_ 提供し、ディストリビューションがどちらの環境でも「ネイティブ」に動作するようにするには、いくつかの方法があります。
 
-#### Attach named exports directly onto `exports`
+#### 名前付きエクスポートを `exports` に直接アタッチする
 
-Classic but takes some sophistication and finesse. This means adding properties onto the existing `module.exports` (instead of re-assigning `module.exports` as a whole).
+古典的な方法ですが、ある程度の高度な技術と工夫が必要です。これは、既存の `module.exports` にプロパティを追加することを意味します（`module.exports` 全体を再割り当てするのではなく）。
 
-**Working example**: [cjs-with-dual-distro (properties)](https://github.com/JakobJingleheimer/nodejs-module-config-examples/tree/main/packages/cjs/dual/property-distro)
+**動作例**: [cjs-with-dual-distro (properties)](https://github.com/JakobJingleheimer/nodejs-module-config-examples/tree/main/packages/cjs/dual/property-distro)
 
 ```json displayName="Minimal package.json"
 {
@@ -171,17 +171,17 @@ Classic but takes some sophistication and finesse. This means adding properties 
 }
 ```
 
-Pros:
+メリット:
 
-- Smaller package weight
-- Easy and simple (probably least effort if you don't mind keeping to a minor syntax stipulation)
-- Precludes [the Dual-Package Hazard](#the-dual-package-hazard)
+- パッケージサイズが小さい
+- 簡単でシンプル (多少の構文上の制約さえ守れば、おそらく最小限の労力で済む)
+- [二重パッケージ化の危険性](#the-dual-package-hazard) を回避
 
-Cons:
+デメリット:
 
-- Requires very specific syntax (either in source code and/or bundler gymnastics).
+- 非常に特殊な構文 (ソースコード内、またはバンドラの扱い方) が必要となる
 
-Sometimes, a CJS module may re-assign `module.exports` to something else (be it an object or a function) like this:
+CJS モジュールは、`module.exports` を別のもの (オブジェクトまたは関数) に再割り当てすることがあります。例:
 
 ```cjs
 const someObject = {
@@ -193,7 +193,7 @@ const someObject = {
 module.exports = someObject;
 ```
 
-Node.js detects the named exports in CJS via [static analysis that look for certain patterns](https://github.com/nodejs/cjs-module-lexer/tree/main?tab=readme-ov-file#parsing-examples), which the example above evades. To make the named exports detectable, do this:
+Node.jsは、CJS内の名前付きエクスポートを[特定のパターンを探す静的解析](https://github.com/nodejs/cjs-module-lexer/tree/main?tab=readme-ov-file#parsing-examples)によって検出しますが、上記の例ではこれを回避しています。名前付きエクスポートを検出可能にするには、以下の手順を実行してください。
 
 ```cjs
 module.exports.foo = function foo() {};
@@ -201,11 +201,11 @@ module.exports.bar = function bar() {};
 module.exports.qux = function qux() {};
 ```
 
-#### Use a simple ESM wrapper
+#### シンプルな ESM ラッパーを使用する
 
-Complicated setup and difficult to get the balance right.
+設定が複雑で、適切なバランスを取るのが困難です。
 
-**Working example**: [cjs-with-dual-distro (wrapper)](https://github.com/JakobJingleheimer/nodejs-module-config-examples/tree/main/packages/cjs/dual/wrapper-distro)
+**動作例**: [cjs-with-dual-distro (ラッパー)](https://github.com/JakobJingleheimer/nodejs-module-config-examples/tree/main/packages/cjs/dual/wrapper-distro)
 
 ```json displayName="Minimal package.json"
 {
@@ -236,17 +236,17 @@ Complicated setup and difficult to get the balance right.
 }
 ```
 
-Pros:
+メリット:
 
-- Smaller package weight
+- パッケージサイズが小さい
 
-Cons:
+デメリット:
 
-- Likely requires complicated bundler gymnastics (we could not find any existing option to automate this in Webpack).
+- 複雑なバンドラー操作が必要になる可能性が高い（Webpack でこれを自動化する既存のオプションは見つかりませんでした）。
 
-When the CJS output from the bundler evades the named exports detection in Node.js, a ESM wrapper can be used to explicitly re-export the known named exports for ESM consumers.
+バンドラーからの CJS 出力が Node.js の名前付きエクスポート検出を回避した場合、ESM ラッパーを使用して、ESM コンシューマー向けに既知の名前付きエクスポートを明示的に再エクスポートできます。
 
-When CJS exports an object (which gets aliased to ESM's `default`), you can save references to all the members of the object locally in the wrapper, and then re-export them so the ESM consumer can access all of them by name.
+CJS がオブジェクト（ESM の `default` にエイリアスされます）をエクスポートする場合、オブジェクトのすべてのメンバーへの参照をラッパー内にローカルに保存し、それらを再エクスポートすることで、ESM コンシューマーが名前ですべてのメンバーにアクセスできるようになります。
 
 ```js displayName="./dist/esm/wrapper.mjs"
 import cjs from '../cjs/index.js';
@@ -256,13 +256,13 @@ const { a, b, c /* … */ } = cjs;
 export { a, b, c /* … */ };
 ```
 
-**However**, this does break live bindings: a reassignment to `cjs.a` will not reflect in `esmWrapper.a`.
+**ただし**、これはライブバインディングを壊します。`cjs.a` への再割り当ては `esmWrapper.a` に反映されません。
 
-#### Two full distributions
+#### 2つのフルディストリビューション
 
-Chuck in a bunch of stuff and hope for the best. This is probably the most common and easiest of the CJS to CJS & ESM options, but you pay for it. This is rarely a good idea.
+いろいろ詰め込んで、うまくいくことを期待しましょう。これはおそらくCJSからCJSとESMへの変換オプションの中で最も一般的で簡単な方法ですが、費用がかかります。これはあまり良いアイデアではありません。
 
-**Working example**: [cjs-with-dual-distro (double)](https://github.com/JakobJingleheimer/nodejs-module-config-examples/tree/main/packages/cjs/dual/double-distro)
+**動作例**: [cjs-with-dual-distro (double)](https://github.com/JakobJingleheimer/nodejs-module-config-examples/tree/main/packages/cjs/dual/double-distro)
 
 ```json displayName="Minimal package.json"
 {
@@ -293,16 +293,16 @@ Chuck in a bunch of stuff and hope for the best. This is probably the most commo
 }
 ```
 
-Pros:
+メリット:
 
-- Simple bundler configuration
+- シンプルなバンドラー設定
 
-Cons:
+デメリット:
 
-- Larger package weight (basically double)
-- Vulnerable to [the Dual-Package Hazard](#the-dual-package-hazard)
+- パッケージの重量が大きくなる (実質的に2倍)
+- [デュアルパッケージハザード](#the-dual-package-hazard) の脆弱性
 
-Alternatively, you can use `"default"` and `"node"` keys, which are less counter-intuitive: Node.js will always choose the `"node"` option (which always works), and non-Node.js tooling will choose `"default"` when configured to target something other than node. **This precludes the dual-package hazard.**
+代わりに、`"default"` キーと `"node"` キーを使用することもできます。これらは直感的に分かりやすいです。Node.js は常に `"node"` オプション (常に動作します) を選択します。また、Node.js 以外のツールは、node 以外のものをターゲットにするように設定されている場合は `"default"` を選択します。**これにより、デュアルパッケージハザードを回避できます。**
 
 ```json displayName="Minimal package.json"
 {
@@ -331,40 +331,40 @@ Alternatively, you can use `"default"` and `"node"` keys, which are less counter
 }
 ```
 
-### ESM source with only CJS distribution
+### ESMソースとCJSディストリビューションのみ
 
-We're not in Kansas anymore, Toto.
+もうカンザスじゃないよ、トト。
 
-The configurations (there are 2 options) are nearly the same as [ESM source and both CJS & ESM distribution](#esm-source-and-both-cjs-amp-esm-distribution), just exclude `packageJson.exports.import`.
+設定（2つのオプションがあります）は[ESMソースとCJSとESMディストリビューションの両方](#esm-source-and-both-cjs-amp-esm-distribution)とほぼ同じですが、`packageJson.exports.import`を除外するだけです。
 
-💡 Using `"type": "module"`[^2] paired with the `.cjs` file extension (for commonjs files) yields best results. For more information on why, see [Down the rabbit-hole](#down-the-rabbit-hole) and [Gotchas](#gotchas) below.
+💡 `"type": "module"`[^2]と`.cjs`ファイル拡張子（commonjsファイルの場合）を組み合わせると、最良の結果が得られます。理由の詳細については、以下の[Down the rabbit-hole](#down-the-rabbit-hole)と[Gotchas](#gotchas)をご覧ください。
 
-**Working example**: [esm-with-cjs-distro](https://github.com/JakobJingleheimer/nodejs-module-config-examples/tree/main/packages/esm/cjs-distro)
+**動作例**: [esm-with-cjs-distro](https://github.com/JakobJingleheimer/nodejs-module-config-examples/tree/main/packages/esm/cjs-distro)
 
-### ESM source and both CJS & ESM distribution
+### ESM ソースと CJS および ESM ディストリビューション
 
-When source code is written in non-JavaScript (ex TypeScript), options can be limited due to needing to use file extension(s) specific to that language (ex `.ts`) and there may be no `.mjs` equivalent.
+ソースコードが JavaScript 以外（例：TypeScript）で記述されている場合、その言語固有のファイル拡張子（例：`.ts`）を使用する必要があり、`.mjs` に相当する拡張子がない可能性があるため、選択肢が限られることがあります。
 
-Similar to [CJS source and both CJS & ESM distribution](#cjs-source-and-both-cjs-amp-esm-distribution), you have the same options.
+[CJS ソースと CJS および ESM ディストリビューション](#cjs-source-and-both-cjs-amp-esm-distribution) と同様に、同じ選択肢があります。
 
-#### Publish only a CJS distribution with property exports
+#### プロパティエクスポートを含むCJSディストリビューションのみを公開する
 
-Tricky to make and needs good ingredients.
+作成が難しく、良質な材料が必要です。
 
-This option is almost identical to the [CJS source with CJS & ESM distribution's property exports](#attach-named-exports-directly-onto-raw-exports-endraw-) above. The only difference is in package.json: `"type": "module"`.
+このオプションは、上記の[CJSとESMディストリビューションのプロパティエクスポートを含むCJSソース](#attach-named-exports-directly-onto-raw-exports-endraw-)とほぼ同じです。唯一の違いは、package.jsonの`"type": "module"`です。
 
-Only some build tools support generating this output. [Rollup](https://www.rollupjs.org/) produces compatible output out of the box when targetting commonjs. Webpack as of [v5.66.0+](https://github.com/webpack/webpack/releases/tag/v5.66.0) does with the new [`commonjs-static`](https://webpack.js.org/configuration/output/#type-commonjs-static) output type, (prior to this, no commonjs options produces compatible output). It is not currently possible with [esbuild](https://esbuild.github.io/) (which produces a non-static `exports`).
+この出力の生成をサポートしているのは、一部のビルドツールのみです。[Rollup](https://www.rollupjs.org/)は、commonjsをターゲットにした場合、すぐに互換性のある出力を生成します。[v5.66.0+](https://github.com/webpack/webpack/releases/tag/v5.66.0)以降のWebpackは、新しい[`commonjs-static`](https://webpack.js.org/configuration/output/#type-commonjs-static)出力タイプを使用することで、互換性のある出力を生成します（それより前は、commonjsオプションでは互換性のある出力が生成されません）。現時点では、[esbuild](https://esbuild.github.io/) (非静的な `exports` を生成する) では不可能です。
 
-The working example below was created prior to Webpack's recent release, so it uses Rollup (I'll get around to adding a Webpack option too).
+以下の動作例は Webpack の最新リリース前に作成されたため、Rollup を使用しています (Webpack のオプションも追加する予定です)。
 
-These examples assume javascript files within use the extension `.js`; `"type"` in `package.json` controls how those are interpreted:
+これらの例では、JavaScript ファイルが拡張子 `.js` を使用していることを前提としています。`package.json` の `"type"` によって、それらの解釈方法が制御されます。
 
 `"type":"commonjs"` + `.js` → `cjs`<br />
 `"type":"module"` + `.js` → `mjs`
 
-If your files explicitly _all_ use `.cjs` and/or `.mjs` file extensions (none use `.js`), `"type"` is superfluous.
+ファイル拡張子が `.cjs` または `.mjs` のみで明示的に指定されている場合（`.js` は使用していない場合）、`"type" は不要です。
 
-**Working example**: [esm-with-cjs-distro](https://github.com/JakobJingleheimer/nodejs-module-config-examples/tree/main/packages/esm/dual/property-distro)
+**動作例**: [esm-with-cjs-distro](https://github.com/JakobJingleheimer/nodejs-module-config-examples/tree/main/packages/esm/dual/property-distro)
 
 ```json displayName="Minimal package.json"
 {
@@ -386,15 +386,15 @@ If your files explicitly _all_ use `.cjs` and/or `.mjs` file extensions (none us
 }
 ```
 
-💡 Using `"type": "module"`[^2] paired with the `.cjs` file extension (for commonjs files) yields best results. For more information on why, see [Down the rabbit-hole](#down-the-rabbit-hole) and [Gotchas](#gotchas) below.
+💡 `"type": "module"`[^2] と `.cjs` ファイル拡張子（commonjs ファイル用）を組み合わせると、最良の結果が得られます。理由の詳細については、以下の [Down the rabbit-hole](#down-the-rabbit-hole) と [Gotchas](#gotchas) を参照してください。
 
-#### Publish a CJS distribution with an ESM wrapper
+#### ESM ラッパーを使用した CJS ディストリビューションを公開する
 
-There's a lot going on here, and this is usually not the best.
+ここでは多くの処理が行われており、通常は最適な方法ではありません。
 
-This is also almost identical to the [CJS source and dual distribution using an ESM wrapper](#use-a-simple-esm-wrapper), but with subtle differences `"type": "module"` and some `.cjs` file extenions in package.json.
+これは [ESM ラッパーを使用した CJS ソースとデュアルディストリビューション](#use-a-simple-esm-wrapper) とほぼ同じですが、`"type": "module"` と package.json 内のいくつかの `.cjs` ファイル拡張子がわずかに異なります。
 
-**Working example**: [esm-with-dual-distro (wrapper)](https://github.com/JakobJingleheimer/nodejs-module-config-examples/tree/main/packages/esm/dual/wrapper-distro)
+**動作例**: [esm-with-dual-distro (ラッパー)](https://github.com/JakobJingleheimer/nodejs-module-config-examples/tree/main/packages/esm/dual/wrapper-distro)
 
 ```json displayName="Minimal package.json"
 {
@@ -426,23 +426,23 @@ This is also almost identical to the [CJS source and dual distribution using an 
 }
 ```
 
-💡 Using `"type": "module"`[^2] paired with the `.cjs` file extension (for commonjs files) yields best results. For more information on why, see [Down the rabbit-hole](#down-the-rabbit-hole) and [Gotchas](#gotchas) below.
+💡 `"type": "module"`[^2] と `.cjs` ファイル拡張子（commonjs ファイル用）を組み合わせると、最良の結果が得られます。理由の詳細については、以下の [ウサギの穴に落ちる](#down-the-rabbit-hole) と [落とし穴](#gotchas) を参照してください。
 
-#### Publish both full CJS & ESM distributions
+#### CJS と ESM の両方の完全なディストリビューションを公開する
 
-Chuck in a bunch of stuff (with a surprise) and hope for the best. This is probably the most common and easiest of the ESM to CJS & ESM options, but you pay for it. This is rarely a good idea.
+（サプライズ付きの）いくつかのものを詰め込んで、うまくいくことを期待します。これは、ESM から CJS と ESM へのオプションの中でおそらく最も一般的で簡単な方法ですが、費用がかかります。これはあまり良いアイデアではありません。
 
-In terms of package configuration, there are a few options that differ mostly in personal preference.
+パッケージ構成に関しては、主に個人の好みによって異なるいくつかのオプションがあります。
 
-##### Mark the whole package as ESM and specifically mark the CJS exports as CJS via the `.cjs` file extension
+##### パッケージ全体を ESM としてマークし、CJS エクスポートを `.cjs` ファイル拡張子で CJS として明示的にマークします。
 
-This option has the least burden on development/developer experience.
+このオプションは、開発者の負担が最も少ない方法です。
 
-This also means that whatever build tooling must produce the distribution file with a `.cjs` file extension. This might necessitate chaining multiple build tools or adding a subsequent step to move/rename the file to have the `.cjs` file extension (ex `mv ./dist/index.js ./dist/index.cjs`). This can be worked around by adding a subsequent step to move/rename those outputted files (ex [Rollup](https://rollupjs.org/) or [a simple shell script](https://stackoverflow.com/q/21985492)).
+これはまた、ビルドツールが `.cjs` ファイル拡張子を持つ配布ファイルを生成する必要があることを意味します。そのため、複数のビルドツールを連結したり、ファイルを移動/名前変更して `.cjs` ファイル拡張子を持つようにする後続の手順を追加したりする必要がある可能性があります (例: `mv ./dist/index.js ./dist/index.cjs`)。この問題は、出力されたファイルを移動/名前変更する後続の手順を追加することで回避できます (例: [Rollup](https://rollupjs.org/) または [シンプルなシェルスクリプト](https://stackoverflow.com/q/21985492))。
 
-Support for the `.cjs` file extension was added in 12.0.0, and using it will cause ESM to properly recognised a file as commonjs (`import { foo } from './foo.cjs'` works). However, `require()` does not auto-resolve `.cjs` like it does for `.js`, so file extension cannot be omitted as is commonplace in commonjs: `require('./foo')` will fail, but `require('./foo.cjs')` works. Using it in your package's exports has no drawbacks: `packageJson.exports` (and `packageJson.main`) requires a file extension regardless, and consumers reference your package by the `"name"` field of your package.json (so they're blissfully unaware).
+`.cjs` ファイル拡張子のサポートは 12.0.0 で追加されました。これを使用すると、ESM はファイルを commonjs として正しく認識します（`import { foo } from './foo.cjs'` は動作します）。ただし、`require()` は `.js` のように `.cjs` を自動解決しないため、commonjs で一般的に行われているようにファイル拡張子を省略することはできません。`require('./foo')` は失敗しますが、`require('./foo.cjs')` は動作します。パッケージのエクスポートでこれを使用してもデメリットはありません。`packageJson.exports`（および `packageJson.main`）はファイル拡張子を必須とし、ユーザーは package.json の `"name"` フィールドでパッケージを参照します（そのため、ユーザーはこのことを全く意識しません）。
 
-**Working example**: [esm-with-dual-distro](https://github.com/JakobJingleheimer/nodejs-module-config-examples/tree/main/packages/esm/dual/double-distro)
+**動作例**: [esm-with-dual-distro](https://github.com/JakobJingleheimer/nodejs-module-config-examples/tree/main/packages/esm/dual/double-distro)
 
 ```json displayName="Minimal import & require package.json"
 {
@@ -470,7 +470,7 @@ Support for the `.cjs` file extension was added in 12.0.0, and using it will cau
 }
 ```
 
-Alternatively, you can use `"default"` and `"node"` keys, which are less counter-intuitive: Node.js will always choose the `"node"` option (which always works), and non-Node.js tooling will choose `"default"` when configured to target something other than node. **This precludes the dual-package hazard.**
+あるいは、直感に反しない `"default"` キーと `"node"` キーを使用することもできます。Node.js は常に `"node"` オプション（常に機能します）を選択し、Node.js 以外のツールは、node 以外のものをターゲットにするように構成されている場合は `"default"` を選択します。**これにより、二重パッケージの危険性が排除されます。**
 
 ```json displayName="Minimal default & node package.json"
 {
@@ -498,70 +498,70 @@ Alternatively, you can use `"default"` and `"node"` keys, which are less counter
 }
 ```
 
-💡 Using `"type": "module"`[^2] paired with the `.cjs` file extension (for commonjs files) yields best results. For more information on why, see [Down the rabbit-hole](#down-the-rabbit-hole) and [Gotchas](#gotchas) below.
+💡 `"type": "module"`[^2] と `.cjs` ファイル拡張子（commonjs ファイル用）を組み合わせると、最良の結果が得られます。理由の詳細については、以下の [Down the rabbit-hole](#down-the-rabbit-hole) と [Gotchas](#gotchas) を参照してください。
 
-##### Use the `.mjs` (or equivalent) file extension for all source code files
+##### すべてのソースコードファイルには `.mjs`（または同等の）ファイル拡張子を使用してください。
 
-The configuration for this is the same as [CJS source and both CJS & ESM distribution](#cjs-source-and-both-cjs-amp-esm-distribution).
+この設定は、[CJS ソースおよび CJS と ESM の両方のディストリビューション](#cjs-source-and-both-cjs-amp-esm-distribution) と同じです。
 
-**Non-JavaScript source code**: The non-JavaScript language’s own configuration needs to recognise/specify that the input files are ESM.
+**JavaScript 以外のソースコード**: JavaScript 以外の言語独自の設定で、入力ファイルが ESM であることを認識/指定する必要があります。
 
-#### Node.js before 12.22.x
+#### Node.js 12.22.x より前
 
-🛑 You should not do this: Versions of Node.js prior to 12.x are End of Life and are now vulnerable to serious security exploits.
+🛑 実行しないでください: Node.js 12.x より前のバージョンはサポート終了となり、深刻なセキュリティ上の脆弱性が存在します。
 
-If you're a security researcher needing to investigate Node.js prior to v12.22.x, feel free to contact us for help configuring.
+セキュリティ研究者の方で、Node.js 12.22.x より前のバージョンを調査する必要がある場合は、設定のサポートについてお気軽にお問い合わせください。
 
-## General notes
+## 一般的な注意事項
 
-[Syntax detection](https://nodejs.org/api/packages.html#syntax-detection) is _**not**_ a replacement for proper package configuration; syntax detection is not fool-proof and it has [significant performance cost](https://github.com/nodejs/node/pull/55238).
+[構文検出](https://nodejs.org/api/packages.html#syntax-detection)は、適切なパッケージ構成の代替手段ではありません。構文検出は完全なものではなく、[パフォーマンスに大きな影響](https://github.com/nodejs/node/pull/55238)を伴います。
 
-When using [`"exports"`](https://nodejs.org/api/packages.html#conditional-exports) in package.json, it is generally a good idea to include `"./package.json": "./package.json"` so that it can be imported ([`module.findPackageJSON`](https://nodejs.org/api/module.html#modulefindpackagejsonspecifier-base) is not affected by this limitation, but `import` may be more convenient).
+package.jsonで[`"exports"`](https://nodejs.org/api/packages.html#conditional-exports)を使用する場合は、一般的に`"./package.json": "./package.json"`をインポートできるように含めることが推奨されます（[`module.findPackageJSON`](https://nodejs.org/api/module.html#modulefindpackagejsonspecifier-base)はこの制限の影響を受けませんが、`import`の方が便利な場合があります）。
 
-`"exports"` can be advisable over [`"main"`](https://nodejs.org/api/packages.html#main) because it prevents external access to internal code (so you can be relatively sure users are not depending on things they shouldn't). If you don't need that, `"main"` is simpler and may be a better option for you.
+`"exports"` は [`"main"`](https://nodejs.org/api/packages.html#main) よりも推奨されます。これは、外部から内部コードへのアクセスを阻止するためです（そのため、ユーザーが依存すべきでないものに依存していないことを比較的確実に確認できます）。それが不要な場合は、`"main" の方がシンプルで、より適切な選択肢となる可能性があります。
 
-The `"engines"` field provides both a human-friendly and a machine-friendly indication of which version(s) of Node.js the package is compatible. Depending on the package manager used, an exception may be thrown causing the installation to fail when the consumer is using an incompatible version of Node.js (which can be very helpful to consumers). Including this field will save a lot of headache for consumers with an older version of Node.js who cannot use the package.
+`"engines"` フィールドは、パッケージがどのバージョンの Node.js と互換性があるかを、人間とマシンの両方にとって分かりやすい形で示します。使用するパッケージマネージャーによっては、ユーザーが互換性のないバージョンの Node.js を使用している場合、例外がスローされ、インストールが失敗することがあります（これはユーザーにとって非常に役立ちます）。このフィールドを含めることで、古いバージョンの Node.js を使用しているためにパッケージを使用できないユーザーの負担を大幅に軽減できます。
 
-## Down the rabbit-hole
+## ウサギの穴に落ちろ
 
-Specifically in relation to Node.js, there are 4 problems to solve:
+Node.js に関しては、特に解決すべき問題が4つあります。
 
-- Determining format of source code files (author running their own code)
+- ソースコードファイルのフォーマットを決定する（作者が自身のコードを実行する）
 
-- Determining format of distribution files (code consumers will receive)
+- 配布ファイルのフォーマットを決定する（利用者が受け取るコード）
 
-- Publicising distribution code for when it is `require()`’d (consumer expects CJS)
+- 配布コードを `require()` で読み込めるように公開する（利用者は CJS を期待している）
 
-- Publicising distribution code for when it is `import`’d (consumer probably wants ESM)
+- 配布コードを `import` で読み込めるように公開する（利用者はおそらく ESM を希望している）
 
-⚠️ The first 2 are **independent** of the last 2.
+⚠️ 最初の2つは、最後の2つとは **独立** しています。
 
-The method of loading does NOT determine the format the file is interpreted as:
+ファイルの読み込み方法は、ファイルの解釈形式を決定するものではありません。
 
-- **package.json’s** **`exports.require`** **≠** **`CJS`**. `require()` does NOT and cannot blindly interpret the file as CJS; for instance, `require('foo.json')` correctly interprets the file as JSON, not CJS. The module containing the `require()` call of course must be CJS, but what it is loading is not necessarily also CJS.
-- **package.json’s** **`exports.import`** **≠** **`ESM`**. `import` similarly does NOT and cannot blindly interpret the file as ESM; `import` can load CJS, JSON, and WASM, as well as ESM. The module containing the `import` statement of course must be ESM, but what it is loading is not necessarily also ESM.
+- **package.json** の **`exports.require`** は **`CJS`** とは逆です。`require()` は、ファイルを盲目的に CJS として解釈することはできず、またそうでもありません。例えば、`require('foo.json')` は、ファイルを CJS ではなく JSON として正しく解釈します。`require()` 呼び出しを含むモジュールは当然 CJS である必要がありますが、ロードするものも必ずしも CJS であるとは限りません。
+- **package.json** の **`exports.import`** は **`ESM`** とは逆です。`import` も同様に、ファイルを盲目的に ESM として解釈することはできず、またそうでもありません。`import` は、ESM だけでなく、CJS、JSON、WASM もロードできます。`import` 文を含むモジュールは当然 ESM である必要がありますが、ロードするものも必ずしも ESM であるとは限りません。
 
-So when you see configuration options citing or named with `require` or `import`, resist the urge to assume they are for _determining_ CJS vs ES Modules.
+したがって、`require` や `import` で引用または命名された設定オプションを目にした場合でも、それらが CJS と ES モジュールを _判別_ するためのものだと決めつけるのはやめましょう。
 
-⚠️ Adding an `"exports"` field/field-set to a package’s configuration effectively [blocks deep pathing into the package](https://nodejs.org/api/packages.html#package-entry-points) for anything not explicitly listed in the exports’ subpathing. This means it can be a breaking change.
+⚠️ パッケージの設定に `"exports"` フィールド/フィールドセットを追加すると、エクスポートのサブパスに明示的にリストされていないものについては、実質的に [パッケージへの深いパスをブロック](https://nodejs.org/api/packages.html#package-entry-points) されます。つまり、これは破壊的な変更となる可能性があります。
 
-⚠️ Consider carefully whether to distribute both CJS and ESM: It creates the potential for the [Dual Package Hazard](#the-dual-package-hazard) (especially if misconfigured and the consumer tries to get clever). This can lead to an extremely confusing bug in consuming projects, especially when your package is not perfectly configured. Consumers can even be blind-sided by an intermediary package that uses the "other" format of your package (e.g. consumer uses the ESM distribution, and some other package the consumer is also using itself uses the CJS distribution). If your package is in any way stateful, consuming both the CJS and ESM distributions will result in parallel states (which is almost surely unintentional).
+⚠️ CJS と ESM の両方を配布するかどうかは慎重に検討してください。[二重パッケージの危険性](#the-dual-package-hazard) が発生する可能性があります (特に設定が誤っていて、ユーザーが巧妙に操作しようとした場合)。これは、特にパッケージが完全に設定されていない場合、利用プロジェクトで非常に混乱を招くバグにつながる可能性があります。消費者は、あなたのパッケージとは別のフォーマットを使用する中間パッケージによって、不意打ちを受ける可能性があります（例えば、消費者はESMディストリビューションを使用しており、消費者自身も使用している別のパッケージがCJSディストリビューションを使用している場合など）。パッケージが何らかの形でステートフルである場合、CJSとESMディストリビューションの両方を使用すると、並列状態が発生します（これはほぼ確実に意図的ではありません）。
 
-### The dual-package hazard
+### 二重パッケージの危険性
 
-When an application is using a package that provides both CommonJS and ES module sources, there is a risk of certain bugs if both instances of the package get loaded. This potential comes from the fact that the `pkgInstance` created by `const pkgInstance = require('pkg')` is not the same as the `pkgInstance` created by `import pkgInstance from 'pkg'` (or an alternative main path like `'pkg/module'`). This is the “dual package hazard”, where two instances of the same package can be loaded within the same runtime environment. While it is unlikely that an application or package would intentionally load both instances directly, it is common for an application to load one copy while a dependency of the application loads the other copy. This hazard can happen because Node.js supports intermixing CommonJS and ES modules, and can lead to unexpected and confusing behavior.
+アプリケーションがCommonJSとESモジュールソースの両方を提供するパッケージを使用している場合、パッケージの両方のインスタンスがロードされると、特定のバグが発生するリスクがあります。この危険性は、`const pkgInstance = require('pkg')` によって作成された `pkgInstance` が、`import pkgInstance from 'pkg'` (または `'pkg/module'` のような代替メインパス) によって作成された `pkgInstance` と同じではないことに起因します。これが「二重パッケージの危険性」であり、同じランタイム環境内に同じパッケージの2つのインスタンスがロードされる可能性があります。アプリケーションやパッケージが意図的に両方のインスタンスを直接ロードすることはほとんどありませんが、アプリケーションが一方のインスタンスをロードし、アプリケーションの依存関係がもう一方のインスタンスをロードすることはよくあります。Node.jsはCommonJSとESモジュールの混在をサポートしているため、この危険性が発生し、予期せぬ混乱を招く動作につながる可能性があります。
 
-If the package main export is a constructor, an `instanceof` comparison of instances created by the two copies returns `false`, and if the export is an object, properties added to one (like `pkgInstance.foo = 3`) are not present on the other. This differs from how `import` and `require` statements work in all-CommonJS or all-ES module environments, respectively, and therefore is surprising to users. It also differs from the behavior users are familiar with when using transpilation via tools like [Babel](https://babeljs.io/) or [`esm`](https://github.com/standard-things/esm#readme).
+パッケージのメインエクスポートがコンストラクタの場合、2つのコピーによって作成されたインスタンスの `instanceof` 比較は `false` を返します。また、エクスポートがオブジェクトの場合、一方に追加されたプロパティ（`pkgInstance.foo = 3` など）はもう一方には存在しません。これは、それぞれ all-CommonJS または all-ES モジュール環境における `import` および `require` ステートメントの動作とは異なるため、ユーザーにとって意外な結果となります。また、これは [Babel](https://babeljs.io/) や [`esm`](https://github.com/standard-things/esm#readme) などのツールを介してトランスパイルを行う際にユーザーが慣れ親しんでいる動作とも異なります。
 
-### How did we get here
+### これまでの経緯
 
-[CommonJS (CJS)](https://wiki.commonjs.org/wiki/Modules) was created _long_ before ECMAScript Modules (ESM), back when JavaScript was still adolescent—CJS and jQuery were created just 3 years apart. CJS is not an official ([TC39](https://tc39.es)) standard and is supported by a limited few platforms (most notably, Node.js). ESM as a standard has been incoming for several years; it is currently supported by all major platforms (browsers, Deno, Node.js, etc), meaning it will run pretty much everywhere. As it became clear ESM would effectively succeed CJS (which is still very popular and widespread), many attempted to adopt early on, often before a particular aspect of the ESM specification was finalised. Because of this, those changed over time as better information became available (often informed by learnings/experiences of those eager beavers), going from best-guess to aligning with the specification.
+[CommonJS (CJS)](https://wiki.commonjs.org/wiki/Modules) は、ECMAScript Modules (ESM) よりずっと前に、JavaScript がまだ発展途上だった頃に開発されました。CJS と jQuery の開発期間はわずか 3 年しか離れていません。CJS は公式の ([TC39](https://tc39.es)) 標準ではなく、限られたプラットフォーム (特に Node.js) でのみサポートされています。ESM の標準規格化は数年前から進められており、現在ではすべての主要プラットフォーム (ブラウザ、Deno、Node.js など) でサポートされているため、ほぼすべてのプラットフォームで動作します。ESM が CJS (現在でも非常に人気があり広く普及しています) の後継となることが明らかになったため、多くの人が早期に、多くの場合は ESM 仕様の特定の側面が完成する前から、ESM の採用を試みてきました。そのため、より良い情報が入手できるようになるにつれて（多くの場合、熱心な開発者たちの学習や経験に基づいて）、それらは時間の経過とともに変化し、推測から仕様に沿ったものへと変化しました。
 
-An additional complication is bundlers, which historically managed much of this territory. However, much of what we previously needed bundle(r)s to manage is now native functionality; yet bundlers are still (and likely always will be) necessary for some things. Unfortunately, functionality bundlers no-longer need to provide is deeply ingrained in older bundlers’ implementations, so they can at times be too helpful, and in some cases, anti-pattern (bundling a library is often not recommended by bundler authors themselves). The hows and whys of that are an article unto itself.
+さらに複雑なのは、歴史的にこの領域の多くを管理してきたバンドラーの存在です。しかし、以前はバンドラーに管理させる必要があった機能の多くは、今ではネイティブ機能になっています。それでも、バンドラーは依然として（そしておそらくこれからも）一部の用途では必要です。残念ながら、バンドラーがもはや提供する必要がなくなった機能は、古いバンドラーの実装に深く根付いているため、時には役立ちすぎたり、場合によってはアンチパターンになったりすることがあります（ライブラリのバンドルは、バンドラーの作者自身によって推奨されていないことが多いです）。その仕組みと理由については、それ自体が一つの記事になるほどで​​す。
 
-## Gotchas
+## 注意点
 
-The `package.json`'s `"type"` field changes the `.js` file extension to mean either `commonjs` or ES `module` respectively. It is very common in dual/mixed packages (that contain both CJS and ESM) to use this field incorrectly.
+`package.json` の `"type"` フィールドは、`.js` ファイル拡張子をそれぞれ `commonjs` または ES `module` のいずれかに変更します。CJS と ESM の両方を含むデュアル/混合パッケージでは、このフィールドを誤って使用することが非常によくあります。
 
 ```json displayName="⚠️ THIS DOES NOT WORK"
 {
@@ -578,9 +578,9 @@ The `package.json`'s `"type"` field changes the `.js` file extension to mean eit
 }
 ```
 
-This does not work because `"type": "module"` causes `packageJson.main`, `packageJson.exports["."].require`, and `packageJson.exports["."].default` to get interpreted as ESM (but they’re actually CJS).
+これは動作しません。`"type": "module"` により、`packageJson.main`、`packageJson.exports["."].require`、`packageJson.exports["."].default` が ESM として解釈されてしまうためです（ただし、これらは実際には CJS です）。
 
-Excluding `"type": "module"` produces the opposite problem:
+`"type": "module"` を除外すると、逆の問題が発生します。
 
 ```json displayName="⚠️ THIS DOES NOT WORK"
 {
@@ -596,8 +596,8 @@ Excluding `"type": "module"` produces the opposite problem:
 }
 ```
 
-This does not work because `packageJson.exports["."].import` will get interpreted as CJS (but it’s actually ESM).
+これは動作しません。`packageJson.exports["."].import` は CJS として解釈されるからです（実際には ESM です）。
 
-[^1]: There was a bug in Node.js v13.0–13.6 where `packageJson.exports["."]` had to be an array with verbose config options as the first item (as an object) and the “default” as the second item (as a string). See [nodejs/modules#446](https://github.com/nodejs/modules/issues/446).
+[^1]: Node.js v13.0～13.6 には、`packageJson.exports["."]` が、最初の項目として詳細な設定オプション（オブジェクト）を、2 番目の項目として “default” （文字列）を含む配列である必要があるというバグがありました。[nodejs/modules#446](https://github.com/nodejs/modules/issues/446) を参照してください。
 
-[^2]: The `"type"` field in package.json changes what the `.js` file extension means, similar to to an [HTML script element’s type attribute](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script#attr-type).
+[^2]: package.json の `"type"` フィールドは、`.js` ファイル拡張子の意味を変更します。これは、[HTML スクリプト要素の type 属性](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script#attr-type) と同様です。

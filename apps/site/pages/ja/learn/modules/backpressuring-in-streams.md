@@ -3,38 +3,19 @@ title: Backpressuring in Streams
 layout: learn
 ---
 
-# Backpressuring in Streams
+# ストリームにおけるバックプレッシャ
 
-There is a general problem that occurs during data handling called
-[`backpressure`][] and describes a buildup of data behind a buffer during data
-transfer. When the receiving end of the transfer has complex operations, or is
-slower for whatever reason, there is a tendency for data from the incoming
-source to accumulate, like a clog.
+データ処理中に発生する一般的な問題は [`backpressure`][] と呼ばれ、データ転送中にバッファの背後にデータが蓄積される現象を指します。転送の受信側で複雑な処理が行われている場合、または何らかの理由で処理速度が遅い場合、受信側のデータが詰まりのように蓄積される傾向があります。
 
-To solve this problem, there must be a delegation system in place to ensure a
-smooth flow of data from one source to another. Different communities have
-resolved this issue uniquely to their programs, Unix pipes and TCP sockets are
-good examples of this, and are often referred to as _flow control_. In
-Node.js, streams have been the adopted solution.
+この問題を解決するには、あるソースから別のソースへのスムーズなデータフローを確保するための委任システムが必要です。様々なコミュニティがそれぞれのプログラムでこの問題を独自に解決しており、Unix パイプや TCP ソケットはその好例であり、しばしば _フロー制御_ と呼ばれます。Node.js では、ストリームが採用されている解決策です。
 
-The purpose of this guide is to further detail what backpressure is, and how
-exactly streams address this in Node.js' source code. The second part of
-the guide will introduce suggested best practices to ensure your application's
-code is safe and optimized when implementing streams.
+このガイドの目的は、バックプレッシャとは何か、そしてストリームが Node.js のソースコードでどのようにこの問題に対処するかを詳しく説明することです。ガイドの後半では、ストリームを実装する際にアプリケーションのコードを安全かつ最適化するための推奨ベストプラクティスを紹介します。
 
-We assume a little familiarity with the general definition of
-[`backpressure`][], [`Buffer`][], and [`EventEmitters`][] in Node.js, as well as
-some experience with [`Stream`][]. If you haven't read through those docs,
-it's not a bad idea to take a look at the API documentation first, as it will
-help expand your understanding while reading this guide.
+このガイドでは、Node.jsにおける[`backpressure`][]、[`Buffer`][]、[`EventEmitters`][]の一般的な定義と、[`Stream`][]の使用経験についてある程度の知識があることを前提としています。これらのドキュメントをまだ読んでいない場合は、まずAPIドキュメントを参照することをお勧めします。このガイドを読み進める中で、理解を深めるのに役立ちます。
 
-## The Problem with Data Handling
+## データ処理の問題
 
-In a computer system, data is transferred from one process to another through
-pipes, sockets, and signals. In Node.js, we find a similar mechanism called
-[`Stream`][]. Streams are great! They do so much for Node.js and almost every
-part of the internal codebase utilizes that module. As a developer, you
-are more than encouraged to use them too!
+コンピュータシステムでは、データはパイプ、ソケット、シグナルを介してプロセス間で転送されます。Node.jsには、[`Stream`][]と呼ばれる同様のメカニズムがあります。Streamは素晴らしい！Node.jsで非常に多くの機能を提供し、内部コードベースのほぼすべての部分でこのモジュールが使用されています。開発者の皆さんにも、Streamをぜひ活用してください！
 
 ```cjs
 const readline = require('node:readline');
@@ -68,20 +49,15 @@ rl.question('Why should you use streams? ', answer => {
 });
 ```
 
-A good example of why the backpressure mechanism implemented through streams is
-a great optimization can be demonstrated by comparing the internal system tools
-from Node.js' [`Stream`][] implementation.
+ストリームを通じて実装されたバックプレッシャー機構が優れた最適化である理由を示す良い例は、Node.js の [`Stream`][] 実装の内部システムツールを比較することで確認できます。
 
-In one scenario, we will take a large file (approximately ~9 GB) and compress it
-using the familiar [`zip(1)`][] tool.
+あるシナリオでは、大きなファイル（約 9 GB）を、使い慣れた [`zip(1)`][] ツールを使用して圧縮します。
 
 ```
 zip The.Matrix.1080p.mkv
 ```
 
-While that will take a few minutes to complete, in another shell we may run
-a script that takes Node.js' module [`zlib`][], that wraps around another
-compression tool, [`gzip(1)`][].
+完了するまでに数分かかる場合がありますが、別のシェルで、別の圧縮ツール [`gzip(1)`][] をラップする Node.js のモジュール [`zlib`][] を取得するスクリプトを実行する場合があります。
 
 ```cjs
 const fs = require('node:fs');
@@ -105,23 +81,14 @@ const out = createWriteStream('The.Matrix.1080p.mkv.gz');
 inp.pipe(gzip).pipe(out);
 ```
 
-To test the results, try opening each compressed file. The file compressed by
-the [`zip(1)`][] tool will notify you the file is corrupt, whereas the
-compression finished by [`Stream`][] will decompress without error.
+結果をテストするには、各圧縮ファイルを開いてみてください。[`zip(1)`][] ツールで圧縮されたファイルはファイルが破損していることを通知しますが、[`Stream`][] で圧縮されたファイルはエラーなく解凍されます。
 
-> In this example, we use `.pipe()` to get the data source from one end
-> to the other. However, notice there are no proper error handlers attached. If
-> a chunk of data were to fail to be properly received, the `Readable` source or
-> `gzip` stream will not be destroyed. [`pump`][] is a utility tool that would
-> properly destroy all the streams in a pipeline if one of them fails or closes,
-> and is a must-have in this case!
+> この例では、`.pipe()` を使用してデータソースを一方から他方へ取得しています。ただし、適切なエラーハンドラがアタッチされていないことに注意してください。データチャンクを適切に受信できなかった場合、`Readable` ソースまたは `gzip` ストリームは破棄されません。[`pump`][] は、パイプライン内のストリームの 1 つが失敗または終了した場合に、すべてのストリームを適切に破棄するユーティリティツールであり、この場合は必須です。
 
-[`pump`][] is only necessary for Node.js 8.x or earlier, as for Node.js 10.x
-or later version, [`pipeline`][] is introduced to replace for [`pump`][].
-This is a module method to pipe between streams forwarding errors and properly
-cleaning up and providing a callback when the pipeline is complete.
+[`pump`][] は Node.js 8.x 以前でのみ必要です。Node.js 10.x 以降では、[`pump`][] の代わりに [`pipeline`][] が導入されています。
+これは、ストリーム間のパイプ処理を行い、エラーを転送し、適切にクリーンアップして、パイプラインが完了したらコールバックを返すモジュールメソッドです。
 
-Here is an example of using pipeline:
+パイプラインの使用例を以下に示します。
 
 ```cjs
 const fs = require('node:fs');
@@ -169,7 +136,7 @@ pipeline(
 );
 ```
 
-You can also use the [`stream/promises`][] module to use pipeline with `async` / `await`:
+[`stream/promises`][] モジュールを使用して、`async` / `await` でパイプラインを使用することもできます。
 
 ```cjs
 const fs = require('node:fs');
@@ -209,19 +176,13 @@ async function run() {
 }
 ```
 
-## Too Much Data, Too Quickly
+## データが多すぎる、速すぎる
 
-There are instances where a [`Readable`][] stream might give data to the
-[`Writable`][] much too quickly — much more than the consumer can handle!
+[`Readable`][] ストリームが [`Writable`][] にデータを渡す速度が速すぎる場合があります。これは、コンシューマーが処理できる量をはるかに超えています。
 
-When that occurs, the consumer will begin to queue all the chunks of data for
-later consumption. The write queue will get longer and longer, and because of
-this more data must be kept in memory until the entire process has been completed.
+そうなると、コンシューマーは後で処理するためにすべてのデータチャンクをキューに入れ始めます。書き込みキューはどんどん長くなり、処理全体が完了するまで、より多くのデータをメモリに保持する必要があります。
 
-Writing to a disk is a lot slower than reading from a disk, thus, when we are
-trying to compress a file and write it to our hard disk, backpressure will
-occur because the write disk will not be able to keep up with the speed from
-the read.
+ディスクへの書き込みはディスクからの読み取りよりもはるかに遅いため、ファイルを圧縮してハードディスクに書き込もうとすると、書き込みディスクが読み取り速度に追いつかず、バックプレッシャーが発生します。
 
 ```js
 // Secretly the stream is saying: "whoa, whoa! hang on, this is way too much!"
@@ -230,27 +191,19 @@ the read.
 inp.pipe(gzip).pipe(outputFile);
 ```
 
-This is why a backpressure mechanism is important. If a backpressure system was
-not present, the process would use up your system's memory, effectively slowing
-down other processes, and monopolizing a large part of your system until
-completion.
+これがバックプレッシャー機構が重要な理由です。バックプレッシャー機構がなければ、プロセスはシステムのメモリを大量に消費し、他のプロセスの速度を低下させ、完了するまでシステムの大部分を占有することになります。
 
-This results in a few things:
+その結果、いくつかの問題が発生します。
 
-- Slowing down all other current processes
-- A very overworked garbage collector
-- Memory exhaustion
+- 他のすべての実行中のプロセスの速度低下
+- ガベージコレクタの過負荷
+- メモリ枯渇
 
-In the following examples, we will take out the [return value][] of the
-`.write()` function and change it to `true`, which effectively disables
-backpressure support in Node.js core. In any reference to 'modified' binary,
-we are talking about running the `node` binary without the `return ret;` line,
-and instead with the replaced `return true;`.
+以下の例では、`.write()` 関数の [return value][] を削除し、`true` に変更します。これにより、Node.js コアにおけるバックプレッシャーのサポートが実質的に無効になります。「変更された」バイナリとは、`return ret;` 行を削除し、代わりに `return true;` 行を追加して `node` バイナリを実行することを意味します。
 
-## Excess Drag on Garbage Collection
+## ガベージコレクションへの過剰な負荷
 
-Let's take a look at a quick benchmark. Using the same example from above, we
-ran a few time trials to get a median time for both binaries.
+簡単なベンチマークを見てみましょう。上記と同じ例を用いて、両方のバイナリの中央値を取得するために、いくつかのタイムトライアルを実行しました。
 
 ```
    trial (#)  | `node` binary (ms) | modified `node` binary (ms)
@@ -264,13 +217,9 @@ ran a few time trials to get a median time for both binaries.
 average time: |      55299         |           55975
 ```
 
-Both take around a minute to run, so there's not much of a difference at all,
-but let's take a closer look to confirm whether our suspicions are correct. We
-use the Linux tool [`dtrace`][] to evaluate what's happening with the V8 garbage
-collector.
+どちらも実行に約1分かかるので、大きな違いはありませんが、私たちの推測が正しいかどうかを確認するために、詳しく見てみましょう。Linuxツール[`dtrace`][]を使用して、V8ガベージコレクターで何が起こっているかを評価します。
 
-The GC (garbage collector) measured time indicates the intervals of a full cycle
-of a single sweep done by the garbage collector:
+GC（ガベージコレクター）の測定時間は、ガベージコレクターが実行する単一のスイープの完全なサイクルの間隔を示しています。
 
 ```
 approx. time (ms) | GC (ms) | modified GC (ms)
@@ -292,31 +241,19 @@ approx. time (ms) | GC (ms) | modified GC (ms)
       54000       |    6    |     35
 ```
 
-While the two processes start the same and seem to work the GC at the same
-rate, it becomes evident that after a few seconds with a properly working
-backpressure system in place, it spreads the GC load across consistent
-intervals of 4-8 milliseconds until the end of the data transfer.
+2つのプロセスは開始時点では同じで、GCも同じ速度で動作しているように見えますが、バックプレッシャーシステムが適切に機能していれば、数秒後にはデータ転送が終了するまでGCの負荷が4～8ミリ秒の一定間隔に分散されることがわかります。
 
-However, when a backpressure system is not in place, the V8 garbage collection
-starts to drag out. The normal binary called the GC fires approximately **75**
-times in a minute, whereas, the modified binary fires only **36** times.
+しかし、バックプレッシャーシステムが機能していない場合、V8ガベージコレクションは遅延し始めます。GCと呼ばれる通常のバイナリは1分間に約**75**回実行されるのに対し、修正されたバイナリは**36**回しか実行されません。
 
-This is the slow and gradual debt accumulating from growing memory usage. As
-data gets transferred, without a backpressure system in place, more memory is
-being used for each chunk transfer.
+これは、メモリ使用量の増加によってゆっくりと徐々に蓄積される負債です。バックプレッシャーシステムが機能していない状態でデータが転送されると、チャンク転送ごとにメモリ使用量が増加します。
 
-The more memory that is being allocated, the more the GC has to take care of in
-one sweep. The bigger the sweep, the more the GC needs to decide what can be
-freed up, and scanning for detached pointers in a larger memory space will
-consume more computing power.
+割り当てられるメモリ量が多いほど、GCが1回のスイープで処理しなければならないメモリ量も増えます。スイープが大きいほど、GCが解放できる領域を決定する必要があり、より広いメモリ空間でデタッチされたポインタをスキャンするために、より多くの計算能力が消費されます。
 
-## Memory Exhaustion
+## メモリ消費量
 
-To determine the memory consumption of each binary, we've clocked each process
-with `/usr/bin/time -lp sudo ./node ./backpressure-example/zlib.js`
-individually.
+各バイナリのメモリ消費量を調べるために、各プロセスごとに `/usr/bin/time -lp sudo ./node ./backpressure-example/zlib.js` を実行してメモリ消費量を計測しました。
 
-This is the output on the normal binary:
+通常のバイナリの出力は次のとおりです。
 
 ```
 Respecting the return value of .write()
@@ -340,10 +277,9 @@ sys          8.79
     666037  involuntary context switches
 ```
 
-The maximum byte size occupied by virtual memory turns out to be approximately
-87.81 mb.
+仮想メモリが占​​有する最大バイトサイズは約87.81MBです。
 
-And now changing the [return value][] of the [`.write()`][] function, we get:
+[`.write()`][]関数の[戻り値][]を変更すると、次のようになります。
 
 ```
 Without respecting the return value of .write():
@@ -367,71 +303,41 @@ sys          7.43
     629566  involuntary context switches
 ```
 
-The maximum byte size occupied by virtual memory turns out to be approximately
-1.52 gb.
+仮想メモリが占​​有する最大バイトサイズは約1.52GBです。
 
-Without streams in place to delegate the backpressure, there is an order of
-magnitude greater of memory space being allocated - a huge margin of
-difference between the same process!
+バックプレッシャーを委譲するストリームがない場合、割り当てられるメモリ空間は桁違いに大きくなります。同じプロセスでも、この差は歴然としています。
 
-This experiment shows how optimized and cost-effective Node.js' backpressure
-mechanism is for your computing system. Now, let's do a breakdown of how it
-works!
+この実験は、Node.jsのバックプレッシャー機構がコンピューティングシステムにとっていかに最適化され、費用対効果が高いかを示しています。それでは、その仕組みを詳しく見ていきましょう。
 
-## How Does Backpressure Resolve These Issues?
+## バックプレッシャーはどのようにこれらの問題を解決するのでしょうか？
 
-There are different functions to transfer data from one process to another. In
-Node.js, there is an internal built-in function called [`.pipe()`][]. There are
-[other packages][] out there you can use too! Ultimately though, at the basic
-level of this process, we have two separate components: the _source_ of the
-data and the _consumer_.
+あるプロセスから別のプロセスにデータを転送する関数はいくつかあります。Node.js には [`.pipe()`][] という組み込み関数があります。他にも [パッケージ][] を利用できます。しかし、最終的には、このプロセスの基本レベルでは、データの _ソース_ と _コンシューマー_ という 2 つの別々のコンポーネントが存在します。
 
-When [`.pipe()`][] is called from the source, it signals to the consumer that
-there is data to be transferred. The pipe function helps to set up the
-appropriate backpressure closures for the event triggers.
+ソースから [`.pipe()`][] が呼び出されると、転送するデータがあることがコンシューマーに通知されます。pipe 関数は、イベントトリガーに対して適切なバックプレッシャークロージャを設定するのに役立ちます。
 
-In Node.js the source is a [`Readable`][] stream and the consumer is the
-[`Writable`][] stream (both of these may be interchanged with a [`Duplex`][] or
-a [`Transform`][] stream, but that is out-of-scope for this guide).
+Node.js では、ソースは [`Readable`][] ストリーム、コンシューマーは [`Writable`][] ストリームです（どちらも [`Duplex`][] または [`Transform`][] ストリームと置き換えることができますが、このガイドでは扱いません）。
 
-The moment that backpressure is triggered can be narrowed exactly to the return
-value of a [`Writable`][]'s [`.write()`][] function. This return value is
-determined by a few conditions, of course.
+バックプレッシャーがトリガーされるタイミングは、[`Writable`][] の [`.write()`][] 関数の戻り値に正確に限定できます。もちろん、この戻り値はいくつかの条件によって決まります。
 
-In any scenario where the data buffer has exceeded the [`highWaterMark`][] or
-the write queue is currently busy, [`.write()`][] will return `false`.
+データバッファが [`highWaterMark`][] を超えている場合、または書き込みキューが現在ビジー状態の場合、[`.write()`][] は `false` を返します。
 
-When a `false` value is returned, the backpressure system kicks in. It will
-pause the incoming [`Readable`][] stream from sending any data and wait until
-the consumer is ready again. Once the data buffer is emptied, a [`'drain'`][]
-event will be emitted and resume the incoming data flow.
+`false` 値が返されると、バックプレッシャーシステムが起動します。バックプレッシャーシステムは、受信中の [`Readable`][] ストリームへのデータ送信を一時停止し、コンシューマー側の準備が整うまで待機します。データバッファが空になると、[`'drain'`][] イベントが発行され、受信データフローが再開されます。
 
-Once the queue is finished, backpressure will allow data to be sent again.
-The space in memory that was being used will free itself up and prepare for the
-next batch of data.
+キューの処理が完了すると、バックプレッシャーによってデータの送信が再開されます。
+使用されていたメモリ領域は解放され、次のデータバッチの準備が整います。
 
-This effectively allows a fixed amount of memory to be used at any given
-time for a [`.pipe()`][] function. There will be no memory leakage, and no
-infinite buffering, and the garbage collector will only have to deal with
-one area in memory!
+これにより、[`.pipe()`][] 関数は、常に一定量のメモリを使用できるようになります。メモリリークや無限バッファリングは発生せず、ガベージコレクターはメモリ内の1つの領域のみを処理することになります。
 
-So, if backpressure is so important, why have you (probably) not heard of it?
-Well, the answer is simple: Node.js does all of this automatically for you.
+では、バックプレッシャーがそれほど重要なのに、なぜ（おそらく）聞いたことがないのでしょうか？
+答えは簡単です。Node.js はこれらすべてを自動的に処理してくれるからです。
 
-That's so great! But also not so great when we are trying to understand how to
-implement our custom streams.
+これは素晴らしいですね！しかし、カスタムストリームの実装方法を理解しようとすると、あまり良いことではありません。
 
-> In most machines, there is a byte size that determines when a buffer
-> is full (which will vary across different machines). Node.js allows you to set
-> your custom [`highWaterMark`][], but commonly, the default is set to 16kb
-> (16384, or 16 for objectMode streams). In instances where you might
-> want to raise that value, go for it, but do so with caution!
+> ほとんどのマシンでは、バッファがいっぱいになったかどうかを判断するバイトサイズがあります（これはマシンによって異なります）。Node.js では [`highWaterMark`][] を独自に設定できますが、一般的にはデフォルトは 16KB（16384、または objectMode ストリームの場合は 16）に設定されています。この値を上げたい場合は、設定しても構いませんが、注意が必要です。
 
-## Lifecycle of `.pipe()`
+## `.pipe()` のライフサイクル
 
-To achieve a better understanding of backpressure, here is a flow-chart on the
-lifecycle of a [`Readable`][] stream being [piped][] into a [`Writable`][]
-stream:
+バックプレッシャーをより深く理解するために、[`Readable`][] ストリームが [`Writable`][] ストリームに [pipe][] されるまでのライフサイクルのフローチャートを以下に示します。
 
 ```
                                                      +===================+
@@ -477,72 +383,44 @@ stream:
                                        +============+
 ```
 
-> If you are setting up a pipeline to chain together a few streams to
-> manipulate your data, you will most likely be implementing [`Transform`][]
-> stream.
+> 複数のストリームを連結してデータを操作するパイプラインを設定する場合、おそらく [`Transform`][] ストリームを実装することになるでしょう。
 
-In this case, your output from your [`Readable`][] stream will enter in the
-[`Transform`][] and will pipe into the [`Writable`][].
+この場合、[`Readable`][] ストリームからの出力は [`Transform`][] に入り、[`Writable`][] にパイプされます。
 
 ```js
 Readable.pipe(Transformable).pipe(Writable);
 ```
 
-Backpressure will be automatically applied, but note that both the incoming and
-outgoing `highWaterMark` of the [`Transform`][] stream may be manipulated and
-will affect the backpressure system.
+バックプレッシャーは自動的に適用されますが、[`Transform`][] ストリームの受信および送信の `highWaterMark` は両方とも操作可能であり、バックプレッシャーシステムに影響を与えることに注意してください。
 
-## Backpressure Guidelines
+## バックプレッシャーのガイドライン
 
-Since [Node.js v0.10][], the [`Stream`][] class has offered the ability to
-modify the behavior of the [`.read()`][] or [`.write()`][] by using the
-underscore version of these respective functions ([`._read()`][] and
-[`._write()`][]).
+[Node.js v0.10][] 以降、[`Stream`][] クラスは、[`.read()`][] または [`.write()`][] のアンダースコアバージョン ([`._read()`][] および [`._write()`][]) を使用して、これらの関数の動作を変更できるようになりました。
 
-There are guidelines documented for [implementing Readable streams][] and
-[implementing Writable streams][]. We will assume you've read these over, and
-the next section will go a little bit more in-depth.
+[読み取り可能ストリームの実装][] および [書き込み可能ストリームの実装][] に関するガイドラインが文書化されています。これらのガイドラインは既にお読みいただいているものと仮定し、次のセクションではより詳細に説明します。
 
-## Rules to Abide By When Implementing Custom Streams
+## カスタムストリームを実装する際の遵守すべきルール
 
-The golden rule of streams is **to always respect backpressure**. What
-constitutes as best practice is non-contradictory practice. So long as you are
-careful to avoid behaviors that conflict with internal backpressure support,
-you can be sure you're following good practice.
+ストリームの黄金律は、**常にバックプレッシャーを尊重する** ことです。ベストプラクティスとは、矛盾のないプラクティスです。内部的なバックプレッシャーサポートと競合する動作を避けるように注意していれば、確実にベストプラクティスに従っていると言えるでしょう。
 
-In general,
+一般的には、
 
-1. Never `.push()` if you are not asked.
-2. Never call `.write()` after it returns false but wait for 'drain' instead.
-3. Streams changes between different Node.js versions, and the library you use.
-   Be careful and test things.
+1. 指示がない限り、`.push()` は使用しないでください。
+2. false が返された後は `.write()` を呼び出さず、代わりに 'drain' を待機します。
+3. ストリームは、Node.js のバージョンや使用するライブラリによって異なります。注意してテストを行ってください。
 
-> In regards to point 3, an incredibly useful package for building
-> browser streams is [`readable-stream`][]. Rodd Vagg has written a
-> [great blog post][] describing the utility of this library. In short, it
-> provides a type of automated graceful degradation for [`Readable`][] streams,
-> and supports older versions of browsers and Node.js.
+> 3. ブラウザストリームを構築するための非常に便利なパッケージは [`readable-stream`][] です。Rodd Vagg 氏が [素晴らしいブログ記事][] でこのライブラリの有用性について解説しています。簡単に言うと、このライブラリは [`Readable`][] ストリームに対して一種の自動化されたグレースフルデグラデーション機能を提供し、古いバージョンのブラウザと Node.js をサポートします。
 
-## Rules specific to Readable Streams
+## Readable Streams 固有のルール
 
-So far, we have taken a look at how [`.write()`][] affects backpressure and have
-focused much on the [`Writable`][] stream. Because of Node.js' functionality,
-data is technically flowing downstream from [`Readable`][] to [`Writable`][].
-However, as we can observe in any transmission of data, matter, or energy, the
-source is just as important as the destination, and the [`Readable`][] stream
-is vital to how backpressure is handled.
+これまで、[`.write()`][] がバックプレッシャーにどのような影響を与えるかを見てきましたが、特に [`Writable`][] ストリームに重点を置いてきました。Node.js の機能により、データは技術的には [`Readable`][] から [`Writable`][] へと下流に流れます。
+しかし、データ、物質、エネルギーのあらゆる伝送において見られるように、送信元は送信先と同様に重要であり、[`Readable`][] ストリームはバックプレッシャーの処理に不可欠です。
 
-Both these processes rely on one another to communicate effectively, if
-the [`Readable`][] ignores when the [`Writable`][] stream asks for it to stop
-sending in data, it can be just as problematic as when the [`.write()`][]'s return
-value is incorrect.
+これらのプロセスは互いに連携して効率的に通信を行います。[`Readable`][] が [`Writable`][] ストリームからのデータ送信停止要求を無視した場合、[`.write()`][] の戻り値が正しくない場合と同様に問題が発生する可能性があります。
 
-So, as well as respecting the [`.write()`][] return, we must also respect the
-return value of [`.push()`][] used in the [`._read()`][] method. If
-[`.push()`][] returns a `false` value, the stream will stop reading from the
-source. Otherwise, it will continue without pause.
+したがって、[`.write()`][] の戻り値だけでなく、[`._read()`][] メソッドで使用される [`.push()`][] の戻り値も考慮する必要があります。[`.push()`][] が `false` 値を返した場合、ストリームはソースからの読み取りを停止します。それ以外の場合は、読み取りを中断することなく続行します。
 
-Here is an example of bad practice using [`.push()`][]:
+[`.push()`][] の使用における不適切な例を以下に示します。
 
 ```js
 // This is problematic as it completely ignores the return value from the push
@@ -557,7 +435,7 @@ class MyReadable extends Readable {
 }
 ```
 
-Here is an example of good practice, where the `Readable` stream respects backpressure by checking the return value of `this.push()`:
+以下は、`Readable` ストリームが `this.push()` の戻り値をチェックしてバックプレッシャーを尊重する良い例です。
 
 ```js
 class MyReadable extends Readable {
@@ -571,19 +449,15 @@ class MyReadable extends Readable {
 }
 ```
 
-Additionally, from outside the custom stream, there are pitfalls to ignoring
-backpressure. In this counter-example of good practice, the application's code
-forces data through whenever it is available (signaled by the
-[`'data'` event][]):
+さらに、カスタムストリームの外部から見ると、バックプレッシャーを無視することには落とし穴があります。この良い例の反例では、アプリケーションのコードは、データが利用可能になった場合（[`'data'` イベント][] によって通知される）、データを強制的に通過させます。
 
 ```js
-// This ignores the backpressure mechanisms Node.js has set in place,
-// and unconditionally pushes through data, regardless if the
-// destination stream is ready for it or not.
+// これにより、Node.js が設定したバックプレッシャーメカニズムが無視され、
+// 宛先ストリームの準備ができているかどうかに関係なく、無条件にデータがプッシュされます。
 readable.on('data', data => writable.write(data));
 ```
 
-Here's an example of using [`.push()`][] with a Readable stream.
+以下は、Readable ストリームで [`.push()`][] を使用する例です。
 
 ```cjs
 const { Readable } = require('node:stream');
@@ -629,33 +503,23 @@ myReadableStream.on('data', chunk => {
 // { message: 'Hello, world!' }
 ```
 
-In this example, we create a custom Readable stream that pushes a single object
-onto the stream using [`.push()`][]. The [`._read()`][] method is called when the stream is ready
-to consume data, and in this case, we immediately push some data onto the stream and
-mark the end of the stream by pushing null.
+この例では、[`.push()`][] を使用して単一のオブジェクトをストリームにプッシュするカスタム Readable ストリームを作成します。[`._read()`][] メソッドは、ストリームがデータを処理する準備ができたときに呼び出されます。この例では、すぐにデータをストリームにプッシュし、null をプッシュしてストリームの終了をマークします。
 
-We then consume the stream by listening for the 'data' event and logging each chunk of
-data that is pushed onto the stream. In this case, we only push a single chunk of data
-onto the stream, so we only see one log message.
+次に、'data' イベントをリッスンし、ストリームにプッシュされる各データチャンクをログに記録することで、ストリームを処理します。この例では、ストリームにプッシュされるデータチャンクは 1 つだけなので、表示されるログメッセージは 1 つだけです。
 
-## Rules specific to Writable Streams
+## 書き込み可能ストリームに固有のルール
 
-Recall that a [`.write()`][] may return true or false dependent on some
-conditions. Luckily for us, when building our own [`Writable`][] stream,
-the [`stream state machine`][] will handle our callbacks and determine when to
-handle backpressure and optimize the flow of data for us.
+[`.write()`][] は、いくつかの条件に応じて true または false を返す可能性があることを思い出してください。幸いなことに、独自の [`Writable`][] ストリームを構築する場合、[`stream state machine`][] がコールバックを処理し、バックプレッシャーを処理するタイミングを決定し、データフローを最適化します。
 
-However, when we want to use a [`Writable`][] directly, we must respect the
-[`.write()`][] return value and pay close attention to these conditions:
+ただし、[`Writable`][] を直接使用する場合は、[`.write()`][] の戻り値を尊重し、以下の条件に細心の注意を払う必要があります。
 
-- If the write queue is busy, [`.write()`][] will return false.
-- If the data chunk is too large, [`.write()`][] will return false (the limit
-  is indicated by the variable, [`highWaterMark`][]).
+- 書き込みキューがビジー状態の場合、[`.write()`][] は false を返します。
+- データチャンクが大きすぎる場合、[`.write()`][] は false を返します（上限は変数 [`highWaterMark`][] で示されます）。
 
 ```js
-// This writable is invalid because of the async nature of JavaScript callbacks.
-// Without a return statement for each callback prior to the last,
-// there is a great chance multiple callbacks will be called.
+// この書き込み可能オブジェクトは、JavaScript コールバックの非同期性のため無効です。
+// 最後のコールバックの前に各コールバックの return 文がないと、
+// 複数のコールバックが呼び出される可能性が高くなります。
 class MyWritable extends Writable {
   _write(chunk, encoding, callback) {
     if (chunk.toString().indexOf('a') >= 0) {
@@ -678,13 +542,12 @@ if (chunk.contains('b')) {
 callback();
 ```
 
-There are also some things to look out for when implementing [`._writev()`][].
-The function is coupled with [`.cork()`][], but there is a common mistake when
-writing:
+[`._writev()`][] を実装する際には、いくつか注意すべき点があります。
+この関数は [`.cork()`][] と連動していますが、次のような書き方をするとよくある間違いがあります。
 
 ```js
-// Using .uncork() twice here makes two calls on the C++ layer, rendering the
-// cork/uncork technique useless.
+// ここで .uncork() を 2 回使用すると、C++ レイヤーで 2 回の呼び出しが行われ、
+// cork/uncork テクニックが役に立たなくなります。
 ws.cork();
 ws.write('hello ');
 ws.write('world ');
@@ -695,8 +558,8 @@ ws.write('from ');
 ws.write('Matteo');
 ws.uncork();
 
-// The correct way to write this is to utilize process.nextTick(), which fires
-// on the next event loop.
+// これを記述する正しい方法は、次のイベント ループで実行される 
+// process.nextTick() を使用することです。
 ws.cork();
 ws.write('hello ');
 ws.write('world ');
@@ -713,22 +576,15 @@ function doUncork(stream) {
 }
 ```
 
-[`.cork()`][] can be called as many times as we want, we just need to be careful to
-call [`.uncork()`][] the same amount of times to make it flow again.
+[`.cork()`][] は何度でも呼び出すことができますが、再びストリームを流すには [`.uncork()`][] を同じ回数呼び出すように注意する必要があります。
 
-## Conclusion
+## まとめ
 
-Streams are an often-used module in Node.js. They are important to the internal
-structure, and for developers, to expand and connect across the Node.js modules
-ecosystem.
+ストリームは Node.js でよく使われるモジュールです。内部構造にとって重要であり、開発者にとっては Node.js モジュールエコシステム全体への拡張と接続に不可欠です。
 
-Hopefully, you will now be able to troubleshoot and safely code your own
-[`Writable`][] and [`Readable`][] streams with backpressure in mind, and share
-your knowledge with colleagues and friends.
+これで、バックプレッシャーを考慮した独自の [`Writable`][] および [`Readable`][] ストリームのトラブルシューティングと安全なコーディングが可能になり、同僚や友人と知識を共有できるようになることを願っています。
 
-Be sure to read up more on [`Stream`][] for other API functions to help
-improve and unleash your streaming capabilities when building an application with
-Node.js.
+Node.js でアプリケーションを構築する際に、ストリーミング機能の向上と最大限活用に役立つ他の API 関数については、[`Stream`][] の詳細を必ずお読みください。
 
 [`Stream`]: https://nodejs.org/api/stream.html
 [`Buffer`]: https://nodejs.org/api/buffer.html

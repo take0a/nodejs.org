@@ -4,24 +4,24 @@ layout: learn
 authors: flaviocopes, MylesBorins, fhemberger, LaRuaNa, ahmadawais, RenanTKN, mcollina
 ---
 
-# Node.js, the difference between development and production
+# Node.js：開発環境と本番環境の違い
 
-**There is no difference between development and production in Node.js**, i.e., there are no specific settings you need to apply to make Node.js work in a production configuration.
-However, a few libraries in the npm registry recognize using the `NODE_ENV` variable and default it to a `development` setting.
-Always run your Node.js with the `NODE_ENV=production` set.
+**Node.js には開発環境と本番環境の違いはありません**。つまり、Node.js を本番環境設定で動作させるために特別な設定は必要ありません。
+ただし、npm レジストリ内のいくつかのライブラリは `NODE_ENV` 変数を認識し、デフォルトで `development` 設定を使用します。
+Node.js は常に `NODE_ENV=production` に設定して実行してください。
 
-A popular way of configuring your application is by using the [twelve factor methodology](https://12factor.net/).
+アプリケーションを設定する一般的な方法は、[twelve factor methodology](https://12factor.net/) を使用することです。
 
-## Why is NODE_ENV considered an antipattern?
+## なぜ NODE_ENV はアンチパターンとみなされるのでしょうか？
 
-An environment is a digital platform or a system where engineers can build, test, _deploy_, and manage software products. Conventionally, there are four stages or types of environments where our application is run:
+環境とは、エンジニアがソフトウェア製品を構築、テスト、デプロイ、管理できるデジタルプラットフォームまたはシステムです。通常、アプリケーションが実行される環境には4つの段階（種類）があります。
 
-- Development
-- Testing
-- Staging
-- Production
+- 開発
+- テスト
+- ステージング
+- 本番環境
 
-The fundamental problem of `NODE_ENV` stems from developers combining optimizations and software behavior with the environment their software is running on. The result is code like the following:
+`NODE_ENV` の根本的な問題は、開発者が最適化とソフトウェアの動作を、ソフトウェアが実行される環境と混同していることに起因します。その結果、次のようなコードが生成されます。
 
 ```js
 if (process.env.NODE_ENV === 'development') {
@@ -37,5 +37,5 @@ if (['production', 'staging'].includes(process.env.NODE_ENV)) {
 }
 ```
 
-While this might look harmless, it makes the production and staging environments different, thus making reliable testing impossible. For example a test and thus a functionality of your product could pass when `NODE_ENV` is set to `development` but fail when setting `NODE_ENV` to `production`.
-Therefore, setting `NODE_ENV` to anything but `production` is considered an _antipattern_.
+これは一見無害に見えるかもしれませんが、本番環境とステージング環境が異なるため、信頼性の高いテストが不可能になります。例えば、`NODE_ENV` を `development` に設定するとテストが成功し、製品の機能も成功する可能性がありますが、`NODE_ENV` を `production` に設定すると失敗する可能性があります。
+したがって、`NODE_ENV` を `production` 以外の値に設定することは、_アンチパターン_ と見なされます。

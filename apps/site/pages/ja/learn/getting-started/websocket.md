@@ -4,23 +4,23 @@ layout: learn
 authors: callezenwaka
 ---
 
-# Native WebSocket Client in Node.js
+# Node.js のネイティブ WebSocket クライアント
 
-## Introduction
+## はじめに
 
-Since [Node.js v21](https://github.com/nodejs/node/blob/47a59bde2aadb3ad1b377c0ef12df7abc28840e9/doc/changelogs/CHANGELOG_V21.md#L1329-L1345), the [WebSocket API](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket) has been enhanced using the [Undici](https://undici.nodejs.org) library, introducing a built-in WebSocket client. This simplifies real-time communication for Node.js applications. In [Node.js v22.4.0](https://github.com/nodejs/node/releases/tag/v22.4.0) release, the WebSocket API was marked as stable, indicating it's ready for production use.
+[Node.js v21](https://github.com/nodejs/node/blob/47a59bde2aadb3ad1b377c0ef12df7abc28840e9/doc/changelogs/CHANGELOG_V21.md#L1329-L1345) 以降、[WebSocket API](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket) は [Undici](https://undici.nodejs.org) ライブラリを使用して拡張され、組み込みの WebSocket クライアントが導入されました。これにより、Node.js アプリケーションのリアルタイム通信が簡素化されます。[Node.js v22.4.0](https://github.com/nodejs/node/releases/tag/v22.4.0) リリースでは、WebSocket API が安定版としてマークされ、本番環境での使用が可能になりました。
 
-## What is a WebSocket
+## WebSocketとは
 
-[WebSocket](https://en.wikipedia.org/wiki/WebSocket) is a standardized communication protocol that enables simultaneous two-way communication over a single TCP connection. It has full-duplex or bi-directional capabilities that distinguishes it from HTTP. WebSocket achieves HTTP compatibility by using the HTTP Upgrade header to transition protocols. It allows servers to push content to clients without initial requests and maintains open connections for continuous message exchange, making it ideal for real-time data transfer with lower overhead than alternatives like HTTP polling. WebSocket communications typically occur over TCP ports 443 (secured) or 80 (unsecured), helping bypass firewall restrictions on non-web connections. The protocol defines its own URI schemes (ws:// and wss://) for unencrypted and encrypted connections respectively and supported by all major browsers.
+[WebSocket](https://en.wikipedia.org/wiki/WebSocket)は、単一のTCP接続で同時双方向通信を可能にする標準化された通信プロトコルです。全二重（双方向）通信が可能で、HTTPとは異なります。WebSocketは、プロトコル移行にHTTP Upgradeヘッダーを使用することでHTTPとの互換性を実現しています。サーバーは初期リクエストなしでクライアントにコンテンツをプッシュし、継続的なメッセージ交換のために接続を維持できるため、HTTPポーリングなどの代替手段よりもオーバーヘッドを抑えながら、リアルタイムのデータ転送に最適です。WebSocket通信は通常、TCPポート443（セキュリティ保護済み）または80（セキュリティ保護なし）を介して行われるため、Web以外の接続におけるファイアウォールの制限を回避できます。このプロトコルは、暗号化されていない接続と暗号化された接続にそれぞれ独自のURIスキーム（ws://とwss://）を定義しており、すべての主要ブラウザでサポートされています。
 
-## Native WebSocket Client
+## ネイティブ WebSocket クライアント
 
-Node.js can now act as a WebSocket `client` without relying on external libraries like [ws](https://www.npmjs.com/package/ws) or [socket.io](https://www.npmjs.com/package/socket.io) for client connections. This allows Node.js applications to initiate and manage outgoing WebSocket connections directly, streamlining tasks such as connecting to real-time data feeds or interacting with other WebSocket servers. Users can now create a websocket client connection with the standard [new WebSocket()](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/WebSocket) constructor.
+Node.js は、クライアント接続に [ws](https://www.npmjs.com/package/ws) や [socket.io](https://www.npmjs.com/package/socket.io) などの外部ライブラリに依存することなく、WebSocket クライアントとして動作できるようになりました。これにより、Node.js アプリケーションは送信 WebSocket 接続を直接開始および管理できるようになり、リアルタイムデータフィードへの接続や他の WebSocket サーバーとのやり取りといったタスクを効率化できます。ユーザーは、標準の [new WebSocket()](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/WebSocket) コンストラクターを使用して、WebSocket クライアント接続を作成できるようになりました。
 
-Building on the above, let's add more practical examples to demonstrate the new WebSocket client functionality that demonstrates basic use-cases.
+上記の内容を基に、基本的なユースケースを示す新しい WebSocket クライアント機能のより実用的な例を追加してみましょう。
 
-### Basic Connection and Message Handling
+### 基本的な接続とメッセージの処理
 
 ```javascript
 // Creates a new WebSocket connection to the specified URL.
@@ -49,7 +49,7 @@ socket.addEventListener('error', error => {
 });
 ```
 
-### Sending and Receiving JSON Data
+### JSONデータの送受信
 
 ```javascript
 const socket = new WebSocket('ws://localhost:8080');
@@ -70,14 +70,14 @@ socket.addEventListener('message', event => {
 });
 ```
 
-The `javascript` code above demonstrates sending and receiving [JSON](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Scripting/JSON) data, which is common in WebSocket applications. It uses [JSON.stringify()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify) to convert JavaScript objects to JSON strings before sending. And converts the received string back to a JavaScript object with [JSON.parse()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse). Finally, it includes error handling for JSON parsing.
+上記の `javascript` コードは、WebSocket アプリケーションで一般的に使用される [JSON](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Scripting/JSON) データの送受信を示しています。送信前に [JSON.stringify()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify) を使用して JavaScript オブジェクトを JSON 文字列に変換します。また、受信した文字列を [JSON.parse()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse) を使用して JavaScript オブジェクトに戻します。最後に、JSON 解析のエラー処理も含まれています。
 
-This offers reduced dependency management and improved compatibility. Developers can avoid installing and maintaining additional WebSocket client libraries. The built-in implementation aligns with modern web standards, ensuring better interoperability. The enhancement focuses on the client-side of WebSocket communication, enabling Node.js to act as a WebSocket client.
+これにより、依存関係の管理が軽減され、互換性が向上します。開発者は追加の WebSocket クライアントライブラリのインストールとメンテナンスを回避できます。組み込み実装は最新の Web 標準に準拠しており、相互運用性が向上します。この機能強化は、WebSocket 通信のクライアント側に重点を置いており、Node.js が WebSocket クライアントとして機能できるようになります。
 
-## Important to Understand
+## 理解しておくべき重要な点
 
-Node.js v22 **does not** provide a built-in native WebSocket server implementation. To create a WebSocket server that accepts incoming connections from web browsers or other clients, one still need to use libraries like [ws](https://www.npmjs.com/package/ws) or [socket.io](https://www.npmjs.com/package/socket.io). This means that while Node.js can now easily **connect** to WebSocket servers, it still requires external tools to **become** a WebSocket server.
+Node.js v22 は、ネイティブ WebSocket サーバーの実装を**提供していません**。Web ブラウザやその他のクライアントからの受信接続を受け入れる WebSocket サーバーを作成するには、[ws](https://www.npmjs.com/package/ws) や [socket.io](https://www.npmjs.com/package/socket.io) などのライブラリを使用する必要があります。つまり、Node.js は WebSocket サーバーに簡単に **接続** できるようになりましたが、WebSocket サーバーとして **動作** するには依然として外部ツールが必要です。
 
-## In Summary
+## まとめ
 
-Node.js v22 empowers applications to seamlessly interact with WebSocket servers as `clients`, but the creation of WebSocket servers within Node.js remains dependent on established libraries. This distinction is crucial for developers to understand when implementing real-time communication in their Node.js projects.
+Node.js v22では、アプリケーションがWebSocketサーバーと「クライアント」としてシームレスにやり取りできるようになりましたが、Node.js内でのWebSocketサーバーの作成は依然として既存のライブラリに依存しています。開発者がNode.jsプロジェクトでリアルタイム通信を実装する際には、この違いを理解することが重要です。

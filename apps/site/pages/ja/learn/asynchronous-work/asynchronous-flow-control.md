@@ -4,15 +4,15 @@ layout: learn
 authors: aug2uag, ovflowd
 ---
 
-# Asynchronous flow control
+# 非同期フロー制御
 
-> The material in this post is heavily inspired by [Mixu's Node.js Book](http://book.mixu.net/node/ch7.html).
+> この投稿の内容は、[Mixu の Node.js ブック](http://book.mixu.net/node/ch7.html) に大きく影響を受けています。
 
-At its core, JavaScript is designed to be non-blocking on the "main" thread, this is where views are rendered. You can imagine the importance of this in the browser. When the main thread becomes blocked it results in the infamous "freezing" that end users dread, and no other events can be dispatched resulting in the loss of data acquisition, for example.
+JavaScript は、ビューがレンダリングされる「メイン」スレッドではノンブロッキングになるように設計されています。ブラウザにおいてこれがいかに重要であるかは想像に難くないでしょう。メインスレッドがブロックされると、エンドユーザーが恐れる悪名高い「フリーズ」が発生し、他のイベントがディスパッチされなくなり、例えばデータ取得が失われるといった事態に陥ります。
 
-This creates some unique constraints that only a functional style of programming can cure. This is where callbacks come in to the picture.
+これは、関数型プログラミングスタイルでしか解決できない特有の制約を生み出します。ここでコールバックが役立ちます。
 
-However, callbacks can become challenging to handle in more complicated procedures. This often results in "callback hell" where multiple nested functions with callbacks make the code more challenging to read, debug, organize, etc.
+しかし、コールバックは複雑な処理では扱いが困難になることがあります。その結果、「コールバック地獄」に陥ることがよくあります。コールバックを含む複数のネストされた関数によって、コードの可読性、デバッグ、整理などが困難になるのです。
 
 ```js
 async1(function (input, result1) {
@@ -28,23 +28,23 @@ async1(function (input, result1) {
 });
 ```
 
-Of course, in real life there would most likely be additional lines of code to handle `result1`, `result2`, etc., thus, the length and complexity of this issue usually results in code that looks much more messy than the example above.
+もちろん、現実世界では `result1`、`result2` などを処理するために追加のコード行が必要になる可能性が高いため、この問題の長さと複雑さにより、上記の例よりもはるかに複雑なコードになることがよくあります。
 
-**This is where _functions_ come in to great use. More complex operations are made up of many functions:**
+**ここで _関数_ が大いに役立ちます。より複雑な操作は、多くの関数で構成されます。**
 
-1. initiator style / input
-2. middleware
-3. terminator
+1. イニシエータースタイル / 入力
+2. ミドルウェア
+3. ターミネータ
 
-**The "initiator style / input" is the first function in the sequence. This function will accept the original input, if any, for the operation. The operation is an executable series of functions, and the original input will primarily be:**
+**「イニシエータースタイル / 入力」は、シーケンスの最初の関数です。この関数は、操作の元の入力（存在する場合）を受け取ります。操作は実行可能な一連の関数であり、元の入力は主に次のようになります。**
 
-1. variables in a global environment
-2. direct invocation with or without arguments
-3. values obtained by file system or network requests
+1. グローバル環境内の変数
+2. 引数ありまたはなしの直接呼び出し
+3. ファイルシステムまたはネットワーク要求によって取得された値
 
-Network requests can be incoming requests initiated by a foreign network, by another application on the same network, or by the app itself on the same or foreign network.
+ネットワーク要求とは、外部ネットワーク、同じネットワーク上の別のアプリケーション、または同じネットワークまたは外部ネットワーク上のアプリケーション自身によって開始された着信要求のことです。
 
-A middleware function will return another function, and a terminator function will invoke the callback. The following illustrates the flow to network or file system requests. Here the latency is 0 because all these values are available in memory.
+ミドルウェア関数は別の関数を返し、ターミネータ関数はコールバックを呼び出します。以下は、ネットワークまたはファイルシステムリクエストへのフローを示しています。これらの値はすべてメモリ内で利用可能なため、レイテンシは0です。
 
 ```js
 function final(someInput, callback) {
@@ -66,20 +66,20 @@ function initiate() {
 initiate();
 ```
 
-## State management
+## 状態管理
 
-Functions may or may not be state dependent. State dependency arises when the input or other variable of a function relies on an outside function.
+関数は状態に依存する場合とそうでない場合があります。状態依存性は、関数の入力やその他の変数が外部関数に依存している場合に発生します。
 
-**In this way there are two primary strategies for state management:**
+**このように、状態管理には主に2つの戦略があります。**
 
-1. passing in variables directly to a function, and
-2. acquiring a variable value from a cache, session, file, database, network, or other outside source.
+1. 関数に変数を直接渡す。
+2. キャッシュ、セッション、ファイル、データベース、ネットワーク、その他の外部ソースから変数の値を取得する。
 
-Note, I did not mention global variable. Managing state with global variables is often a sloppy anti-pattern that makes it difficult or impossible to guarantee state. Global variables in complex programs should be avoided when possible.
+グローバル変数については触れていません。グローバル変数による状態管理は、しばしばずさんなアンチパターンとなり、状態の保証が困難、あるいは不可能になります。複雑なプログラムでは、可能な限りグローバル変数の使用を避けるべきです。
 
-## Control flow
+## 制御フロー
 
-If an object is available in memory, iteration is possible, and there will not be a change to control flow:
+オブジェクトがメモリ上で利用可能な場合、反復処理が可能であり、制御フローは変更されません。
 
 ```js
 function getSong() {
@@ -110,7 +110,7 @@ const song = getSong();
 singSong(song);
 ```
 
-However, if the data exists outside of memory the iteration will no longer work:
+ただし、データがメモリ外に存在する場合、反復は機能しなくなります。
 
 ```js
 function getSong() {
@@ -144,13 +144,13 @@ singSong(song);
 // Uncaught Error: song is '' empty, FEED ME A SONG!
 ```
 
-Why did this happen? `setTimeout` instructs the CPU to store the instructions elsewhere on the bus, and instructs that the data is scheduled for pickup at a later time. Thousands of CPU cycles pass before the function hits again at the 0 millisecond mark, the CPU fetches the instructions from the bus and executes them. The only problem is that song ('') was returned thousands of cycles prior.
+なぜこのようなことが起こるのでしょうか？`setTimeout` は、CPU に命令をバス上の別の場所に保存するよう指示し、データは後で取得するようにスケジュール設定します。関数が 0 ミリ秒の時点で再び実行され、CPU がバスから命令を取得して実行するまでに、数千 CPU サイクルが経過します。唯一の問題は、song ('') が数千サイクル前に返されていたことです。
 
-The same situation arises in dealing with file systems and network requests. The main thread simply cannot be blocked for an indeterminate period of time-- therefore, we use callbacks to schedule the execution of code in time in a controlled manner.
+ファイルシステムやネットワーク要求の処理でも同じ状況が発生します。メインスレッドを不確定な時間ブロックすることはできません。そのため、コールバックを使用して、制御された方法で時間内にコードの実行をスケジュールします。
 
-You will be able to perform almost all of your operations with the following 3 patterns:
+ほぼすべての操作は、次の 3 つのパターンで実行できます。
 
-1. **In series:** functions will be executed in a strict sequential order, this one is most similar to `for` loops.
+1. **直列:** 関数は厳密に順番に実行されます。これは `for` ループに最も似ています。
 
 ```js
 // operations defined elsewhere and ready to execute
@@ -180,7 +180,7 @@ function serialProcedure(operation) {
 serialProcedure(operations.shift());
 ```
 
-2. **Limited in series:** functions will be executed in a strict sequential order, but with a limit on the number of executions. Useful when you need to process a large list but with a cap on the number of items successfully processed.
+2. **連続実行制限:** 関数は厳密に順番に実行されますが、実行回数には制限があります。これは、大きなリストを処理する必要があるものの、正常に処理できる項目の数に上限を設けたい場合に便利です。
 
 ```js
 let successCount = 0;
@@ -229,7 +229,7 @@ function sendOneMillionEmailsOnly() {
 sendOneMillionEmailsOnly();
 ```
 
-3. **Full parallel:** when ordering is not an issue, such as emailing a list of 1,000,000 email recipients.
+3. **完全な並列:** 1,000,000 人のメール受信者のリストにメールを送信する場合など、順序が問題にならない場合。
 
 ```js
 let count = 0;
@@ -284,4 +284,4 @@ recipients.forEach(function (recipient) {
 });
 ```
 
-Each has its own use cases, benefits, and issues you can experiment and read about in more detail. Most importantly, remember to modularize your operations and use callbacks! If you feel any doubt, treat everything as if it were middleware!
+それぞれに独自のユースケース、メリット、そして問題点があり、実際に試したり、詳細を読んだりすることができます。最も重要なのは、操作をモジュール化し、コールバックを使用することです。少しでも疑問を感じたら、すべてをミドルウェアとして扱ってください。

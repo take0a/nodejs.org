@@ -4,37 +4,37 @@ layout: learn
 authors: ovflowd
 ---
 
-# ECMAScript 2015 (ES6) and beyond
+# ECMAScript 2015 (ES6) 以降
 
-Node.js is built against modern versions of [V8](https://v8.dev/). By keeping up-to-date with the latest releases of this engine, we ensure new features from the [JavaScript ECMA-262 specification](http://www.ecma-international.org/publications/standards/Ecma-262.htm) are brought to Node.js developers in a timely manner, as well as continued performance and stability improvements.
+Node.js は最新バージョンの [V8](https://v8.dev/) をベースに構築されています。このエンジンの最新リリースを常に最新の状態に保つことで、[JavaScript ECMA-262 仕様](http://www.ecma-international.org/publications/standards/Ecma-262.htm) の新機能を Node.js 開発者にタイムリーに提供し、パフォーマンスと安定性を継続的に向上させています。
 
-All ECMAScript 2015 (ES6) features are split into three groups for **shipping**, **staged**, and **in progress** features:
+ECMAScript 2015 (ES6) のすべての機能は、**リリース済み**、**ステージング済み**、**開発中** の3つのグループに分けられます。
 
-- All **shipping** features, which V8 considers stable, are turned **on by default on Node.js** and do **NOT** require any kind of runtime flag.
-- **Staged** features, which are almost-completed features that are not considered stable by the V8 team, require a runtime flag: `--harmony`.
-- **In progress** features can be activated individually by their respective harmony flag, although this is highly discouraged unless for testing purposes. Note: these flags are exposed by V8 and will potentially change without any deprecation notice.
+- V8 が安定しているとみなすすべての **リリース済み** 機能は、Node.js ではデフォルトで有効になっており、いかなるランタイムフラグも必要ありません。
+- V8 チームによって安定していない、ほぼ完成している機能である **ステージング済み** 機能には、ランタイムフラグ `--harmony` が必要です。
+- **開発中** 機能は、それぞれの harmony フラグによって個別に有効化できますが、テスト目的以外では使用しないことを強くお勧めします。注: これらのフラグは V8 によって公開されており、廃止予定の通知なしに変更される可能性があります。
 
-### Which features ship with which Node.js version by default?
+### どの機能がどの Node.js バージョンにデフォルトで付属していますか？
 
-The website [node.green](https://node.green/) provides an excellent overview over supported ECMAScript features in various versions of Node.js, based on kangax's compat-table.
+ウェブサイト [node.green](https://node.green/) では、kangax の互換性テーブルに基づいて、Node.js のさまざまなバージョンでサポートされている ECMAScript 機能の概要をわかりやすく説明しています。
 
-### Which features are in progress?
+### 現在開発中の機能はどれですか？
 
-New features are constantly being added to the V8 engine. Generally speaking, expect them to land on a future Node.js release, although timing is unknown.
+V8 エンジンには新しい機能が継続的に追加されています。一般的には、将来の Node.js リリースに搭載される予定ですが、時期は未定です。
 
-You may list all the _in progress_ features available on each Node.js release by grepping through the `--v8-options` argument. Please note that these are incomplete and possibly broken features of V8, so use them at your own risk:
+`--v8-options` 引数を grep することで、各 Node.js リリースで利用可能なすべての _進行中_ 機能の一覧を確認できます。これらの機能は V8 の未完成な機能であり、不具合がある可能性がありますので、自己責任でご利用ください。
 
 ```bash
 node --v8-options | grep "in progress"
 ```
 
-### I have my infrastructure set up to leverage the --harmony flag. Should I remove it?
+### --harmony フラグを活用するようにインフラストラクチャを設定しています。このフラグを削除すべきでしょうか？
 
-The current behavior of the `--harmony` flag on Node.js is to enable **staged** features only. After all, it is now a synonym of `--es_staging`. As mentioned above, these are completed features that have not been considered stable yet. If you want to play safe, especially on production environments, consider removing this runtime flag until it ships by default on V8 and, consequently, on Node.js. If you keep this enabled, you should be prepared for further Node.js upgrades to break your code if V8 changes their semantics to more closely follow the standard.
+Node.js における `--harmony` フラグの現在の動作は、**ステージングされた** 機能のみを有効にすることです。結局のところ、これは現在 `--es_staging` と同義です。前述のように、これらはまだ安定していない完成済みの機能です。特に本番環境で安全を確保したい場合は、このランタイムフラグが V8 で、ひいては Node.js でもデフォルトでリリースされるまで、このフラグを削除することを検討してください。このフラグを有効にしたままにしておくと、V8 が標準に近づくようにセマンティクスを変更した場合、Node.js の今後のアップグレードでコードが動作しなくなる可能性があることにご注意ください。
 
-### How do I find which version of V8 ships with a particular version of Node.js?
+### 特定のバージョンの Node.js に同梱されている V8 のバージョンを確認するにはどうすればよいですか？
 
-Node.js provides a simple way to list all dependencies and respective versions that ship with a specific binary through the `process` global object. In case of the V8 engine, type the following in your terminal to retrieve its version:
+Node.js では、`process` グローバルオブジェクトを通じて、特定のバイナリに同梱されているすべての依存関係とそのバージョンを一覧表示する簡単な方法が提供されています。V8 エンジンの場合、ターミナルで次のコマンドを入力するとバージョンを取得できます。
 
 ```bash
 node -p process.versions.v8

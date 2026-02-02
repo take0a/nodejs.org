@@ -3,24 +3,18 @@ title: Live Debugging
 layout: learn
 ---
 
-# Live Debugging
+# ライブデバッグ
 
-In this document you can learn about how to live debug a Node.js process.
+このドキュメントでは、Node.js プロセスのライブデバッグの方法について学習します。
 
-## My application doesn’t behave as expected
+## アプリケーションが期待どおりに動作しない
 
-### Symptoms
+### 症状
 
-The user may observe that the application doesn’t provide the expected output
-for certain inputs, for example, an HTTP server returns a JSON response where
-certain fields are empty. Various things can go wrong in the process but in this
-use case, we are mainly focused on the application logic and its correctness.
+アプリケーションが特定の入力に対して期待どおりの出力を返さないことに気付く場合があります。例えば、HTTP サーバーが特定のフィールドが空の JSON レスポンスを返すなどです。プロセスではさまざまな問題が発生する可能性がありますが、このユースケースでは、主にアプリケーションロジックとその正確性に焦点を当てます。
 
-### Debugging
+### デバッグ
 
-In this use case, the user would like to understand the code path that our
-application executes for a certain trigger like an incoming HTTP request. They
-may also want to step through the code and control the execution as well as
-inspect what values variables hold in memory.
+このユースケースでは、ユーザーは、HTTP リクエストの受信など、特定のトリガーに対してアプリケーションが実行するコードパスを把握したいと考えています。また、コードをステップ実行して実行を制御したり、メモリ内の変数の値を調べたりすることも考えられます。
 
-- [Using Inspector](/learn/diagnostics/live-debugging/using-inspector)
+- [Inspector の使用](/learn/diagnostics/live-debugging/using-inspector)

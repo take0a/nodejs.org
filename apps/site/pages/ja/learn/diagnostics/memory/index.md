@@ -3,55 +3,43 @@ title: Memory
 layout: learn
 ---
 
-# Memory
+# メモリ
 
-In this document you can learn about how to debug memory related issues.
+このドキュメントでは、メモリ関連の問題をデバッグする方法について説明します。
 
-## My process runs out of memory
+## プロセスがメモリ不足に陥りました
 
-Node.js _(JavaScript)_ is a garbage collected language, so having memory
-leaks is possible through retainers. As Node.js applications are usually
-multi-tenant, business critical, and long-running, providing an accessible and
-efficient way of finding a memory leak is essential.
+Node.js (JavaScript) はガベージコレクション機能を持つ言語であるため、リテイナーを介してメモリリークが発生する可能性があります。Node.js アプリケーションは通常、マルチテナントで、ビジネスクリティカルかつ長時間実行されるため、メモリリークを検出するためのアクセスしやすく効率的な方法を提供することが不可欠です。
 
-You can also fine-tune memory to get specific results. Check out
-[Understanding and Tuning Memory](/learn/diagnostics/memory/understanding-and-tuning-memory) for more details.
+メモリを微調整することで、特定の結果を得ることもできます。詳細については、[メモリの理解とチューニング](/learn/diagnostics/memory/understanding-and-tuning-mery)をご覧ください。
 
-### Symptoms
+### 症状
 
-The user observes continuously increasing memory usage _(can be fast or slow,
-over days or even weeks)_ then sees the process crashing and restarting by the
-process manager. The process is maybe running slower than before and the
-restarts cause some requests to fail _(load balancer responds with 502)_.
+メモリ使用量が継続的に増加していることに気付きました（増加の度合いは、数日または数週間にわたり、速い場合も遅い場合もあります）。その後、プロセスがクラッシュし、プロセスマネージャによって再起動されます。プロセスの実行速度が以前よりも低下している可能性があり、再起動によって一部のリクエストが失敗します（ロードバランサが502で応答します）。
 
-### Side Effects
+### 副作用
 
-- Process restarts due to the memory exhaustion and requests are dropped
-  on the floor
-- Increased GC activity leads to higher CPU usage and slower response time
-  - GC blocking the Event Loop causing slowness
-- Increased memory swapping slows down the process (GC activity)
-- May not have enough available memory to get a Heap Snapshot
+- メモリ枯渇によりプロセスが再起動し、リクエストが破棄される
+- GCアクティビティの増加によりCPU使用率が増加し、応答時間が遅くなる
+  - GCがイベントループをブロックするため、速度低下が発生する
+- メモリスワップの増加により、プロセス（GCアクティビティ）が遅くなる
+- ヒープスナップショットを取得するのに十分なメモリが確保できない可能性がある
 
-## My process utilizes memory inefficiently
+## プロセスがメモリを効率的に使用していません
 
-### Symptoms
+### 症状
 
-The application uses an unexpected amount of memory and/or we observe elevated
-garbage collector activity.
+アプリケーションが想定外の量のメモリを使用している、またはガベージコレクタのアクティビティが増加している。
 
-### Side Effects
+### 副作用
 
-- An elevated number of page faults
-- Higher GC activity and CPU usage
+- ページフォールトの増加
+- GCアクティビティとCPU使用率の増加
 
-## Debugging
+## デバッグ
 
-Most memory issues can be solved by determining how much space our specific
-type of objects take and what variables are preventing them from being garbage
-collected. It can also help to know the allocation pattern of our program over
-time.
+メモリに関するほとんどの問題は、特定の種類のオブジェクトがどれだけのメモリを占有しているか、そしてそれらのオブジェクトがガベージコレクションされない原因となっている変数を特定することで解決できます。また、プログラムのメモリ割り当てパターンを経時的に把握することも役立ちます。
 
-- [Using Heap Profiler](/learn/diagnostics/memory/using-heap-profiler/)
-- [Using Heap Snapshot](/learn/diagnostics/memory/using-heap-snapshot/)
-- [GC Traces](/learn/diagnostics/memory/using-gc-traces)
+- [ヒーププロファイラの使用](/learn/diagnostics/memory/using-heap-profiler/)
+- [ヒープスナップショットの使用](/learn/diagnostics/memory/using-heap-snapshot/)
+- [GCトレース](/learn/diagnostics/memory/using-gc-traces)

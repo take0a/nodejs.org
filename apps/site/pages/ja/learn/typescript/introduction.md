@@ -4,19 +4,19 @@ layout: learn
 authors: sbielenica, ovflowd, vaishnav-mk, AugustinMauroy
 ---
 
-# Introduction to TypeScript
+# TypeScript 入門
 
-## What is TypeScript
+## TypeScript とは
 
-**[TypeScript](https://www.typescriptlang.org)** is an open-source language maintained and developed by Microsoft.
+**[TypeScript](https://www.typescriptlang.org)** は、Microsoft が保守・開発しているオープンソース言語です。
 
-Basically, TypeScript adds additional syntax to JavaScript to support a tighter integration with your editor. Catch errors early in your editor or in your CI/CD pipeline, and write more maintainable code.
+基本的に、TypeScript は JavaScript に構文を追加することで、エディターとの緊密な統合をサポートします。エディター内や CI/CD パイプラインでエラーを早期に検出し、より保守性の高いコードを作成できます。
 
-We can talk about other TypeScript benefits later, let's see some examples now!
+TypeScript のその他のメリットについては後ほど詳しく説明しますので、まずはいくつか例を見てみましょう。
 
-## First TypeScript code
+## 最初の TypeScript コード
 
-Take a look at this code snippet and then we can unpack it together:
+このコードスニペットを見て、一緒に解説しましょう。
 
 <!--
   Maintainers note: this code is duplicated in the next article, please keep them in sync
@@ -40,17 +40,17 @@ const justine = {
 const isJustineAnAdult = isAdult(justine);
 ```
 
-The first part (with the `type` keyword) is responsible for declaring our custom object type representing users. Later we utilize this newly created type to create the function `isAdult` that accepts one argument of type `User` and returns a `boolean`. After this, we create `justine`, our example data that can be used for calling the previously defined function. Finally, we create a new variable with information on whether `justine` is an adult.
+最初の部分（キーワード `type` を使用）は、ユーザーを表すカスタムオブジェクト型の宣言を担当します。その後、この新しく作成された型を利用して、`User` 型の引数を1つ受け取り、`boolean` を返す関数 `isAdult` を作成します。その後、先ほど定義した関数を呼び出すために使用できるサンプルデータである `justine` を作成します。最後に、`justine` が成人かどうかの情報を格納する新しい変数を作成します。
 
-There are additional things about this example that you should know. Firstly, if we do not comply with the declared types, TypeScript will inform us that something is wrong and prevent misuse. Secondly, not everything must be typed explicitly—TypeScript infers types for us. For example, the variable `isJustineAnAdult` is of type `boolean` even if we didn't type it explicitly, and `justine` would be a valid argument for our function even though we didn't declare this variable as of `User` type.
+この例について、他に知っておくべきことがあります。まず、宣言された型に準拠していない場合、TypeScript は誤りを通知し、誤用を防止します。次に、すべてを明示的に型指定する必要はありません。TypeScript が型を推論します。例えば、変数 `isJustineAnAdult` は、明示的に型指定していなくても `boolean` 型になります。また、`justine` は、`User` 型として宣言していなくても、関数の有効な引数になります。
 
-## What does TypeScript consist of?
+## TypeScript は何で構成されていますか？
 
-TypeScript consists of two main components: the code itself and type definitions.
+TypeScript は、コード自体と型定義という2つの主要なコンポーネントで構成されています。
 
-### TypeScript Code
+### TypeScript コード
 
-The code part is regular JavaScript with additional TypeScript-specific syntax for type annotations. When TypeScript code is compiled, all the TypeScript-specific parts are removed, resulting in clean JavaScript that can run in any environment. For example:
+コード部分は、型アノテーション用の TypeScript 固有の構文が追加された通常の JavaScript です。TypeScript コードをコンパイルすると、TypeScript 固有の部分はすべて削除され、あらゆる環境で実行できるクリーンな JavaScript になります。例:
 
 ```ts displayName="example.ts"
 function greet(name: string) {
@@ -58,17 +58,17 @@ function greet(name: string) {
 }
 ```
 
-### Type Definitions
+### 型定義
 
-Type definitions describe the shape of existing JavaScript code. They are usually stored in `.d.ts` files and don't contain any actual implementation—they only describe the types. These definitions are essential for interoperability with JavaScript: code is not usually distributed as TypeScript, but instead transpiled to JavaScript that includes sidecar type definition files.
+型定義は、既存の JavaScript コードの形状を記述します。通常、`.d.ts` ファイルに保存され、実際の実装は含まれず、型のみを記述します。これらの定義は、JavaScript との相互運用性にとって不可欠です。コードは通常、TypeScript として配布されるのではなく、サイドカー型定義ファイルを含む JavaScript にトランスパイルされます。
 
-For example, when you use Node.js with TypeScript, you'll need type definitions for Node.js APIs. This is available via `@types/node`. Install it using:
+例えば、Node.js を TypeScript と併用する場合、Node.js API の型定義が必要になります。これは `@types/node` から入手できます。以下のコマンドでインストールしてください。
 
 ```bash
 npm add --save-dev @types/node
 ```
 
-These type definitions allow TypeScript to understand Node.js APIs and provide proper type checking and autocompletion when you use functions like `fs.readFile` or `http.createServer`. For example:
+これらの型定義により、TypeScript は Node.js API を理解し、`fs.readFile` や `http.createServer` などの関数を使用する際に適切な型チェックと自動補完を提供できるようになります。例えば、次のようになります。
 
 ```ts
 // @errors: 2345
@@ -77,13 +77,13 @@ import { resolve } from 'node:path';
 resolve(123, 456);
 ```
 
-Many popular JavaScript libraries have their type definitions available under the `@types` namespace, maintained by the DefinitelyTyped community. This enables seamless integration of existing JavaScript libraries with TypeScript projects.
+多くの人気JavaScriptライブラリは、DefinitelyTypedコミュニティによってメンテナンスされている`@types`名前空間で型定義を利用できます。これにより、既存のJavaScriptライブラリをTypeScriptプロジェクトにシームレスに統合できます。
 
-### Transform Capabilities
+### 変換機能
 
-TypeScript also includes powerful transformation capabilities, particularly for JSX (used in React and similar frameworks). The TypeScript compiler can transform JSX syntax into regular JavaScript, similar to how Babel works. While we won't cover these transformation features in these articles, it's worth noting that TypeScript isn't only a tool for type checking—it's also a build tool for transforming modern JavaScript syntax into compatible versions for different environments.
+TypeScript には、特に React などのフレームワークで使用される JSX 向けの強力な変換機能も備わっています。TypeScript コンパイラは、Babel と同様に、JSX 構文を通常の JavaScript に変換できます。この記事ではこれらの変換機能については取り上げませんが、TypeScript は型チェックツールであるだけでなく、最新の JavaScript 構文をさまざまな環境に対応可能なバージョンに変換するビルドツールでもあることを覚えておくとよいでしょう。
 
-## How to run TypeScript code
+## TypeScript コードの実行方法
 
-Okay, so we have some TypeScript code. Now how do we run it?
-There are few possible ways to run TypeScript code, we will cover all of them in the next articles.
+さて、TypeScript コードができました。では、どのように実行すればいいのでしょうか？
+TypeScript コードを実行する方法はいくつかありますが、次の記事ですべて取り上げます。

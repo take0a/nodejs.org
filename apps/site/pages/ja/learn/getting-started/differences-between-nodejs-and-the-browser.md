@@ -4,24 +4,24 @@ layout: learn
 authors: flaviocopes, ollelauribostrom, MylesBorins, fhemberger, LaRuaNa, ahmadawais, karlhorky
 ---
 
-# Differences between Node.js and the Browser
+# Node.js とブラウザの違い
 
-Both the browser and Node.js use JavaScript as their programming language. Building apps that run in the browser is completely different from building a Node.js application. Despite the fact that it's always JavaScript, there are some key differences that make the experience radically different.
+ブラウザと Node.js はどちらもプログラミング言語として JavaScript を使用します。ブラウザで動作するアプリの開発は、Node.js アプリケーションの開発とは全く異なります。どちらも JavaScript を使用するという点では変わりませんが、体験を根本的に変える重要な違いがいくつかあります。
 
-From the perspective of a frontend developer who extensively uses JavaScript, Node.js apps bring with them a huge advantage: the comfort of programming everything - the frontend and the backend - in a single language.
+JavaScript を多用するフロントエンド開発者にとって、Node.js アプリは大きなメリットをもたらします。それは、フロントエンドとバックエンドのすべてを単一の言語でプログラミングできるという利便性です。
 
-You have a huge opportunity because we know how hard it is to fully, deeply learn a programming language, and by using the same language to perform all your work on the web - both on the client and on the server, you're in a unique position of advantage.
+プログラミング言語を完全に深く学ぶことがどれほど難しいかは私たちも理解しています。だからこそ、Node.js には大きなチャンスがあります。クライアントとサーバーの両方で、Web 上のすべての作業を同じ言語で実行できるからです。
 
-> **What changes is the ecosystem.**
+> **変わるのはエコシステムです。**
 
-In the browser, most of the time what you are doing is interacting with the DOM, or other Web Platform APIs like Cookies. Those do not exist in Node.js, of course. You don't have the `document`, `window` and all the other objects that are provided by the browser.
+ブラウザでは、ほとんどの場合、DOM や Cookie などの Web プラットフォーム API とのやり取りが行われます。もちろん、Node.js にはこれらの API は存在しません。`document`、`window`、そしてブラウザが提供するその他のオブジェクトは存在しません。
 
-And in the browser, we don't have all the nice APIs that Node.js provides through its modules, like the filesystem access functionality.
+また、ブラウザでは、ファイルシステムアクセス機能など、Node.js がモジュールを通じて提供する優れた API も利用できません。
 
-Another big difference is that in Node.js you control the environment. Unless you are building an open source application that anyone can deploy anywhere, you know which version of Node.js you will run the application on. Compared to the browser environment, where you don't get the luxury to choose what browser your visitors will use, this is very convenient.
+もう一つの大きな違いは、Node.js では環境を制御できることです。誰でもどこにでもデプロイできるオープンソースアプリケーションを開発している場合を除き、アプリケーションを実行する Node.js のバージョンは決まっています。訪問者が使用するブラウザを選択できないブラウザ環境と比べると、これは非常に便利です。
 
-This means that you can write all the modern ES2015+ JavaScript that your Node.js version supports. Since JavaScript moves so fast, but browsers can be a bit slow to upgrade, sometimes on the web you are stuck with using older JavaScript / ECMAScript releases. You can use Babel to transform your code to be ES5-compatible before shipping it to the browser, but in Node.js, you won't need that.
+つまり、Node.js のバージョンがサポートする最新の ES2015+ JavaScript をすべて記述できるということです。 JavaScript は非常に高速に動作しますが、ブラウザのアップグレードはやや遅いため、Web 上では古い JavaScript / ECMAScript リリースを使わざるを得ない場合があります。ブラウザに配信する前にコードを ES5 互換に変換するために Babel を使用できますが、Node.js ではそれは必要ありません。
 
-Another difference is that Node.js supports both the CommonJS and ES module systems (since Node.js v12), while in the browser, we are starting to see the ES Modules standard being implemented.
+もう一つの違いは、Node.js は CommonJS と ES モジュールシステムの両方をサポートしている点です (Node.js v12 以降)。一方、ブラウザでは ES モジュール標準の実装が始まっています。
 
-In practice, this means that you can use both `require()` and `import` in Node.js, while you are limited to `import` in the browser.
+実際には、これは Node.js では `require()` と `import` の両方が使用できるのに対し、ブラウザでは `import` のみ使用できることを意味します。

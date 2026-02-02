@@ -4,12 +4,12 @@ layout: learn
 authors: flaviocopes, MylesBorins, LaRuaNa, ahmadawais, ovflowd, marksist300
 ---
 
-# Understanding process.nextTick()
+# process.nextTick() を理解する
 
-As you try to understand the Node.js event loop, one important part of it is `process.nextTick()`.
-Every time the runtime calls back into JavaScript for an event, we call it a tick.
+Node.js のイベントループを理解する上で、重要な部分の一つが `process.nextTick()` です。
+ランタイムが JavaScript にイベントをコールバックするたびに、これを「ティック」と呼びます。
 
-When we pass a function to `process.nextTick()`, we instruct the engine to invoke this function immediately after the current operation completes, before moving to the next phase in the event loop:
+`process.nextTick()` に関数を渡すと、現在の操作が完了した直後に、イベントループの次のフェーズに進む前に、この関数を呼び出すようにエンジンに指示します。
 
 ```js
 process.nextTick(() => {
@@ -17,12 +17,12 @@ process.nextTick(() => {
 });
 ```
 
-The event loop is busy processing the current function code. When this operation ends, the JS engine runs all the functions passed to `nextTick` calls during that operation.
+イベントループは現在の関数コードを処理中です。この処理が終了すると、JS エンジンはその処理中に `nextTick` 呼び出しに渡されたすべての関数を実行します。
 
-It's the way we can tell the JS engine to process a function asynchronously (after the current function), but as soon as possible, not queue it.
+これは、JS エンジンに関数を非同期的に（現在の関数の後に）処理するよう指示する方法ですが、キューに入れるのではなく、できるだけ早く処理するように指示できます。
 
-Calling `setTimeout(() => {}, 0)` will execute the function at the end of next tick, much later than when using `nextTick()` which prioritizes the call and executes it just before the beginning of the next tick.
+`setTimeout(() => {}, 0)` を呼び出すと、関数は次のティックの終了時に実行されます。これは、呼び出しを優先して次のティックの開始直前に実行する `nextTick()` を使用する場合よりも大幅に遅くなります。
 
-Use `nextTick()` when you want to make sure that in the next event loop iteration that code is already executed.
+次のイベントループの反復処理でそのコードが既に実行されていることを確認したい場合は、`nextTick()` を使用します。
 
-To learn more about the order of execution and how the event loop works, check out [the dedicated article](https://nodejs.org/en/learn/asynchronous-work/event-loop-timers-and-nexttick)
+実行順序とイベントループの仕組みの詳細については、[関連記事](https://nodejs.org/en/learn/asynchronous-work/event-loop-timers-and-nexttick) をご覧ください。

@@ -3,222 +3,96 @@ title: How to work with Different Filesystems
 layout: learn
 ---
 
-# How to Work with Different Filesystems
+# 異なるファイルシステムの扱い方
 
-Node.js exposes many features of the filesystem. But not all filesystems are alike.
-The following are suggested best practices to keep your code simple and safe
-when working with different filesystems.
+Node.js はファイルシステムの多くの機能を公開しています。しかし、すべてのファイルシステムが同じ機能を持つわけではありません。
+以下は、異なるファイルシステムを扱う際にコードをシンプルかつ安全に保つためのベストプラクティスです。
 
-## Filesystem Behavior
+## ファイルシステムの動作
 
-Before you can work with a filesystem, you need to know how it behaves.
-Different filesystems behave differently and have more or less features than
-others: case sensitivity, case insensitivity, case preservation, Unicode form
-preservation, timestamp resolution, extended attributes, inodes, Unix
-permissions, alternate data streams etc.
+ファイルシステムを操作する前に、その動作を理解する必要があります。
+ファイルシステムによって動作は異なり、大文字と小文字の区別の有無、大文字と小文字の保存、Unicode形式の保存、タイムスタンプ解決、拡張属性、inode、Unixパーミッション、代替データストリームなど、機能の多寡も異なります。
 
-Be wary of inferring filesystem behavior from `process.platform`. For example,
-do not assume that because your program is running on Darwin that you are
-therefore working on a case-insensitive filesystem (HFS+), as the user may be
-using a case-sensitive filesystem (HFSX). Similarly, do not assume that because
-your program is running on Linux that you are therefore working on a filesystem
-which supports Unix permissions and inodes, as you may be on a particular
-external drive, USB or network drive which does not.
+`process.platform` からファイルシステムの動作を推測することは避けてください。例えば、プログラムが Darwin 上で動作しているからといって、大文字と小文字を区別しないファイルシステム (HFS+) 上で動作しているとは考えないでください。ユーザーが大文字と小文字を区別するファイルシステム (HFSX) を使用している可能性もあるからです。同様に、プログラムが Linux 上で動作しているからといって、Unixパーミッションとinodeをサポートするファイルシステム上で動作しているとは考えないでください。特定の外付けドライブ、USB、またはネットワークドライブでは、それらに対応していない可能性があります。
 
-The operating system may not make it easy to infer filesystem behavior, but all
-is not lost. Instead of keeping a list of every known filesystem and behavior
-(which is always going to be incomplete), you can probe the filesystem to see
-how it actually behaves. The presence or absence of certain features which are
-easy to probe, are often enough to infer the behavior of other features which
-are more difficult to probe.
+オペレーティングシステムによっては、ファイルシステムの動作を推測することが容易ではない場合もありますが、すべてが無駄になるわけではありません。既知のファイルシステムとその動作をすべてリストアップする（これは常に不完全なものになります）代わりに、ファイルシステムをプローブして実際の動作を確認することができます。プローブしやすい特定の機能の有無は、プローブが難しい他の機能の動作を推測するのに十分であることがよくあります。
 
-Remember that some users may have different filesystems mounted at various paths
-in the working tree.
+ユーザーによっては、作業ツリー内の異なるパスに異なるファイルシステムをマウントしている場合があることに注意してください。
 
-## Avoid a Lowest Common Denominator Approach
+## 最小公分母アプローチを避ける
 
-You might be tempted to make your program act like a lowest common denominator
-filesystem, by normalizing all filenames to uppercase, normalizing all filenames
-to NFC Unicode form, and normalizing all file timestamps to say 1-second
-resolution. This would be the lowest common denominator approach.
+すべてのファイル名を大文字に正規化し、すべてのファイル名をNFC Unicode形式に正規化し、すべてのファイルのタイムスタンプを例えば1秒単位に正規化することで、プログラムを最小公分母のファイルシステムのように動作させたいと思うかもしれません。これは、最小公分母アプローチです。
 
-Do not do this. You would only be able to interact safely with a filesystem
-which has the exact same lowest common denominator characteristics in every
-respect. You would be unable to work with more advanced filesystems in the way
-that users expect, and you would run into filename or timestamp collisions. You
-would most certainly lose and corrupt user data through a series of complicated
-dependent events, and you would create bugs that would be difficult if not
-impossible to solve.
+これは絶対にやめてください。あらゆる点で全く同じ最小公分母の特性を持つファイルシステムとのみ安全にやりとりできるようになります。ユーザーが期待する方法でより高度なファイルシステムを扱うことができなくなり、ファイル名やタイムスタンプの衝突が発生します。一連の複雑な依存関係によってユーザーデータが失われたり破損したりすることはほぼ確実で、解決が困難、あるいは不可能なバグが発生する可能性があります。
 
-What happens when you later need to support a filesystem that only has 2-second
-or 24-hour timestamp resolution? What happens when the Unicode standard advances
-to include a slightly different normalization algorithm (as has happened in the
-past)?
+後になって、タイムスタンプの解像度が2秒または24時間しかないファイルシステムをサポートする必要がある場合はどうなるでしょうか？ Unicode規格が進化し、（過去に起こったように）わずかに異なる正規化アルゴリズムが採用された場合、どうなるでしょうか？
 
-A lowest common denominator approach would tend to try to create a portable
-program by using only "portable" system calls. This leads to programs that are
-leaky and not in fact portable.
+最低限の共通項を求めるアプローチでは、「移植可能な」システムコールのみを使用して移植性の高いプログラムを作成しようとする傾向があります。しかし、これではプログラムに脆弱性が生じ、実際には移植性がありません。
 
-## Adopt a Superset Approach
+## スーパーセットアプローチを採用する
 
-Make the best use of each platform you support by adopting a superset approach.
-For example, a portable backup program should sync btimes (the created time of a
-file or folder) correctly between Windows systems, and should not destroy or
-alter btimes, even though btimes are not supported on Linux systems. The same
-portable backup program should sync Unix permissions correctly between Linux
-systems, and should not destroy or alter Unix permissions, even though Unix
-permissions are not supported on Windows systems.
+スーパーセットアプローチを採用することで、サポートする各プラットフォームを最大限に活用できます。
+例えば、ポータブルバックアッププログラムは、Windowsシステム間でbtime（ファイルまたはフォルダの作成時刻）を正しく同期する必要があります。また、Linuxシステムではbtimeがサポートされていないにもかかわらず、btimeを破壊したり変更したりしてはなりません。同じポータブルバックアッププログラムは、Linuxシステム間でUnixパーミッションを正しく同期する必要があります。また、WindowsシステムではUnixパーミッションがサポートされていないにもかかわらず、Unixパーミッションを破壊したり変更したりしてはなりません。
 
-Handle different filesystems by making your program act like a more advanced
-filesystem. Support a superset of all possible features: case-sensitivity,
-case-preservation, Unicode form sensitivity, Unicode form preservation, Unix
-permissions, high-resolution nanosecond timestamps, extended attributes etc.
+プログラムをより高度なファイルシステムのように動作させることで、異なるファイルシステムに対応できます。大文字と小文字の区別、大文字と小文字の保持、Unicode形式の区別、Unicode形式の保持、Unixパーミッション、高解像度ナノ秒タイムスタンプ、拡張属性など、考えられるすべての機能のスーパーセットをサポートします。
 
-Once you have case-preservation in your program, you can always implement
-case-insensitivity if you need to interact with a case-insensitive filesystem.
-But if you forego case-preservation in your program, you cannot interact safely
-with a case-preserving filesystem. The same is true for Unicode form
-preservation and timestamp resolution preservation.
+プログラムで大文字と小文字の保持を実装すれば、大文字と小文字を区別しないファイルシステムを扱う必要がある場合は、いつでも大文字と小文字を区別しない機能を実装できます。しかし、プログラムで大文字と小文字の区別を省略すると、大文字と小文字の区別を保持するファイルシステムと安全にやりとりすることはできません。Unicode形式の区別やタイムスタンプ解像度の区別についても同様です。
 
-If a filesystem provides you with a filename in a mix of lowercase and
-uppercase, then keep the filename in the exact case given. If a filesystem
-provides you with a filename in mixed Unicode form or NFC or NFD (or NFKC or
-NFKD), then keep the filename in the exact byte sequence given. If a filesystem
-provides you with a millisecond timestamp, then keep the timestamp in
-millisecond resolution.
+ファイルシステムが小文字と大文字が混在したファイル名を提供する場合は、ファイル名を指定されたとおりに正確に大文字と小文字で保持してください。ファイルシステムがUnicode形式、NFC、NFD（またはNFKC、NFKD）が混在したファイル名を提供する場合は、ファイル名を指定されたとおりに正確にバイトシーケンスで保持してください。ファイルシステムがミリ秒単位のタイムスタンプを提供する場合は、タイムスタンプをミリ秒単位に保持してください。
 
-When you work with a lesser filesystem, you can always downsample appropriately,
-with comparison functions as required by the behavior of the filesystem on which
-your program is running. If you know that the filesystem does not support Unix
-permissions, then you should not expect to read the same Unix permissions you
-write. If you know that the filesystem does not preserve case, then you should
-be prepared to see `ABC` in a directory listing when your program creates `abc`.
-But if you know that the filesystem does preserve case, then you should consider
-`ABC` to be a different filename to `abc`, when detecting file renames or if the
-filesystem is case-sensitive.
+より低レベルのファイルシステムを扱う場合は、プログラムが実行されるファイルシステムの動作に応じて、比較関数を用いて適切にダウンサンプリングを行うことができます。ファイルシステムがUnixパーミッションをサポートしていないことが分かっている場合は、書き込んだものと同じUnixパーミッションで読み取れるとは期待しないでください。ファイルシステムが大文字と小文字の区別を保持しないことが分かっている場合は、プログラムが `abc` を作成したときにディレクトリ一覧に `ABC` が表示されることを覚悟しておく必要があります。
+ただし、ファイルシステムが大文字と小文字の区別を保持することが分かっている場合は、ファイル名の変更を検出するとき、またはファイルシステムが大文字と小文字を区別するときに、`ABC` を `abc` とは異なるファイル名と見なす必要があります。
 
-## Case Preservation
+## 大文字と小文字の保持
 
-You may create a directory called `test/abc` and be surprised to see sometimes
-that `fs.readdir('test')` returns `['ABC']`. This is not a bug in Node. Node
-returns the filename as the filesystem stores it, and not all filesystems
-support case-preservation. Some filesystems convert all filenames to uppercase
-(or lowercase).
+`test/abc` というディレクトリを作成すると、`fs.readdir('test')` が `['ABC']` を返すことに驚くかもしれません。これは Node のバグではありません。Node はファイルシステムに格納されているファイル名を返しますが、すべてのファイルシステムが大文字と小文字の保持をサポートしているわけではありません。一部のファイルシステムでは、すべてのファイル名が大文字（または小文字）に変換されます。
 
-## Unicode Form Preservation
+## Unicode 形式の保存
 
-_Case preservation and Unicode form preservation are similar concepts. To
-understand why Unicode form should be preserved , make sure that you first
-understand why case should be preserved. Unicode form preservation is just as
-simple when understood correctly._
+_大文字と小文字の保存と Unicode 形式の保存は似た概念です。Unicode 形式の保存が必要な理由を理解するには、まず大文字と小文字の保存が必要な理由を理解する必要があります。Unicode 形式の保存も、正しく理解すれば同様に簡単です。_
 
-Unicode can encode the same characters using several different byte sequences.
-Several strings may look the same, but have different byte sequences. When
-working with UTF-8 strings, be careful that your expectations are in line with
-how Unicode works. Just as you would not expect all UTF-8 characters to encode
-to a single byte, you should not expect several UTF-8 strings that look the same
-to the human eye to have the same byte representation. This may be an
-expectation that you can have of ASCII, but not of UTF-8.
+Unicode は、同じ文字を複数の異なるバイトシーケンスでエンコードできます。
+複数の文字列が同じように見えても、バイトシーケンスが異なる場合があります。UTF-8 文字列を扱う際は、Unicode の動作と期待値が一致していることを確認してください。すべての UTF-8 文字が 1 バイトにエンコードされるとは期待しないのと同様に、人間の目には同じに見える複数の UTF-8 文字列が同じバイト表現を持つとは期待しないでください。これは ASCII では期待できることですが、UTF-8 では期待できません。
 
-You may create a directory called `test/café` (NFC Unicode form with byte
-sequence `<63 61 66 c3 a9>` and `string.length === 5`) and be surprised to see
-sometimes that `fs.readdir('test')` returns `['café']` (NFD Unicode form with
-byte sequence `<63 61 66 65 cc 81>` and `string.length === 6`). This is not a
-bug in Node. Node.js returns the filename as the filesystem stores it, and not
-all filesystems support Unicode form preservation.
+`test/café`（NFC Unicode形式、バイトシーケンス `<63 61 66 c3 a9>`、`string.length === 5`）というディレクトリを作成し、`fs.readdir('test')` が `['café']`（NFD Unicode形式、バイトシーケンス `<63 61 66 65 cc 81>`、`string.length === 6`）を返すことに驚くことがあるかもしれません。これはNode.jsのバグではありません。Node.jsはファイルシステムに保存されているファイル名を返しますが、すべてのファイルシステムがUnicode形式の保存をサポートしているわけではありません。
 
-HFS+, for example, will normalize all filenames to a form almost always the same
-as NFD form. Do not expect HFS+ to behave the same as NTFS or EXT4 and
-vice-versa. Do not try to change data permanently through normalization as a
-leaky abstraction to paper over Unicode differences between filesystems. This
-would create problems without solving any. Rather, preserve Unicode form and use
-normalization as a comparison function only.
+例えばHFS+は、すべてのファイル名をほぼ常にNFD形式と同じ形式に正規化します。HFS+がNTFSやEXT4と同じように動作するとは期待しないでください（逆も同様です）。ファイルシステム間のUnicodeの差異を覆い隠すための、漏れやすい抽象化として正規化によってデータを永続的に変更しようとしないでください。これは問題を引き起こすだけで、何も解決しません。むしろ、Unicode形式を維持し、正規化は比較機能としてのみ使用してください。
 
-## Unicode Form Insensitivity
+## Unicode 形式非判別
 
-Unicode form insensitivity and Unicode form preservation are two different
-filesystem behaviors often mistaken for each other. Just as case-insensitivity
-has sometimes been incorrectly implemented by permanently normalizing filenames
-to uppercase when storing and transmitting filenames, so Unicode form
-insensitivity has sometimes been incorrectly implemented by permanently
-normalizing filenames to a certain Unicode form (NFD in the case of HFS+) when
-storing and transmitting filenames. It is possible and much better to implement
-Unicode form insensitivity without sacrificing Unicode form preservation, by
-using Unicode normalization for comparison only.
+Unicode 形式非判別と Unicode 形式保存は、しばしば混同される異なるファイルシステムの動作です。大文字と小文字を区別しない動作が、ファイル名の保存および転送時にファイル名を恒久的に大文字に正規化することで誤って実装されることがあったように、Unicode 形式非判別も、ファイル名の保存および転送時にファイル名を特定の Unicode 形式（HFS+ の場合は NFD）に恒久的に正規化することで誤って実装されることがありました。Unicode 形式非判別を、Unicode 形式保存を犠牲にすることなく実装することは可能であり、より優れた方法でもあります。そのためには、Unicode 正規化を比較のみに使用します。Unicode 形式非判別
 
-## Comparing Different Unicode Forms
+Unicode 形式非判別と Unicode 形式保存は、しばしば混同される異なるファイルシステムの動作です。ファイル名の保存および転送時に、大文字と小文字を区別しない実装が誤って実装されることがあったように、Unicode 形式を区別しない実装も、ファイル名の保存および転送時に、特定の Unicode 形式（HFS+ の場合は NFD）に正規化されるという誤った実装が誤って実装されることがありました。Unicode 正規化を比較のみに使用すれば、Unicode 形式の保存性を犠牲にすることなく Unicode 形式を区別しない実装が可能であり、はるかに優れた方法となります。
 
-Node.js provides `string.normalize('NFC' / 'NFD')` which you can use to normalize a
-UTF-8 string to either NFC or NFD. You should never store the output from this
-function but only use it as part of a comparison function to test whether two
-UTF-8 strings would look the same to the user.
+## 異なる Unicode 形式の比較
 
-You can use `string1.normalize('NFC') === string2.normalize('NFC')` or
-`string1.normalize('NFD') === string2.normalize('NFD')` as your comparison
-function. Which form you use does not matter.
+Node.js は、UTF-8 文字列を NFC または NFD に正規化できる `string.normalize('NFC' / 'NFD')` を提供しています。この関数の出力は保存せず、比較関数の一部としてのみ使用し、2 つの UTF-8 文字列がユーザーにとって同じに見えるかどうかをテストしてください。
 
-Normalization is fast but you may want to use a cache as input to your
-comparison function to avoid normalizing the same string many times over. If the
-string is not present in the cache then normalize it and cache it. Be careful
-not to store or persist the cache, use it only as a cache.
+比較関数として、`string1.normalize('NFC') === string2.normalize('NFC')` または `string1.normalize('NFD') === string2.normalize('NFD')` を使用できます。どちらの形式を使用するかは関係ありません。
 
-Note that using `normalize()` requires that your version of Node.js include ICU
-(otherwise `normalize()` will just return the original string). If you download
-the latest version of Node.js from the website then it will include ICU.
+正規化は高速ですが、同じ文字列を何度も正規化することを避けるため、比較関数への入力としてキャッシュを使用することをお勧めします。文字列がキャッシュに存在しない場合は、正規化してキャッシュします。キャッシュを保存したり永続化したりせず、キャッシュとしてのみ使用してください。
 
-## Timestamp Resolution
+`normalize()` を使用するには、Node.js のバージョンに ICU が含まれている必要があります（含まれていない場合、`normalize()` は元の文字列を返します）。ウェブサイトから最新バージョンの Node.js をダウンロードすると、ICU が含まれています。
 
-You may set the `mtime` (the modified time) of a file to `1444291759414`
-(millisecond resolution) and be surprised to see sometimes that `fs.stat`
-returns the new mtime as `1444291759000` (1-second resolution) or
-`1444291758000` (2-second resolution). This is not a bug in Node. Node.js returns
-the timestamp as the filesystem stores it, and not all filesystems support
-nanosecond, millisecond or 1-second timestamp resolution. Some filesystems even
-have very coarse resolution for the atime timestamp in particular, e.g. 24 hours
-for some FAT filesystems.
+## タイムスタンプの解像度
 
-## Do Not Corrupt Filenames and Timestamps Through Normalization
+ファイルの `mtime`（変更時刻）を `1444291759414`（ミリ秒単位）に設定した場合、`fs.stat` が新しい mtime として `1444291759000`（1秒単位）または `1444291758000`（2秒単位）を返すことに驚くことがあります。これは Node.js のバグではありません。Node.js はファイルシステムに保存されているタイムスタンプを返しますが、すべてのファイルシステムがナノ秒、ミリ秒、または 1 秒単位のタイムスタンプ解像度をサポートしているわけではありません。一部のファイルシステムでは、特に atime タイムスタンプの解像度が非常に粗く、例えば一部の FAT ファイルシステムでは 24 時間単位となっています。
 
-Filenames and timestamps are user data. Just as you would never automatically
-rewrite user file data to uppercase the data or normalize `CRLF` to `LF`
-line-endings, so you should never change, interfere or corrupt filenames or
-timestamps through case / Unicode form / timestamp normalization. Normalization
-should only ever be used for comparison, never for altering data.
+## 正規化によってファイル名やタイムスタンプを破損させないでください
 
-Normalization is effectively a lossy hash code. You can use it to test for
-certain kinds of equivalence (e.g. do several strings look the same even though
-they have different byte sequences) but you can never use it as a substitute for
-the actual data. Your program should pass on filename and timestamp data as is.
+ファイル名とタイムスタンプはユーザーデータです。ユーザーファイルのデータを自動的に大文字に書き換えたり、`CRLF` を `LF` に正規化したりすることは決してありません。同様に、大文字小文字の区別や Unicode 形式、タイムスタンプの正規化によってファイル名やタイムスタンプを変更したり、干渉したり、破損させたりしないでください。正規化は比較のみに使用し、データの変更には使用しないでください。
 
-Your program can create new data in NFC (or in any combination of Unicode form
-it prefers) or with a lowercase or uppercase filename, or with a 2-second
-resolution timestamp, but your program should not corrupt existing user data by
-imposing case / Unicode form / timestamp normalization. Rather, adopt a superset
-approach and preserve case, Unicode form and timestamp resolution in your
-program. That way, you will be able to interact safely with filesystems which do
-the same.
+正規化は実質的には非可逆ハッシュコードです。特定の種類の等価性をテストするために使用できます（例えば、バイトシーケンスが異なっていても複数の文字列が同じに見えるかどうかなど）。ただし、実際のデータの代替として使用することはできません。プログラムはファイル名とタイムスタンプのデータをそのまま渡す必要があります。
 
-## Use Normalization Comparison Functions Appropriately
+プログラムは、NFC（または好みのUnicode形式の組み合わせ）、小文字または大文字のファイル名、あるいは2秒精度のタイムスタンプを使用して新しいデータを作成できます。ただし、大文字と小文字、Unicode形式、タイムスタンプの正規化を強制することで既存のユーザーデータを破壊してはなりません。むしろ、スーパーセットアプローチを採用し、プログラム内で大文字と小文字、Unicode形式、タイムスタンプの精度を維持してください。そうすることで、同様の処理を実行するファイルシステムと安全にやり取りできるようになります。
 
-Make sure that you use case / Unicode form / timestamp comparison functions
-appropriately. Do not use a case-insensitive filename comparison function if you
-are working on a case-sensitive filesystem. Do not use a Unicode form
-insensitive comparison function if you are working on a Unicode form sensitive
-filesystem (e.g. NTFS and most Linux filesystems which preserve both NFC and NFD
-or mixed Unicode forms). Do not compare timestamps at 2-second resolution if you
-are working on a nanosecond timestamp resolution filesystem.
+## 正規化比較関数を適切に使用する
 
-## Be Prepared for Slight Differences in Comparison Functions
+大文字と小文字、Unicode形式、タイムスタンプの比較関数を適切に使用するようにしてください。大文字と小文字を区別するファイルシステムで作業している場合は、大文字と小文字を区別しないファイル名比較関数を使用しないでください。Unicode形式を区別するファイルシステム（NTFSや、NFCとNFDの両方、またはUnicode形式が混在するほとんどのLinuxファイルシステムなど）で作業している場合は、Unicode形式を区別しない比較関数を使用しないでください。ナノ秒精度のタイムスタンプを持つファイルシステムで作業している場合は、2秒精度でタイムスタンプを比較しないでください。
 
-Be careful that your comparison functions match those of the filesystem (or
-probe the filesystem if possible to see how it would actually compare).
-Case-insensitivity for example is more complex than a simple `toLowerCase()`
-comparison. In fact, `toUpperCase()` is usually better than `toLowerCase()`
-(since it handles certain foreign language characters differently). But better
-still would be to probe the filesystem since every filesystem has its own case
-comparison table baked in.
+## 比較関数のわずかな違いに備える
 
-As an example, Apple's HFS+ normalizes filenames to NFD form but this NFD form
-is actually an older version of the current NFD form and may sometimes be
-slightly different from the latest Unicode standard's NFD form. Do not expect
-HFS+ NFD to be exactly the same as Unicode NFD all the time.
+比較関数がファイルシステムの関数と一致するように注意してください（可能であれば、ファイルシステムを実際に調べて、実際の比較結果を確認してください）。
+例えば、大文字と小文字を区別しないことは、単純な `toLowerCase()` 比較よりも複雑です。実際、`toUpperCase()` は通常 `toLowerCase()` よりも優れています（特定の外国語文字を異なる方法で処理するため）。しかし、各ファイルシステムには独自の大文字小文字比較テーブルが組み込まれているため、ファイルシステムを調査する方がさらに効果的です。
+
+例えば、Apple の HFS+ はファイル名を NFD 形式に正規化しますが、この NFD 形式は実際には現在の NFD 形式の古いバージョンであり、最新の Unicode 標準の NFD 形式とは若干異なる場合があります。HFS+ の NFD が常に Unicode の NFD と完全に同じであるとは期待しないでください。

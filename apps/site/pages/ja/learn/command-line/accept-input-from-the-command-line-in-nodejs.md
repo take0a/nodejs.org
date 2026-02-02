@@ -4,11 +4,11 @@ layout: learn
 authors: flaviocopes, MylesBorins, fhemberger, LaRuaNa, ahmadawais
 ---
 
-# Accept input from the command line in Node.js
+# Node.js でコマンドラインからの入力を受け入れる
 
-How to make a Node.js CLI program interactive?
+Node.js CLI プログラムをインタラクティブにするにはどうすればよいですか？
 
-Node.js since version 7 provides the [`readline` module](https://nodejs.org/docs/latest-v22.x/api/readline.html) to perform exactly this: get input from a readable stream such as the `process.stdin` stream, which during the execution of a Node.js program is the terminal input, one line at a time.
+Node.js バージョン 7 以降では、[`readline` モジュール](https://nodejs.org/docs/latest-v22.x/api/readline.html) が提供されており、まさにこれを実行します。つまり、`process.stdin` ストリームなどの読み取り可能なストリームから入力を 1 行ずつ取得します。Node.js プログラムの実行中は、このストリームはターミナル入力となります。
 
 ```cjs
 const readline = require('node:readline');
@@ -38,12 +38,12 @@ rl.question(`What's your name?`, name => {
 });
 ```
 
-This piece of code asks the user's _name_, and once the text is entered and the user presses enter, we send a greeting.
+このコードはユーザーに名前を尋ね、テキストが入力されてEnterキーが押されると、挨拶を送信します。
 
-The `question()` method shows the first parameter (a question) and waits for the user input. It calls the callback function once enter is pressed.
+`question()`メソッドは最初のパラメータ（質問）を表示し、ユーザーの入力を待ちます。Enterキーが押されると、コールバック関数を呼び出します。
 
-In this callback function, we close the readline interface.
+このコールバック関数では、readlineインターフェースを閉じます。
 
-`readline` offers several other methods, please check them out on the package documentation linked above.
+`readline`には他にもいくつかのメソッドが用意されています。上記のパッケージドキュメントでご確認ください。
 
-If you need to require a password, it's best not to echo it back, but instead show a `*` symbol.
+パスワードを要求する場合は、パスワードをエコーバックするのではなく、代わりに`*`記号を表示するのが最適です。

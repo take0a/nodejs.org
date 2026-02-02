@@ -4,48 +4,48 @@ layout: learn
 authors: flaviocopes, smfoote, co16353sidak, MylesBorins, LaRuaNa, andys8, ahmadawais, karlhorky, aymen94
 ---
 
-# The V8 JavaScript Engine
+# V8 JavaScript エンジン
 
-V8 is the name of the JavaScript engine that powers Google Chrome. It's the thing that takes our JavaScript and executes it while browsing with Chrome.
+V8 は、Google Chrome を動かす JavaScript エンジンの名前です。Chrome でブラウジングしているときに、JavaScript を受け取り、実行するものです。
 
-V8 is the JavaScript engine i.e. it parses and executes JavaScript code. The DOM, and the other Web Platform APIs (they all makeup runtime environment) are provided by the browser.
+V8 は JavaScript エンジンであり、JavaScript コードを解析して実行します。DOM やその他の Web プラットフォーム API（これらはすべてランタイム環境を構成します）はブラウザによって提供されます。
 
-The cool thing is that the JavaScript engine is independent of the browser in which it's hosted. This key feature enabled the rise of Node.js. V8 was chosen to be the engine that powered Node.js back in 2009, and as the popularity of Node.js exploded, V8 became the engine that now powers an incredible amount of server-side code written in JavaScript.
+JavaScript エンジンの優れた点は、ホストされているブラウザから独立していることです。この重要な特徴が Node.js の台頭を可能にしました。V8 は 2009 年に Node.js を動かすエンジンとして選ばれ、Node.js の人気が爆発的に高まるにつれて、V8 は現在では JavaScript で書かれた膨大な数のサーバーサイドコードを動かすエンジンとなりました。
 
-The Node.js ecosystem is huge and thanks to V8 which also powers desktop apps, with projects like Electron.
+Node.js エコシステムは巨大で、Electron などのプロジェクトを含むデスクトップアプリも V8 によって支えられています。
 
-## Other JS engines
+## その他の JavaScript エンジン
 
-Other browsers have their own JavaScript engine:
+他のブラウザには独自の JavaScript エンジンがあります。
 
-- Firefox has [**SpiderMonkey**](https://spidermonkey.dev)
-- Safari has [**JavaScriptCore**](https://developer.apple.com/documentation/javascriptcore) (also called Nitro)
-- Edge was originally based on [**Chakra**](https://github.com/Microsoft/ChakraCore) but has more recently been [rebuilt using Chromium](https://support.microsoft.com/en-us/help/4501095/download-the-new-microsoft-edge-based-on-chromium) and the V8 engine.
+- Firefox には [**SpiderMonkey**](https://spidermonkey.dev) が搭載されています。
+- Safari には [**JavaScriptCore**](https://developer.apple.com/documentation/javascriptcore) (Nitro とも呼ばれます) が搭載されています。
+- Edge は元々 [**Chakra**](https://github.com/Microsoft/ChakraCore) をベースにしていましたが、最近では [Chromium](https://support.microsoft.com/en-us/help/4501095/download-the-new-microsoft-edge-based-on-chromium) と V8 エンジンを使用して再構築されました。
 
-and many others exist as well.
+他にも多くのブラウザが存在します。
 
-All those engines implement the [ECMA ES-262 standard](https://www.ecma-international.org/publications/standards/Ecma-262.htm), also called ECMAScript, the standard used by JavaScript.
+これらのエンジンはすべて、JavaScript で使用される標準である [ECMA ES-262 標準](https://www.ecma-international.org/publications/standards/Ecma-262.htm) (ECMAScript とも呼ばれる) を実装しています。
 
-## The quest for performance
+## パフォーマンスの追求
 
-V8 is written in C++, and it's continuously improved. It is portable and runs on Mac, Windows, Linux and several other systems.
+V8はC++で書かれており、継続的に改良されています。移植性が高く、Mac、Windows、Linux、その他多くのシステムで動作します。
 
-In this V8 introduction, we will ignore the implementation details of V8: they can be found on more authoritative sites (e.g. the [V8 official site](https://v8.dev/)), and they change over time, often radically.
+このV8の紹介では、V8の実装の詳細については触れません。実装の詳細は、より権威のあるサイト（例えば[V8公式サイト](https://v8.dev/)）で確認でき、時間の経過とともに、そして多くの場合、劇的に変化します。
 
-V8 is always evolving, just like the other JavaScript engines around, to speed up the Web and the Node.js ecosystem.
+V8は、他のJavaScriptエンジンと同様に、WebとNode.jsエコシステムの高速化のために常に進化しています。
 
-On the web, there is a race for performance that's been going on for years, and we (as users and developers) benefit a lot from this competition because we get faster and more optimized machines year after year.
+Webでは、長年にわたりパフォーマンスを競い合っており、私たち（ユーザーと開発者）は、年々高速化され最適化されたマシンを手に入れることで、この競争から大きな恩恵を受けています。
 
-## Compilation
+## コンパイル
 
-JavaScript is generally considered an interpreted language, but modern JavaScript engines no longer just interpret JavaScript, they compile it.
+JavaScript は一般的にインタープリタ型言語と考えられていますが、現代の JavaScript エンジンはもはや JavaScript を単に解釈するだけでなく、コンパイルも行います。
 
-This has been happening since 2009, when the SpiderMonkey JavaScript compiler was added to Firefox 3.5, and everyone followed this idea.
+これは 2009 年に Firefox 3.5 に SpiderMonkey JavaScript コンパイラが追加されて以来のことで、誰もがこの考え方を採用しました。
 
-JavaScript is internally compiled by V8 with **just-in-time** (JIT) **compilation** to speed up the execution.
+JavaScript は、実行速度を高速化するために V8 によって内部的に **ジャストインタイム** (JIT) **コンパイル** によってコンパイルされます。
 
-This might seem counter-intuitive, but since the introduction of Google Maps in 2004, JavaScript has evolved from a language that was generally executing a few dozens of lines of code to complete applications with thousands to hundreds of thousands of lines running in the browser.
+直感に反するように思えるかもしれませんが、2004 年に Google マップが導入されて以来、JavaScript は数十行のコードを実行する言語から、ブラウザ内で数千行から数十万行に及ぶ完全なアプリケーションへと進化しました。
 
-Our applications can now run for hours inside a browser, rather than being just a few form validation rules or simple scripts.
+今では、アプリケーションは数個のフォーム検証ルールや単純なスクリプトではなく、ブラウザ内で何時間も実行できます。
 
-In this _new world_, compiling JavaScript makes perfect sense because while it might take a little bit more to have the JavaScript _ready_, once done it's going to be much more performant than purely interpreted code.
+この _新しい世界_ では、JavaScript をコンパイルすることは完全に理にかなっています。JavaScript を _準備_ するのに少し時間がかかるかもしれませんが、完了すると、純粋に解釈されたコードよりもはるかにパフォーマンスが向上するからです。

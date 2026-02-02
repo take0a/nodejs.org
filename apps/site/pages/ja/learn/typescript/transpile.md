@@ -4,15 +4,15 @@ layout: learn
 authors: AugustinMauroy
 ---
 
-# Running TypeScript code using transpilation
+# トランスパイルを使用した TypeScript コードの実行
 
-Transpilation is the process of converting source code from one language to another. In the case of TypeScript, it's the process of converting TypeScript code to JavaScript code. This is necessary because browsers and Node.js don't run TypeScript code directly.
+トランスパイルとは、ソースコードをある言語から別の言語に変換するプロセスです。TypeScript の場合、これは TypeScript コードを JavaScript コードに変換するプロセスです。ブラウザや Node.js は TypeScript コードを直接実行できないため、この処理は必須です。
 
-## Compiling TypeScript to JavaScript
+## TypeScript を JavaScript にコンパイルする
 
-The most common way to run TypeScript code is to compile it to JavaScript first. You can do this using the TypeScript compiler `tsc`.
+TypeScript コードを実行する最も一般的な方法は、まず JavaScript にコンパイルすることです。これは、TypeScript コンパイラ `tsc` を使って行うことができます。
 
-**Step 1:** Write your TypeScript code in a file, for example `example.ts`.
+**ステップ 1:** TypeScript コードをファイル（例: `example.ts`）に記述します。
 
 <!--
   Maintainers note: this code is duplicated in the previous article, please keep them in sync
@@ -36,39 +36,39 @@ const justine = {
 const isJustineAnAdult = isAdult(justine);
 ```
 
-**Step 2:** Install TypeScript locally using a package manager:
+**ステップ 2:** パッケージマネージャーを使用して TypeScript をローカルにインストールします。
 
-In this example we're going to use npm, you can check [our introduction to the npm package manager](/learn/getting-started/an-introduction-to-the-npm-package-manager) for more information.
+この例では npm を使用します。詳細については、[npm パッケージマネージャーの紹介](/learn/getting-started/an-introduction-to-the-npm-package-manager) をご覧ください。
 
 ```bash displayName="Install TypeScript locally"
 npm i -D typescript # -D is a shorthand for --save-dev
 ```
 
-**Step 3:** Compile your TypeScript code to JavaScript using the `tsc` command:
+**ステップ 3:** `tsc` コマンドを使用して TypeScript コードを JavaScript にコンパイルします。
 
 ```bash
 npx tsc example.ts
 ```
 
-> **NOTE:** `npx` is a tool that allows you to run Node.js packages without installing them globally.
+> **注:** `npx` は、Node.js パッケージをグローバルにインストールせずに実行できるツールです。
 
-`tsc` is the TypeScript compiler which will take our TypeScript code and compile it to JavaScript.
-This command will result in a new file named `example.js` that we can run using Node.js.
-Now when we know how to compile and run TypeScript code let's see TypeScript bug-preventing capabilities in action!
+`tsc` は TypeScript コンパイラで、TypeScript コードを JavaScript にコンパイルします。
+このコマンドを実行すると、Node.js で実行できる `example.js` という新しいファイルが生成されます。
+TypeScript コードのコンパイルと実行方法がわかったので、TypeScript のバグ防止機能を実際に確認してみましょう。
 
-**Step 4:** Run your JavaScript code using Node.js:
+**ステップ 4:** Node.js を使用して JavaScript コードを実行します。
 
 ```bash
 node example.js
 ```
 
-You should see the output of your TypeScript code in the terminal
+ターミナルに TypeScript コードの出力が表示されます。
 
-## If there are type errors
+## 型エラーがある場合
 
-If you have type errors in your TypeScript code, the TypeScript compiler will catch them and prevent you from running the code. For example, if you change the `age` property of `justine` to a string, TypeScript will throw an error:
+TypeScript コードに型エラーがある場合、TypeScript コンパイラはそれを検出し、コードの実行をブロックします。例えば、`justine` の `age` プロパティを文字列に変更すると、TypeScript はエラーをスローします。
 
-We will modify our code like this, to voluntarily introduce a type error:
+意図的に型エラーを発生させるために、コードを次のように変更します。
 
 ```ts
 // @errors: 2322 2554
@@ -89,4 +89,4 @@ const justine: User = {
 const isJustineAnAdult: string = isAdult(justine, "I shouldn't be here!");
 ```
 
-As you can see, TypeScript is very helpful in catching bugs before they even happen. This is one of the reasons why TypeScript is so popular among developers.
+ご覧のとおり、TypeScriptはバグが発生する前に発見するのに非常に役立ちます。これが、TypeScriptが開発者の間で非常に人気がある理由の一つです。

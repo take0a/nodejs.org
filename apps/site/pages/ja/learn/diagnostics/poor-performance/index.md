@@ -3,29 +3,23 @@ title: Poor Performance
 layout: learn
 ---
 
-# Poor Performance
+# パフォーマンスが低い
 
-In this document you can learn about how to profile a Node.js process.
+このドキュメントでは、Node.js プロセスのプロファイリング方法について説明します。
 
-## My application has a poor performance
+## アプリケーションのパフォーマンスが低い
 
-### Symptoms
+### 症状
 
-My applications latency is high and I have already confirmed that the bottleneck
-is not my dependencies like databases and downstream services. So I suspect that
-my application spends significant time to run code or process information.
+アプリケーションのレイテンシが高く、ボトルネックの原因がデータベースや下流のサービスなどの依存関係ではないことは既に確認済みです。そのため、アプリケーションがコードの実行や情報の処理にかなりの時間を費やしているのではないかと考えています。
 
-You are satisfied with your application performance in general but would like to
-understand which part of our application can be improved to run faster or more
-efficient. It can be useful when we want to improve the user experience or save
-computation cost.
+アプリケーションのパフォーマンスには概ね満足していますが、アプリケーションのどの部分を改善すればより高速に、またはより効率的に実行できるかを把握したいと考えています。これは、ユーザーエクスペリエンスの向上や計算コストの削減に役立ちます。
 
-### Debugging
+### デバッグ
 
-In this use-case, we are interested in code pieces that use more CPU cycles than
-the others. When we do this locally, we usually try to optimize our code.
+このユースケースでは、他の部分よりも多くの CPU サイクルを使用しているコード部分に着目します。ローカルでこれを実行する場合は、通常、コードの最適化を試みます。
 
-This document provides two simple ways to profile a Node.js application:
+このドキュメントでは、Node.js アプリケーションをプロファイリングする 2 つの簡単な方法を紹介します。
 
-- [Using V8 Sampling Profiler](/learn/getting-started/profiling/)
-- [Using Linux Perf](/learn/diagnostics/poor-performance/using-linux-perf)
+- [V8 サンプリング プロファイラーの使用](/learn/getting-started/profiling/)
+- [Linux Perf の使用](/learn/diagnostics/poor-performance/using-linux-perf)

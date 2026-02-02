@@ -5,67 +5,67 @@ layout: learn
 
 # Flame Graphs
 
-## What's a flame graph useful for?
+## Flame Graphs の便利な使い方
 
-Flame graphs are a way of visualizing CPU time spent in functions. They can help you pin down where you spend too much time doing synchronous operations.
+Flame Graphs は、関数内で消費された CPU 時間を視覚化する方法です。同期処理に時間がかかりすぎている箇所を特定するのに役立ちます。
 
-## How to create a flame graph
+## Flame Graphs の作成方法
 
-You might have heard creating a flame graph for Node.js is difficult, but that's not true (anymore).
-Solaris vms are no longer needed for flame graphs!
+Node.js で Flame Graphs を作成するのは難しいと聞いたことがあるかもしれませんが、それはもう間違いです。
+Flame Graphs に Solaris VM は不要になりました！
 
-Flame graphs are generated from `perf` output, which is not a node-specific tool. While it's the most powerful way to visualize CPU time spent, it may have issues with how JavaScript code is optimized in Node.js 8 and above. See [perf output issues](#perf-output-issues) section below.
+Flame Graphs は、Node.js 固有のツールではない `perf` 出力から生成されます。CPU 消費時間を視覚化する最も強力な方法ですが、Node.js 8 以降では JavaScript コードの最適化方法に問題が発生する可能性があります。以下の [perf 出力の問題](#perf-output-issues) セクションを参照してください。
 
-### Use a pre-packaged tool
+### 事前にパッケージ化されたツールを使用する
 
-If you want a single step that produces a flame graph locally, try [0x](https://www.npmjs.com/package/0x)
+ローカルで Flame Graph を生成する単一のステップが必要な場合は、[0x](https://www.npmjs.com/package/0x) をお試しください。
 
-For diagnosing production deployments, read these notes: [0x production servers][].
+本番環境のデプロイメントを診断するには、[0x production servers][] の注意事項をお読みください。
 
-### Create a flame graph with system perf tools
+### システム perf ツールを使ってフレームグラフを作成する
 
-The purpose of this guide is to show the steps involved in creating a flame graph and keep you in control of each step.
+このガイドの目的は、フレームグラフを作成する手順を示し、各手順をユーザーが適切に管理できるようにすることです。
 
-If you want to understand each step better, take a look at the sections that follow where we go into more detail.
+各手順をより深く理解したい場合は、後続のセクションで詳細を説明しています。
 
-Now let's get to work.
+それでは、作業に取り掛かりましょう。
 
-1. Install `perf` (usually available through the linux-tools-common package if not already installed)
-2. Try running `perf` - it might complain about missing kernel modules, install them too
-3. Run node with perf enabled (see [perf output issues](#perf-output-issues) for tips specific to Node.js versions)
+1. `perf` をインストールします（まだインストールされていない場合は、通常 linux-tools-common パッケージから入手できます）。
+2. `perf` を実行してみてください。カーネルモジュールが不足しているというエラーメッセージが表示される場合がありますので、それらもインストールしてください。
+3. perf を有効にして node を実行します（Node.js のバージョン固有のヒントについては、[perf 出力の問題](#perf-output-issues) を参照してください）。
 
 ```bash
 perf record -e cycles:u -g -- node --perf-basic-prof --interpreted-frames-native-stack app.js
 ```
 
-4. Disregard warnings unless they're saying you can't run perf due to missing packages; you may get some warnings about not being able to access kernel module samples which you're not after anyway.
-5. Run `perf script > perfs.out` to generate the data file you'll visualize in a moment. It's useful to [apply some cleanup](#filtering-out-nodejs-internal-functions) for a more readable graph
-6. Clone Brendan Gregg's FlameGraph tools: https://github.com/brendangregg/FlameGraph
-7. Run `cat perfs.out | ./FlameGraph/stackcollapse-perf.pl | ./FlameGraph/flamegraph.pl --colors=js > profile.svg`
+4. パッケージが不足しているため perf を実行できないという警告でない限り、警告は無視してください。カーネルモジュールのサンプルにアクセスできないという警告が表示される場合もありますが、これはそもそも必要ないものです。
+5. `perf script > perfs.out` を実行して、後ほど可視化するデータファイルを生成します。グラフを見やすくするために、[クリーンアップを適用](#filtering-out-nodejs-internal-functions)すると便利です。
+6. Brendan Gregg の FlameGraph ツールをクローンします: https://github.com/brendangregg/FlameGraph
+7. `cat perfs.out | ./FlameGraph/stackcollapse-perf.pl | ./FlameGraph/flamegraph.pl --colors=js > profile.svg` を実行します。
 
-Now open the flame graph file in your favorite browser and watch it burn. It's color-coded so you can focus on the most saturated orange bars first. They're likely to represent CPU heavy functions.
+お気に入りのブラウザで FlameGraph ファイルを開き、描画の様子を確認してください。色分けされているので、最初に最も彩度の高いオレンジ色のバーに注目できます。これらはCPU負荷の高い関数を表している可能性が高いです。
 
-Worth mentioning - if you click an element of a flame graph a it will zoom-in on the section you clicked.
+ちなみに、フレームグラフの要素をクリックすると、クリックしたセクションが拡大表示されます。
 
-### Using `perf` to sample a running process
+### `perf` を使って実行中のプロセスをサンプリングする
 
-This is great for recording flame graph data from an already running process that you don't want to interrupt. Imagine a production process with a hard to reproduce issue.
+これは、中断したくない実行中のプロセスからフレームグラフデータを記録するのに最適です。再現が難しい問題のある本番環境のプロセスを想像してみてください。
 
 ```bash
 perf record -F99 -p `pgrep -n node` -g -- sleep 3
 ```
 
-Wait, what is that `sleep 3` for? It's there to keep the perf running - despite `-p` option pointing to a different pid, the command needs to be executed on a process and end with it.
-perf runs for the life of the command you pass to it, whether or not you're actually profiling that command. `sleep 3` ensures that perf runs for 3 seconds.
+ちょっと待ってください、`sleep 3` って何のためにあるのでしょうか？これは perf を実行し続けるためのものです。`-p` オプションで別の pid を指定しているにもかかわらず、コマンドはプロセス上で実行され、そのプロセスで終了する必要があります。
+perf は、実際にそのコマンドをプロファイリングしているかどうかに関わらず、渡されたコマンドの実行中は実行されます。`sleep 3` は、perf が 3 秒間実行されることを保証します。
 
-Why is `-F` (profiling frequency) set to 99? It's a reasonable default. You can adjust if you want.
-`-F99` tells perf to take 99 samples per second, for more precision increase the value. Lower values should produce less output with less precise results. The precision you need depends on how long your CPU intensive functions really run. If you're looking for the reason for a noticeable slowdown, 99 frames per second should be more than enough.
+`-F` (プロファイリング頻度) が 99 に設定されているのはなぜでしょうか？これは妥当なデフォルト値です。必要に応じて調整できます。
+`-F99` は perf に 1 秒あたり 99 回のサンプル取得を指示します。精度を高めるには、値を大きくしてください。値が小さいほど出力が少なくなり、結果の精度も低くなります。必要な精度は、CPU を集中的に使用する関数が実際にどれだけの時間実行されるかによって異なります。顕著な速度低下の原因を探しているのであれば、1 秒あたり 99 フレームで十分でしょう。
 
-After you get that 3 second perf record, proceed with generating the flame graph with the last two steps from above.
+3 秒間のパフォーマンス記録を取得したら、上記の最後の 2 つの手順を実行してフレーム グラフの生成に進みます。
 
-### Filtering out Node.js internal functions
+### Node.js 内部関数の除外
 
-Usually, you just want to look at the performance of your calls, so filtering out Node.js and V8 internal functions can make the graph much easier to read. You can clean up your perf file with:
+通常は、呼び出しのパフォーマンスだけを確認したいので、Node.js と V8 の内部関数を除外するとグラフが読みやすくなります。perf ファイルを以下のコマンドでクリーンアップできます。
 
 ```bash
 sed -i -r \
@@ -74,53 +74,53 @@ sed -i -r \
   perfs.out
 ```
 
-If you read your flame graph and it seems odd, as if something is missing in the key function taking up most time, try generating your flame graph without the filters - maybe you got a rare case of an issue with Node.js itself.
+フレームグラフを読んでいて、最も時間を消費している主要な関数に何かが欠けているような違和感を感じた場合は、フィルターなしでフレームグラフを生成してみてください。Node.js 自体に稀な問題が発生している可能性があります。
 
-### Node.js's profiling options
+### Node.js のプロファイリングオプション
 
-`--perf-basic-prof-only-functions` and `--perf-basic-prof` are the two that are useful for debugging your JavaScript code. Other options are used for profiling Node.js itself, which is outside the scope of this guide.
+`--perf-basic-prof-only-functions` と `--perf-basic-prof` は、JavaScript コードのデバッグに役立つ 2 つのオプションです。その他のオプションは Node.js 自体のプロファイリングに使用されますが、このガイドの範囲外です。
 
-`--perf-basic-prof-only-functions` produces less output, so it's the option with the least overhead.
+`--perf-basic-prof-only-functions` は出力が少なくなるため、オーバーヘッドが最も少ないオプションです。
 
-### Why do I need them at all?
+### なぜこれらのオプションが必要なのでしょうか？
 
-Well, without these options, you'll still get a flame graph, but with most bars labeled `v8::Function::Call`.
+これらのオプションがなくてもフレームグラフは生成されますが、ほとんどのバーには `v8::Function::Call` というラベルが付きます。
 
-## `perf` output issues
+## `perf` 出力の問題
 
-### Node.js 8.x V8 pipeline changes
+### Node.js 8.x V8 パイプラインの変更
 
-Node.js 8.x and above ships with new optimizations to the JavaScript compilation pipeline in the V8 engine which makes function names/references unreachable for perf sometimes. (It's called Turbofan)
+Node.js 8.x 以降では、V8 エンジンの JavaScript コンパイルパイプラインに新しい最適化が導入されており、関数名や参照が perf でアクセスできなくなる場合があります (Turbofan と呼ばれます)。
 
-The result is you might not get your function names right in the flame graph.
+その結果、Flame Graph で関数名が正しく表示されない可能性があります。
 
-You'll notice `ByteCodeHandler:` where you'd expect function names.
+関数名が期待される場所に `ByteCodeHandler:` と表示されることがあります。
 
-[0x](https://www.npmjs.com/package/0x) has some mitigations for that built in.
+[0x](https://www.npmjs.com/package/0x) には、この問題に対する緩和策が組み込まれています。
 
-For details see:
+詳細については、以下を参照してください。
 
 - https://github.com/nodejs/benchmarking/issues/168
 - https://github.com/nodejs/diagnostics/issues/148#issuecomment-369348961
 
 ### Node.js 10+
 
-Node.js 10.x addresses the issue with Turbofan using the `--interpreted-frames-native-stack` flag.
+Node.js 10.x では、`--interpreted-frames-native-stack` フラグを使用することで Turbofan の問題を解決しています。
 
-Run `node --interpreted-frames-native-stack --perf-basic-prof-only-functions` to get function names in the flame graph regardless of which pipeline V8 used to compile your JavaScript.
+`node --interpreted-frames-native-stack --perf-basic-prof-only-functions` を実行すると、V8 が JavaScript をコンパイルする際にどのパイプラインを使用したかに関係なく、Flame Graph に関数名が表示されます。
 
-### Broken labels in the flame graph
+### Flame Graph でラベルが壊れている
 
-If you're seeing labels looking like this
+ラベルが以下のように表示される場合
 
 ```
 node`_ZN2v88internal11interpreter17BytecodeGenerator15VisitStatementsEPNS0_8ZoneListIPNS0_9StatementEEE
 ```
 
-it means the Linux perf you're using was not compiled with demangle support, see https://bugs.launchpad.net/ubuntu/+source/linux/+bug/1396654 for example
+これは、使用している Linux の perf が demangle サポート付きでコンパイルされていないことを意味します。例として、https://bugs.launchpad.net/ubuntu/+source/linux/+bug/1396654 を参照してください。
 
-## Examples
+## 例
 
-Practice capturing flame graphs yourself with [a flame graph exercise](https://github.com/naugtur/node-example-flamegraph)!
+[Flame Graph 演習](https://github.com/naugtur/node-example-flamegraph) を使って、Flame Graph のキャプチャを練習してみましょう。
 
 [0x production servers]: https://github.com/davidmarkclements/0x/blob/master/docs/production-servers.md

@@ -3,98 +3,84 @@ title: Using Heap Profiler
 layout: learn
 ---
 
-# Using Heap Profiler
+# ヒーププロファイラーの使用
 
-The heap profiler acts on top of V8 to capture allocations over time. In this
-document, we will cover memory profiling using:
+ヒーププロファイラーは V8 上で動作し、時間の経過に伴うメモリ割り当てをキャプチャします。このドキュメントでは、以下の手法を用いたメモリプロファイリングについて説明します。
 
-1. Allocation Timeline
-2. Sampling Heap Profiler
+1. 割り当てタイムライン
+2. サンプリングヒーププロファイラー
 
-Unlike heap dumps which were covered in the [Using Heap Snapshot][] guide, the
-idea of using real-time profiling is to understand allocations over a period of
-time.
+[ヒープスナップショットの使用][] ガイドで説明したヒープダンプとは異なり、リアルタイムプロファイリングの目的は、一定期間にわたるメモリ割り当てを把握することです。
 
-## Heap Profiler - Allocation Timeline
+## ヒーププロファイラー - 割り当てタイムライン
 
-Heap Profiler is similar to the Sampling Heap Profiler, except it will trace
-every allocation. It has higher overhead than the Sampling Heap Profiler so
-it’s not recommended to use in production.
+ヒーププロファイラーはサンプリングヒーププロファイラーに似ていますが、すべての割り当てをトレースします。サンプリングヒーププロファイラーよりもオーバーヘッドが大きいため、本番環境での使用は推奨されません。
 
-> You can use [@mmarchini/observe][] to start and stop the profiler
-> programmatically.
+> プロファイラーをプログラムから起動および停止するには、[@mmarchini/observe][] を使用します。
 
-### How To
+### 方法
 
-Start the application:
+アプリケーションの起動:
 
 ```console
 node --inspect index.js
 ```
 
-> `--inspect-brk` is a better choice for scripts.
+> スクリプトには `--inspect-brk` の方が適しています。
 
-Connect to the dev-tools instance in chrome and then:
+Chrome で開発ツールインスタンスに接続し、以下の操作を行います。
 
-- Select the `Memory` tab.
-- Select `Allocation instrumentation timeline`.
-- Start profiling.
+- `Memory` タブを選択します。
+- `Allocation instrumentation timeline` を選択します。
+- プロファイリングを開始します。
 
 ![heap profiler tutorial step 1][heap profiler tutorial 1]
 
-Once the heap profiling is running, it is strongly recommended to run samples
-in order to identify memory issues. For example, if we were heap profiling a
-web application, we could use `Apache Benchmark` to produce load:
+ヒーププロファイリングの実行後、メモリの問題を特定するためにサンプルを実行することを強くお勧めします。例えば、Web アプリケーションのヒーププロファイリングを行う場合、`Apache Benchmark` を使用して負荷を生成できます。
 
 ```console
 $ ab -n 1000 -c 5 http://localhost:3000
 ```
 
-Then, press stop button when the load is complete:
+ロードが完了したら、停止ボタンを押します。
 
 ![heap profiler tutorial step 2][heap profiler tutorial 2]
 
-Finally, look at the snapshot data:
+最後に、スナップショットデータを確認します。
 
 ![heap profiler tutorial step 3][heap profiler tutorial 3]
 
-Check the [useful links](#useful-links) section for further information
-about memory terminology.
+メモリに関する用語の詳細については、[役立つリンク](#useful-links)セクションをご覧ください。
 
-## Sampling Heap Profiler
+## サンプリングヒーププロファイラー
 
-Sampling Heap Profiler tracks the memory allocation pattern and reserved space
-over time. Since it is sampling based its overhead is low enough to use in
-production systems.
+サンプリングヒーププロファイラーは、メモリ割り当てパターンと予約領域を経時的に追跡します。サンプリングベースであるため、オーバーヘッドは本番システムでも使用できるほど低くなっています。
 
-> You can use the module [`heap-profiler`][] to start and stop the heap
-> profiler programmatically.
+> モジュール [`heap-profiler`][] を使用して、ヒーププロファイラーをプログラムから起動および停止できます。
 
-### How To
+### 方法
 
-Start the application:
+アプリケーションの起動:
 
 ```console
 $ node --inspect index.js
 ```
 
-> `--inspect-brk` is an better choice for scripts.
+> スクリプトには `--inspect-brk` の方が適しています。
 
-Connect to the dev-tools instance and then:
+dev-tools インスタンスに接続し、以下の操作を行います。
 
-1. Select the `Memory` tab.
-2. Select `Allocation sampling`.
-3. Start profiling.
+1. 「Memory」タブを選択します。
+2. 「Allocation Sampling」を選択します。
+3. プロファイリングを開始します。
 
 ![heap profiler tutorial 4][heap profiler tutorial 4]
 
-Produce some load and stop the profiler. It will generate a summary with
-allocation based on their stacktraces. You can focus on the functions with more
-heap allocations, see the example below:
+負荷をかけ、プロファイラーを停止します。スタックトレースに基づいて割り当ての概要が生成されます。ヒープ割り当てが多い関数に注目してみましょう。以下の例をご覧ください。
 
 ![heap profiler tutorial 5][heap profiler tutorial 5]
 
-## Useful Links
+## 便利なリンク
 
 - https://developer.chrome.com/docs/devtools/memory-problems/memory-101/
 - https://developer.chrome.com/docs/devtools/memory-problems/allocation-profiler/

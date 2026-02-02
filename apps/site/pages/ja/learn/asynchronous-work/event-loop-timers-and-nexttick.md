@@ -3,29 +3,19 @@ title: The Node.js Event Loop
 layout: learn
 ---
 
-# The Node.js Event Loop
+# Node.js イベントループ
 
-## What is the Event Loop?
+## イベントループとは？
 
-The event loop is what allows Node.js to perform non-blocking I/O
-operations — despite the fact that a single JavaScript thread is used by default — by
-offloading operations to the system kernel whenever possible.
+イベントループは、Node.js がデフォルトで単一の JavaScript スレッドを使用するにもかかわらず、可能な限りシステムカーネルに操作をオフロードすることで、ノンブロッキング I/O 操作を実行できるようにする仕組みです。
 
-Since most modern kernels are multi-threaded, they can handle multiple
-operations executing in the background. When one of these operations
-completes, the kernel tells Node.js so that the appropriate callback
-may be added to the **poll** queue to eventually be executed. We'll explain
-this in further detail later in this topic.
+最近のカーネルのほとんどはマルチスレッドであるため、バックグラウンドで複数の操作を実行できます。これらの操作の 1 つが完了すると、カーネルは Node.js に適切なコールバックを **poll** キューに追加し、最終的に実行するように指示します。この点については、このトピックの後半で詳しく説明します。
 
-## Event Loop Explained
+## イベントループの説明
 
-When Node.js starts, it initializes the event loop, processes the
-provided input script (or drops into the [REPL][], which is not covered in
-this document) which may make async API calls, schedule timers, or call
-`process.nextTick()`, then begins processing the event loop.
+Node.js が起動すると、イベントループが初期化され、指定された入力スクリプトが処理されます（または [REPL][] にドロップされますが、このドキュメントでは説明されていません）。このスクリプトでは、非同期 API 呼び出し、タイマーのスケジュール設定、`process.nextTick()` の呼び出しなどが行われる場合があります。その後、イベントループの処理が開始されます。
 
-The following diagram shows a simplified overview of the event loop's
-order of operations.
+次の図は、イベントループの処理順序を簡略化して示しています。
 
 ```
    ┌───────────────────────────┐
@@ -48,67 +38,36 @@ order of operations.
    └───────────────────────────┘
 ```
 
-> Each box will be referred to as a "phase" of the event loop.
+> 各ボックスは、イベントループの「フェーズ」と呼ばれます。
 
-Each phase has a FIFO queue of callbacks to execute. While each phase is
-special in its own way, generally, when the event loop enters a given
-phase, it will perform any operations specific to that phase, then
-execute callbacks in that phase's queue until the queue has been
-exhausted or the maximum number of callbacks has executed. When the
-queue has been exhausted or the callback limit is reached, the event
-loop will move to the next phase, and so on.
+各フェーズには、実行するコールバックの FIFO キューがあります。各フェーズはそれぞれ独自の特殊性を持っていますが、一般的には、イベントループが特定のフェーズに入ると、そのフェーズに固有の操作を実行し、その後、キューが空になるかコールバックの実行回数の上限に達するまで、そのフェーズのキュー内のコールバックを実行します。キューが空になるかコールバックの実行回数の上限に達すると、イベントループは次のフェーズに移行し、これを繰り返します。
 
-Since any of these operations may schedule _more_ operations and new
-events processed in the **poll** phase are queued by the kernel, poll
-events can be queued while polling events are being processed. As a
-result, long running callbacks can allow the poll phase to run much
-longer than a timer's threshold. See the [**timers**](#timers) and
-[**poll**](#poll) sections for more details.
+これらの操作のいずれかがさらに操作をスケジュールする可能性があり、**poll** フェーズで処理される新しいイベントはカーネルによってキューに登録されるため、ポーリングイベントが処理されている間にもポーリングイベントがキューに登録されることがあります。その結果、実行時間の長いコールバックは、ポーリングフェーズをタイマーのしきい値よりもはるかに長く実行させる可能性があります。詳細については、[**timers**](#timers) および [**poll**](#poll) セクションを参照してください。
 
-> There is a slight discrepancy between the Windows and the
-> Unix/Linux implementation, but that's not important for this
-> demonstration. The most important parts are here. There are actually
-> seven or eight steps, but the ones we care about — ones that Node.js
-> actually uses - are those above.
+> WindowsとUnix/Linuxの実装には若干の差異がありますが、今回のデモでは重要ではありません。最も重要な部分はここにあります。実際には7つか8つのステップがありますが、ここで重要なのは、Node.jsが実際に使用する上記のステップです。
 
-## Phases Overview
+## フェーズの概要
 
-- **timers**: this phase executes callbacks scheduled by `setTimeout()`
-  and `setInterval()`.
-- **pending callbacks**: executes I/O callbacks deferred to the next loop
-  iteration.
-- **idle, prepare**: only used internally.
-- **poll**: retrieve new I/O events; execute I/O related callbacks (almost
-  all with the exception of close callbacks, the ones scheduled by timers,
-  and `setImmediate()`); node will block here when appropriate.
-- **check**: `setImmediate()` callbacks are invoked here.
-- **close callbacks**: some close callbacks, e.g. `socket.on('close', ...)`.
+- **timers**: このフェーズでは、`setTimeout()` と `setInterval()` によってスケジュールされたコールバックを実行します。
+- **pending callbacks**: 次のループ反復まで延期された I/O コールバックを実行します。
+- **idle, prepare**: 内部でのみ使用されます。
+- **poll**: 新しい I/O イベントを取得し、I/O 関連のコールバックを実行します (close コールバック、タイマーによってスケジュールされたコールバック、および `setImmediate()` を除くほぼすべてのコールバック)。Node は適切な場合にここでブロックします。
+- **check**: `setImmediate()` コールバックがここで呼び出されます。
+- **close callbacks**: 一部のクローズコールバック (例: `socket.on('close', ...)`)。
 
-Between each run of the event loop, Node.js checks if it is waiting for
-any asynchronous I/O or timers and shuts down cleanly if there are not
-any.
+イベントループの各実行の間に、Node.js は非同期 I/O またはタイマーを待機しているかどうかを確認し、待機していない場合は正常にシャットダウンします。
 
-Starting with libuv 1.45.0 (Node.js 20), the event loop behavior
-changed to run timers only after the **poll** phase, instead of both before and after
-as in earlier versions. This change can affect the timing of `setImmediate()` callbacks
-and how they interact with timers in certain scenarios.
+libuv 1.45.0 (Node.js 20) 以降、イベントループの動作が変更され、以前のバージョンではタイマーが **poll** フェーズの前後両方で実行されていましたが、現在は **poll** フェーズの後にのみ実行されるようになりました。この変更は、`setImmediate()` コールバックのタイミングや、特定のシナリオにおけるタイマーとの相互作用に影響を与える可能性があります。
 
-## Phases in Detail
+## フェーズの詳細
 
 ### timers
 
-A timer specifies the **threshold** _after which_ a provided callback
-_may be executed_ rather than the **exact** time a person _wants it to
-be executed_. Timers callbacks will run as early as they can be
-scheduled after the specified amount of time has passed; however,
-Operating System scheduling or the running of other callbacks may delay
-them.
+タイマーは、ユーザーが実行を希望する正確な時間ではなく、指定されたコールバックが実行される可能性のある **しきい値** を指定します。タイマーコールバックは、指定された時間が経過した後、スケジュール可能な限り早く実行されます。ただし、オペレーティングシステムのスケジュール設定や他のコールバックの実行によって遅延される可能性があります。
 
-> Technically, the [**poll** phase](#poll) controls when timers are executed.
+> 技術的には、[**poll** フェーズ](#poll) がタイマーの実行タイミングを制御します。
 
-For example, say you schedule a timeout to execute after a 100 ms
-threshold, then your script starts asynchronously reading a file which
-takes 95 ms:
+例えば、100 ミリ秒のしきい値後にタイムアウトを実行するようにスケジュール設定し、スクリプトがファイルの非同期読み取りを開始して 95 ミリ秒かかるとします。
 
 ```js
 const fs = require('node:fs');
@@ -137,103 +96,54 @@ someAsyncOperation(() => {
 });
 ```
 
-When the event loop enters the **poll** phase, it has an empty queue
-(`fs.readFile()` has not completed), so it will wait for the number of ms
-remaining until the soonest timer's threshold is reached. While it is
-waiting 95 ms pass, `fs.readFile()` finishes reading the file and its
-callback which takes 10 ms to complete is added to the **poll** queue and
-executed. When the callback finishes, there are no more callbacks in the
-queue, so the event loop will see that the threshold of the soonest
-timer has been reached then wrap back to the **timers** phase to execute
-the timer's callback. In this example, you will see that the total delay
-between the timer being scheduled and its callback being executed will
-be 105ms.
+イベントループが **poll** フェーズに入ると、キューは空です（`fs.readFile()` はまだ完了していません）。そのため、最も早いタイマーのしきい値に達するまで、残りミリ秒数だけ待機します。95 ミリ秒が経過するまで待機している間に、`fs.readFile()` はファイルの読み取りを終了し、完了までに 10 ミリ秒かかるコールバックが **poll** キューに追加され、実行されます。コールバックが終了すると、キューにコールバックがもう存在しないため、イベントループは最も早いタイマーのしきい値に達したことを確認し、**timers** フェーズに戻ってタイマーのコールバックを実行します。この例では、タイマーがスケジュールされてからコールバックが実行されるまでの合計遅延は 105 ミリ秒であることがわかります。
 
-> To prevent the **poll** phase from starving the event loop, [libuv][]
-> (the C library that implements the Node.js
-> event loop and all of the asynchronous behaviors of the platform)
-> also has a hard maximum (system dependent) before it stops polling for
-> more events.
+> **poll** フェーズでイベント ループが枯渇するのを防ぐために、[libuv][] (Node.js イベント ループとプラットフォームのすべての非同期動作を実装する C ライブラリ) にも、イベントのポーリングを停止するまでのハード最大値 (システム依存) があります。
 
 ### pending callbacks
 
-This phase executes callbacks for some system operations such as types
-of TCP errors. For example if a TCP socket receives `ECONNREFUSED` when
-attempting to connect, some \*nix systems want to wait to report the
-error. This will be queued to execute in the **pending callbacks** phase.
+このフェーズでは、TCPエラーの種類など、いくつかのシステム操作に対するコールバックを実行します。例えば、TCPソケットが接続時に`ECONNREFUSED`を受け取った場合、一部の\*nixシステムではエラーの報告を待機する必要があります。これは **pending callbacks**フェーズで実行されるようにキューに登録されます。
 
 ### poll
 
-The **poll** phase has two main functions:
+**poll** フェーズには主に 2 つの機能があります。
 
-1. Calculating how long it should block and poll for I/O, then
-2. Processing events in the **poll** queue.
+1. I/O をブロックしてポーリングする時間を計算する。
+2. **poll** キュー内のイベントを処理する。
 
-When the event loop enters the **poll** phase _and there are no timers
-scheduled_, one of two things will happen:
+イベントループが **poll** フェーズに入り、タイマーがスケジュールされていない場合、次の 2 つのうちのいずれかが発生します。
 
-- _If the **poll** queue **is not empty**_, the event loop will iterate
-  through its queue of callbacks executing them synchronously until
-  either the queue has been exhausted, or the system-dependent hard limit
-  is reached.
+- _**poll** キューが **空でない場合**_、イベントループはコールバックのキューを同期的に繰り返し実行し、キューが空になるかシステム依存のハードリミットに達するまで実行を続けます。
 
-- _If the **poll** queue **is empty**_, one of two more things will
-  happen:
-  - If scripts have been scheduled by `setImmediate()`, the event loop
-    will end the **poll** phase and continue to the **check** phase to
-    execute those scheduled scripts.
+- _**poll** キューが **空の場合**_、さらに次の 2 つのうちのいずれかが発生します。
+  - `setImmediate()` によってスクリプトがスケジュールされている場合、イベントループは **poll** フェーズを終了し、**check** フェーズに進んでスケジュールされたスクリプトを実行します。
 
-  - If scripts **have not** been scheduled by `setImmediate()`, the
-    event loop will wait for callbacks to be added to the queue, then
-    execute them immediately.
+  - スクリプトが `setImmediate()` によってスケジュールされていない場合、イベントループはコールバックがキューに追加されるまで待機し、追加されるとすぐに実行します。
 
-Once the **poll** queue is empty the event loop will check for timers
-_whose time thresholds have been reached_. If one or more timers are
-ready, the event loop will wrap back to the **timers** phase to execute
-those timers' callbacks.
+**poll** キューが空になると、イベントループは _時間しきい値に達した_ タイマーをチェックします。1つ以上のタイマーが準備完了状態の場合、イベントループは **timers** フェーズに戻り、それらのタイマーのコールバックを実行します。
 
 ### check
 
-This phase allows the event loop to execute callbacks immediately after the
-**poll** phase has completed. If the **poll** phase becomes idle and
-scripts have been queued with `setImmediate()`, the event loop may
-continue to the **check** phase rather than waiting.
+このフェーズでは、イベントループは **poll** フェーズの完了直後にコールバックを実行できます。**poll** フェーズがアイドル状態になり、スクリプトが `setImmediate()` でキューイングされている場合、イベントループは待機せずに **check** フェーズに進むことがあります。
 
-`setImmediate()` is actually a special timer that runs in a separate
-phase of the event loop. It uses a libuv API that schedules callbacks to
-execute after the **poll** phase has completed.
+`setImmediate()` は、実際にはイベントループの別のフェーズで実行される特別なタイマーです。これは、**poll** フェーズの完了後に実行されるコールバックをスケジュールする libuv API を使用します。
 
-Generally, as the code is executed, the event loop will eventually hit
-the **poll** phase where it will wait for an incoming connection, request,
-etc. However, if a callback has been scheduled with `setImmediate()`
-and the **poll** phase becomes idle, it will end and continue to the
-**check** phase rather than waiting for **poll** events.
+通常、コードが実行されると、イベントループは最終的に **poll** フェーズに到達し、そこで接続やリクエストなどの受信を待機します。ただし、`setImmediate()` でコールバックがスケジュールされており、**poll** フェーズがアイドル状態になった場合、イベントループは終了し、**poll** イベントを待機せずに **check** フェーズに進みます。
 
 ### close callbacks
 
-If a socket or handle is closed abruptly (e.g. `socket.destroy()`), the
-`'close'` event will be emitted in this phase. Otherwise it will be
-emitted via `process.nextTick()`.
+ソケットまたはハンドルが突然閉じられた場合（例：`socket.destroy()`）、このフェーズで `'close'` イベントが発行されます。それ以外の場合は、`process.nextTick()` を介して発行されます。
 
 ## `setImmediate()` vs `setTimeout()`
 
-`setImmediate()` and `setTimeout()` are similar, but behave in different
-ways depending on when they are called.
+`setImmediate()` と `setTimeout()` は似ていますが、呼び出されるタイミングによって動作が異なります。
 
-- `setImmediate()` is designed to execute a script once the
-  current **poll** phase completes.
-- `setTimeout()` schedules a script to be run after a minimum threshold
-  in ms has elapsed.
+- `setImmediate()` は、現在の **poll** フェーズが完了するとスクリプトを実行するように設計されています。
+- `setTimeout()` は、ミリ秒単位の最小しきい値が経過した後にスクリプトを実行するようにスケジュールします。
 
-The order in which the timers are executed will vary depending on the
-context in which they are called. If both are called from within the
-main module, then timing will be bound by the performance of the process
-(which can be impacted by other applications running on the machine).
+タイマーの実行順序は、呼び出されるコンテキストによって異なります。両方がメインモジュール内から呼び出された場合、タイミングはプロセスのパフォーマンスによって制限されます（マシン上で実行されている他のアプリケーションの影響を受ける可能性があります）。
 
-For example, if we run the following script which is not within an I/O
-cycle (i.e. the main module), the order in which the two timers are
-executed is non-deterministic, as it is bound by the performance of the
-process:
+例えば、次のスクリプトを I/O サイクル内（つまりメインモジュール）以外で実行した場合、2 つのタイマーの実行順序はプロセスのパフォーマンスによって制限されるため、非決定的になります。
 
 ```js
 // timeout_vs_immediate.js
@@ -256,8 +166,7 @@ immediate
 timeout
 ```
 
-However, if you move the two calls within an I/O cycle, the immediate
-callback is always executed first:
+ただし、I/O サイクル内で 2 つの呼び出しを移動すると、即時コールバックが常に最初に実行されます。
 
 ```js
 // timeout_vs_immediate.js
@@ -283,35 +192,19 @@ immediate
 timeout
 ```
 
-The main advantage to using `setImmediate()` over `setTimeout()` is
-`setImmediate()` will always be executed before any timers if scheduled
-within an I/O cycle, independently of how many timers are present.
+`setTimeout()` ではなく `setImmediate()` を使用する主な利点は、I/O サイクル内でスケジュールされている場合、存在するタイマーの数に関係なく、`setImmediate()` が常にタイマーの前に実行されることです。
 
 ## `process.nextTick()`
 
-### Understanding `process.nextTick()`
+### `process.nextTick()` を理解する
 
-You may have noticed that `process.nextTick()` was not displayed in the
-diagram, even though it's a part of the asynchronous API. This is because
-`process.nextTick()` is not technically part of the event loop. Instead,
-the `nextTickQueue` will be processed after the current operation is
-completed, regardless of the current phase of the event loop. Here,
-an _operation_ is defined as a transition from the
-underlying C/C++ handler, and handling the JavaScript that needs to be
-executed.
+`process.nextTick()` は非同期 API の一部であるにもかかわらず、図には表示されていないことにお気づきかもしれません。これは、`process.nextTick()` が厳密にはイベントループの一部ではないためです。代わりに、`nextTickQueue` は、イベントループの現在のフェーズに関係なく、現在の操作が完了した後に処理されます。ここで、_操作_ は、基盤となる C/C++ ハンドラーからの遷移として定義され、実行する必要がある JavaScript を処理します。
 
-Looking back at our diagram, any time you call `process.nextTick()` in a
-given phase, all callbacks passed to `process.nextTick()` will be
-resolved before the event loop continues. This can create some bad
-situations because **it allows you to "starve" your I/O by making
-recursive `process.nextTick()` calls**, which prevents the event loop
-from reaching the **poll** phase.
+図をもう一度見てみると、特定のフェーズで `process.nextTick()` を呼び出すたびに、イベントループが続行される前に `process.nextTick()` に渡されるすべてのコールバックが解決されます。これは、**`process.nextTick()` を再帰的に呼び出すことで I/O を「枯渇」させ**、イベントループが **ポーリング** フェーズに到達できないため、問題が発生する可能性があります。
 
-### Why would that be allowed?
+### なぜそんなことが許されるのでしょうか？
 
-Why would something like this be included in Node.js? Part of it is a
-design philosophy where an API should always be asynchronous even where
-it doesn't have to be. Take this code snippet for example:
+なぜこのようなものがNode.jsに含まれているのでしょうか？その理由の一つは、APIは必ずしも非同期である必要がない場合でも常に非同期であるべきという設計思想にあります。例えば、次のコードスニペットをご覧ください。
 
 ```js
 function apiCall(arg, callback) {
@@ -324,23 +217,12 @@ function apiCall(arg, callback) {
 }
 ```
 
-The snippet does an argument check and if it's not correct, it will pass
-the error to the callback. The API updated fairly recently to allow
-passing arguments to `process.nextTick()` allowing it to take any
-arguments passed after the callback to be propagated as the arguments to
-the callback so you don't have to nest functions.
+このスニペットは引数チェックを行い、正しくない場合はエラーをコールバックに渡します。API は最近更新され、`process.nextTick()` に引数を渡せるようになりました。これにより、コールバック後に渡された引数をコールバックの引数として渡すことができるため、関数をネストする必要がなくなりました。
 
-What we're doing is passing an error back to the user but only _after_
-we have allowed the rest of the user's code to execute. By using
-`process.nextTick()` we guarantee that `apiCall()` always runs its
-callback _after_ the rest of the user's code and _before_ the event loop
-is allowed to proceed. To achieve this, the JS call stack is allowed to
-unwind then immediately execute the provided callback which allows a
-person to make recursive calls to `process.nextTick()` without reaching a
-`RangeError: Maximum call stack size exceeded` from v8.
+ここでは、ユーザーにエラーを返しますが、これはユーザーコードの残りの実行を許可した _後_ にのみ行われます。`process.nextTick()` を使用することで、`apiCall()` は常にユーザーコードの残りの実行を許可した _後_ 、かつイベントループの実行が許可される _前_ にコールバックを実行することが保証されます。これを実現するために、JS のコールスタックは展開され、指定されたコールバックがすぐに実行されるため、`process.nextTick()` を再帰呼び出ししても、v8 の `RangeError: Maximum call stack size exceeded` が発生することはありません。
 
-This philosophy can lead to some potentially problematic situations.
-Take this snippet for example:
+この考え方は、潜在的に問題を引き起こす可能性のある状況につながる可能性があります。
+次のスニペットを例に挙げましょう。
 
 ```js
 let bar = null;
@@ -359,20 +241,9 @@ someAsyncApiCall(() => {
 bar = 1;
 ```
 
-The user defines `someAsyncApiCall()` to have an asynchronous signature,
-but it actually operates synchronously. When it is called, the callback
-provided to `someAsyncApiCall()` is called in the same phase of the
-event loop because `someAsyncApiCall()` doesn't actually do anything
-asynchronously. As a result, the callback tries to reference `bar` even
-though it may not have that variable in scope yet, because the script has not
-been able to run to completion.
+ユーザーは `someAsyncApiCall()` を非同期シグネチャを持つように定義していますが、実際には同期的に動作します。`someAsyncApiCall()` が呼び出されると、`someAsyncApiCall()` に提供されたコールバックがイベントループの同じフェーズで呼び出されます。これは、`someAsyncApiCall()` 自体が実際には非同期処理を実行していないためです。その結果、コールバックは `bar` を参照しようとしますが、スクリプトが完了まで実行されていないため、その変数がスコープ内に存在しない可能性があります。
 
-By placing the callback in a `process.nextTick()`, the script still has the
-ability to run to completion, allowing all the variables, functions,
-etc., to be initialized prior to the callback being called. It also has
-the advantage of not allowing the event loop to continue. It may be
-useful for the user to be alerted to an error before the event loop is
-allowed to continue. Here is the previous example using `process.nextTick()`:
+コールバックを `process.nextTick()` に配置することで、スクリプトは完了まで実行することができ、コールバックが呼び出される前にすべての変数、関数などを初期化できます。また、イベントループの継続を禁止するという利点もあります。イベントループの継続が許可される前にエラーをユーザーに警告することは有用です。`process.nextTick()` を使用した前述の例を以下に示します。
 
 ```js
 let bar = null;
@@ -388,7 +259,7 @@ someAsyncApiCall(() => {
 bar = 1;
 ```
 
-Here's another real world example:
+もう一つの現実世界の例を挙げます。
 
 ```js
 const server = net.createServer(() => {}).listen(8080);
@@ -396,44 +267,30 @@ const server = net.createServer(() => {}).listen(8080);
 server.on('listening', () => {});
 ```
 
-When only a port is passed, the port is bound immediately. So, the
-`'listening'` callback could be called immediately. The problem is that the
-`.on('listening')` callback will not have been set by that time.
+ポートのみが渡された場合、そのポートは即座にバインドされます。そのため、`'listening'` コールバックは即座に呼び出される可能性があります。問題は、その時点で `.on('listening')` コールバックが設定されていないことです。
 
-To get around this, the `'listening'` event is queued in a `nextTick()`
-to allow the script to run to completion. This allows the user to set
-any event handlers they want.
+この問題を回避するために、`'listening'` イベントは `nextTick()` のキューに登録され、スクリプトが完了するまで実行されます。これにより、ユーザーは任意のイベントハンドラーを設定できます。
 
 ## `process.nextTick()` vs `setImmediate()`
 
-We have two calls that are similar as far as users are concerned, but
-their names are confusing.
+ユーザーの観点からは似たような呼び出しが2つありますが、名前が紛らわしいです。
 
-- `process.nextTick()` fires immediately on the same phase
-- `setImmediate()` fires on the following iteration or 'tick' of the
-  event loop
+- `process.nextTick()` は同じフェーズで即座に実行されます。
+- `setImmediate()` はイベントループの次の反復処理、つまり「tick」で実行されます。
 
-In essence, the names should be swapped. `process.nextTick()` fires more
-immediately than `setImmediate()`, but this is an artifact of the past
-which is unlikely to change. Making this switch would break a large
-percentage of the packages on npm. Every day more new modules are being
-added, which means every day we wait, more potential breakages occur.
-While they are confusing, the names themselves won't change.
+本質的には、これらの名前は入れ替えるべきです。`process.nextTick()` は `setImmediate()` よりも即座に実行されますが、これは過去の遺物であり、今後変更される可能性は低いでしょう。この変更を行うと、npm 上のパッケージの大部分が動作しなくなります。毎日新しいモジュールが追加されているため、待つ時間が長ければ長いほど、動作しなくなる可能性が高くなります。混乱を招くかもしれませんが、名前自体は変更されません。
 
-> We recommend developers use `setImmediate()` in all cases because it's
-> easier to reason about.
+> 開発者の皆様には、理解しやすいため、常に `setImmediate()` を使用することをお勧めします。
 
-## Why use `process.nextTick()`?
+## なぜ `process.nextTick()` を使うのでしょうか？
 
-There are two main reasons:
+主な理由は2つあります。
 
-1. Allow users to handle errors, cleanup any then unneeded resources, or
-   perhaps try the request again before the event loop continues.
+1. ユーザーがエラー処理を行えるようにするため、不要なリソースをクリーンアップするため、あるいはイベントループが継続する前にリクエストを再試行できるようにするため。
 
-2. At times it's necessary to allow a callback to run after the call
-   stack has unwound but before the event loop continues.
+2. コールスタックが展開された後、イベントループが継続する前にコールバックを実行できるようにする必要がある場合もあります。
 
-One example is to match the user's expectations. Simple example:
+一例として、ユーザーの期待に応えることが挙げられます。簡単な例を以下に示します。
 
 ```js
 const server = net.createServer();
@@ -443,15 +300,9 @@ server.listen(8080);
 server.on('listening', () => {});
 ```
 
-Say that `listen()` is run at the beginning of the event loop, but the
-listening callback is placed in a `setImmediate()`. Unless a
-hostname is passed, binding to the port will happen immediately. For
-the event loop to proceed, it must hit the **poll** phase, which means
-there is a non-zero chance that a connection could have been received
-allowing the connection event to be fired before the listening event.
+例えば、`listen()` はイベントループの先頭で実行されますが、リスニングコールバックは `setImmediate()` 内に配置されているとします。ホスト名が渡されない限り、ポートへのバインドは即座に行われます。イベントループが続行するには、**poll** フェーズに到達する必要があります。つまり、リスニングイベントの前に接続が受信され、接続イベントが発行される可能性がゼロではないということです。
 
-Another example is extending an `EventEmitter` and emitting an
-event from within the constructor:
+別の例として、`EventEmitter` を拡張し、コンストラクタ内からイベントを発行する方法があります。
 
 ```js
 const EventEmitter = require('node:events');
@@ -469,11 +320,7 @@ myEmitter.on('event', () => {
 });
 ```
 
-You can't emit an event from the constructor immediately
-because the script will not have processed to the point where the user
-assigns a callback to that event. So, within the constructor itself,
-you can use `process.nextTick()` to set a callback to emit the event
-after the constructor has finished, which provides the expected results:
+コンストラクターからすぐにイベントを発行することはできません。スクリプトは、ユーザーがそのイベントにコールバックを割り当てる時点まで処理が進んでいないためです。そのため、コンストラクター内で `process.nextTick()` を使用して、コンストラクターの終了後にイベントを発行するコールバックを設定することで、期待どおりの結果を得ることができます。
 
 ```js
 const EventEmitter = require('node:events');

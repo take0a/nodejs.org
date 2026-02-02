@@ -4,21 +4,21 @@ layout: learn
 authors: avivkeller
 ---
 
-# Collecting code coverage in Node.js
+# Node.js でのコードカバレッジの収集
 
-Node.js provides built-in support for code coverage through its test runner, which can be enabled using the [`--experimental-test-coverage`](https://nodejs.org/api/cli.html#--experimental-test-coverage) flag.
+Node.js は、テストランナーを通じてコードカバレッジの組み込みサポートを提供しており、[`--experimental-test-coverage`](https://nodejs.org/api/cli.html#--experimental-test-coverage) フラグを使用して有効にできます。
 
-If using the `run()` API, the `coverage` option must be set to `true`. For more information on the `run()` API, see [the `node:test` documentation](https://nodejs.org/docs/latest/api/test.html#runoptions).
+`run()` API を使用する場合は、`coverage` オプションを `true` に設定する必要があります。`run()` API の詳細については、[`node:test` ドキュメント](https://nodejs.org/docs/latest/api/test.html#runoptions) を参照してください。
 
-## What is code coverage?
+## コードカバレッジとは？
 
-Code coverage is a metric for test runners that gauges how much of a program’s source code is executed during testing. It reveals which portions of the codebase are tested and which are not, helping to pinpoint gaps in the test suite. This ensures more comprehensive testing of the software and minimizes the risk of undetected bugs. Typically expressed as a percentage, higher code coverage percentages indicate more thorough test coverage. For a more detailed explanation of code coverage, you can refer to the ["Code coverage" Wikipedia article](https://en.wikipedia.org/wiki/Code_coverage).
+コードカバレッジは、テストランナーがテスト中にプログラムのソースコードがどの程度実行されたかを測定する指標です。コードベースのどの部分がテストされ、どの部分がテストされていないかを明らかにし、テストスイートのギャップを特定するのに役立ちます。これにより、ソフトウェアのテストをより包括的に実施でき、未検出のバグのリスクを最小限に抑えることができます。コードカバレッジは通常パーセンテージで表され、高いコードカバレッジ率ほど、より徹底したテストカバレッジを示します。コードカバレッジの詳細な説明については、Wikipediaの[「コードカバレッジ」の記事](https://en.wikipedia.org/wiki/Code_coverage)をご覧ください。
 
-## Basic coverage reporting
+## 基本的なカバレッジレポート
 
-Let's walk through a simple example to demonstrate how code coverage works in Node.js.
+Node.js におけるコードカバレッジの仕組みを、簡単な例を使って見ていきましょう。
 
-> **Note:** This example, and all other ones in this file, are written using CommonJS. If you are unfamiliar with this concept, please read the [CommonJS Modules](https://nodejs.org/docs/latest/api/modules.html) documentation.
+> **注:** この例とこのファイル内の他のすべての例は、CommonJS を使用して記述されています。この概念に馴染みがない場合は、[CommonJS モジュール](https://nodejs.org/docs/latest/api/modules.html) のドキュメントをご覧ください。
 
 ```cjs displayName="main.js"
 function add(a, b) {
@@ -50,11 +50,11 @@ test('isEven() should report whether a number is even', t => {
 });
 ```
 
-In the module, we have three functions: `add`, `isEven`, and `multiply`.
+このモジュールには、`add`、`isEven`、`multiply` という3つの関数があります。
 
-In the test file, we are testing the `add()` and `isEven()` functions. Notice that the `multiply()` function is not covered by any tests.
+テストファイルでは、`add()` 関数と `isEven()` 関数をテストしています。`multiply()` 関数はどのテストにも含まれていないことに注意してください。
 
-To collect code coverage while running your tests, see the following snippets:
+テスト実行中にコードカバレッジを収集するには、次のスニペットを参照してください。
 
 ```bash displayName="CLI"
 node --experimental-test-coverage --test main.test.js
@@ -64,7 +64,7 @@ node --experimental-test-coverage --test main.test.js
 run({ files: ['main.test.js'], coverage: true });
 ```
 
-After running the tests, you'll receive a report that looks something like this:
+テストを実行すると、次のようなレポートが表示されます。
 
 ```text displayName="Coverage Report"
 ✔ add() should add two numbers (1.505987ms)
@@ -89,24 +89,24 @@ After running the tests, you'll receive a report that looks something like this:
 ℹ end of coverage report
 ```
 
-The coverage report provides a breakdown of how much of your code is covered by tests:
+カバレッジレポートは、テストでカバーされたコードの割合の内訳を示します。
 
-- **Line Coverage**: The percentage of lines executed during the tests.
-- **Branch Coverage**: The percentage of code branches (like if-else statements) tested.
-- **Function Coverage**: The percentage of functions that have been invoked during testing.
+- **行カバレッジ**: テスト中に実行された行の割合。
+- **分岐カバレッジ**: テストされたコード分岐（if-else 文など）の割合。
+- **関数カバレッジ**: テスト中に呼び出された関数の割合。
 
-In this example:
+この例では、次のようになります。
 
-- `main.js` shows 76.92% line coverage and 66.67% function coverage because the `multiply()` function was not tested. The uncovered lines (9-11) correspond to this function.
-- `main.test.js` shows 100% coverage across all metrics, indicating that the tests themselves were fully executed.
+- `main.js` は、`multiply()` 関数がテストされていないため、行カバレッジが 76.92%、関数カバレッジが 66.67% です。カバーされていない行 (9～11) はこの関数に対応しています。
+- `main.test.js` は、すべてのメトリックで 100% のカバレッジを示しており、テスト自体が完全に実行されたことを示しています。
 
-## Including and excluding
+## 含める、除外する
 
-When working on applications, you might encounter situations where certain files or lines of code need to be excluded.
+アプリケーションを開発しているときに、特定のファイルやコード行を除外する必要がある状況に遭遇することがあります。
 
-Node.js provides mechanisms to handle this, including the use of comments to ignore specific code sections and the CLI to exclude entire patterns.
+Node.js は、コメントを使用して特定のコードセクションを無視したり、CLI を使用してパターン全体を除外したりするなど、これを処理するためのメカニズムを提供しています。
 
-### Using comments
+### コメントの使用
 
 ```cjs displayName="main.js"
 function add(a, b) {
@@ -148,9 +148,9 @@ module.exports = { add, isEven, multiply };
 ℹ end of coverage report
 ```
 
-When reporting coverage with this modified `main.js` file, the report will now show 100% coverage across all metrics. This is because the uncovered lines (9-11) have been ignored.
+この修正された `main.js` ファイルでカバレッジをレポートすると、すべてのメトリックで 100% のカバレッジが表示されます。これは、カバーされていない行 (9～11) が無視されているためです。
 
-There are multiple ways to ignore sections of code using comments.
+コメントを使用してコードの一部を無視する方法は複数あります。
 
 ```cjs displayName="ignore next"
 function add(a, b) {
@@ -206,17 +206,17 @@ function multiply(a, b) {
 module.exports = { add, isEven, multiply };
 ```
 
-Each of these different methods will produce the same report, with 100% code coverage across all metrics.
+これらの異なる方法はいずれも、すべてのメトリクスで 100% のコードカバレッジを持つ同じレポートを生成します。
 
-### Using the CLI
+### CLI の使用
 
-Node.js offers two CLI arguments for managing the inclusion or exclusion of specific files in a coverage report.
+Node.js には、カバレッジレポートに特定のファイルを含めるか除外するかを管理するための 2 つの CLI 引数が用意されています。
 
-The [`--test-coverage-include`](https://nodejs.org/api/cli.html#--test-coverage-include) flag (`coverageIncludeGlobs` in the `run()` API) restricts the coverage to files that match the provided glob pattern. By default, files in the `/node_modules/` directory are excluded, but this flag allows you to explicitly include them.
+[`--test-coverage-include`](https://nodejs.org/api/cli.html#--test-coverage-include) フラグ（`run()` API の `coverageIncludeGlobs`）は、指定された glob パターンに一致するファイルのみにカバレッジを制限します。デフォルトでは `/node_modules/` ディレクトリ内のファイルは除外されますが、このフラグを使用することで明示的に含めることができます。
 
-The [`--test-coverage-exclude`](https://nodejs.org/api/cli.html#--test-coverage-exclude) flag (`coverageExcludeGlobs` in the `run()` API) omits files that match the given glob pattern from the coverage report.
+[`--test-coverage-exclude`](https://nodejs.org/api/cli.html#--test-coverage-exclude) フラグ（`run()` API の `coverageExcludeGlobs`）は、指定された glob パターンに一致するファイルをカバレッジレポートから除外します。
 
-These flags can be used multiple times, and when both are used together, files must adhere to the inclusion rules, while also avoiding the exclusion rules.
+これらのフラグは複数回使用できます。両方を一緒に使用する場合、ファイルは包含ルールに準拠すると同時に除外ルールも回避する必要があります。
 
 ```text displayName="Directory Structure"
 .
@@ -240,7 +240,7 @@ These flags can be used multiple times, and when both are used together, files m
 ℹ end of coverage report
 ```
 
-`src/age.js` has less-than-optimal coverage in the report above, but with the `--test-coverage-exclude` flag (`coverageExcludeGlobs` in the `run()` API), it can be excluded from the report entirely.
+上記のレポートでは `src/age.js` のカバレッジは最適とは言えませんが、`--test-coverage-exclude` フラグ (`run()` API の `coverageExcludeGlobs`) を使用すると、レポートから完全に除外できます。
 
 ```bash displayName="CLI"
 node --experimental-test-coverage --test-coverage-exclude=src/age.js --test main.test.js
@@ -267,7 +267,7 @@ run({
 ℹ end of coverage report
 ```
 
-Our test file is also included in this coverage report, but we only want JavaScript files in the `src/` directory. The `--test-coverage-include` flag (`coverageIncludeGlobs` in the `run()` API) can be used in this case.
+このカバレッジレポートにはテストファイルも含まれていますが、`src/` ディレクトリ内の JavaScript ファイルのみを対象としています。この場合、`--test-coverage-include` フラグ（`run()` API では `coverageIncludeGlobs`）を使用できます。
 
 ```bash displayName="CLI"
 node --experimental-test-coverage --test-coverage-include=src/*.js --test main.test.js
@@ -290,17 +290,17 @@ run({ files: ['main.test.js'], coverage: true, coverageInclude: ['src/*.js'] });
 ℹ end of coverage report
 ```
 
-## Thresholds
+## しきい値
 
-By default, when all tests pass, Node.js exits with code `0`, which indicates a successful execution. However, the coverage report can be configured to exit with code `1` when coverage is failing.
+デフォルトでは、すべてのテストに合格すると、Node.js は実行が成功したことを示すコード `0` で終了します。ただし、カバレッジが失敗した場合にコード `1` で終了するようにカバレッジレポートを設定できます。
 
-Node.js currently supports thresholds for all three of the coverages supported:
+Node.js は現在、サポートされている 3 つのカバレッジすべてに対してしきい値をサポートしています。
 
-- [`--test-coverage-lines`](https://nodejs.org/api/cli.html#--test-coverage-linesthreshold) (`lineCoverage` in the `run()` API) for line coverage.
-- [`--test-coverage-branches`](https://nodejs.org/api/cli.html#--test-coverage-branchesthreshold) (`branchCoverage` in the `run()` API) for branch coverage.
-- [`--test-coverage-functions`](https://nodejs.org/api/cli.html#--test-coverage-functionsthreshold) (`functionCoverage` in the `run()` API) for function coverage.
+- [`--test-coverage-lines`](https://nodejs.org/api/cli.html#--test-coverage-linesthreshold) (`run()` API の `lineCoverage`) は行カバレッジを示します。
+- [`--test-coverage-branches`](https://nodejs.org/api/cli.html#--test-coverage-branchesthreshold) (`run()` API の `branchCoverage`) は分岐カバレッジを示します。
+- 関数カバレッジには [`--test-coverage-functions`](https://nodejs.org/api/cli.html#--test-coverage-functionsthreshold) (`run()` API の `functionCoverage`) を使用します。
 
-If you wanted to require the previous example to have line coverage >= 90%, you could use the `--test-coverage-lines=90` flag (`lineCoverage: 90` in the `run()` API).
+前の例で行カバレッジ >= 90% を要求したい場合は、`--test-coverage-lines=90` フラグ (`run()` API の `lineCoverage: 90`) を使用できます。
 
 ```bash displayName="CLI"
 node --experimental-test-coverage --test-coverage-lines=90 --test main.test.js

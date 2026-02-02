@@ -4,9 +4,9 @@ layout: learn
 authors: flaviocopes, MylesBorins, LaRuaNa, ahmadawais, clean99, ovflowd
 ---
 
-# Understanding setImmediate()
+# setImmediate() を理解する
 
-When you want to execute some piece of code asynchronously, but as soon as possible, one option is to use the `setImmediate()` function provided by Node.js:
+コードを非同期で、かつできるだけ早く実行したい場合、Node.js が提供する `setImmediate()` 関数を使用するという選択肢があります。
 
 ```js
 setImmediate(() => {
@@ -14,19 +14,19 @@ setImmediate(() => {
 });
 ```
 
-Any function passed as the setImmediate() argument is a callback that's executed in the next iteration of the event loop.
+setImmediate() 引数として渡される関数は、イベントループの次の反復処理で実行されるコールバックです。
 
-How is `setImmediate()` different from `setTimeout(() => {}, 0)` (passing a 0ms timeout), and from `process.nextTick()` and `Promise.then()`?
+`setImmediate()` は、`setTimeout(() => {}, 0)`（0ms のタイムアウトを渡す）や `process.nextTick()`、`Promise.then()` とどう違うのでしょうか？
 
-A function passed to `process.nextTick()` is going to be executed on the current iteration of the event loop, after the current operation ends. This means it will always execute before `setTimeout` and `setImmediate`.
+`process.nextTick()` に渡される関数は、イベントループの現在の反復処理において、現在の処理が終了した後に実行されます。つまり、常に `setTimeout` と `setImmediate` の前に実行されます。
 
-A `setTimeout()` callback with a 0ms delay is very similar to `setImmediate()`. The execution order will depend on various factors, but they will be both run in the next iteration of the event loop.
+0ms の遅延を持つ `setTimeout()` コールバックは `setImmediate()` と非常によく似ています。実行順序は様々な要因によって異なりますが、どちらもイベントループの次の反復処理で実行されます。
 
-A `process.nextTick` callback is added to `process.nextTick queue`. A `Promise.then()` callback is added to `promises microtask queue`. A `setTimeout`, `setImmediate` callback is added to `macrotask queue`.
+`process.nextTick` コールバックが `process.nextTick queue` に追加されます。 `Promise.then()` コールバックが `promises microtask queue` に追加されました。`setTimeout` および `setImmediate` コールバックが `macrotask queue` に追加されました。
 
-Event loop executes tasks in `process.nextTick queue` first, and then executes `promises microtask queue`, and then executes `macrotask queue`.
+イベントループは、まず `process.nextTick queue` 内のタスクを実行し、次に `promises microtask queue` を実行し、最後に `macrotask queue` を実行します。
 
-Here is an example to show the order between `setImmediate()`, `process.nextTick()` and `Promise.then()`:
+`setImmediate()`、`process.nextTick()`、`Promise.then()` の順序を示す例を以下に示します。
 
 ```js
 const baz = () => console.log('baz');
@@ -50,12 +50,12 @@ start();
 // start foo bar zoo baz
 ```
 
-This code will first call `start()`, then call `foo()` in `process.nextTick queue`. After that, it will handle `promises microtask queue`, which prints `bar` and adds `zoo()` in `process.nextTick queue` at the same time. Then it will call `zoo()` which has just been added. In the end, the `baz()` in `macrotask queue` is called.
+このコードはまず `start()` を呼び出し、次に `process.nextTick queue` 内の `foo()` を呼び出します。その後、`promises microtask queue` を処理し、`bar` を出力すると同時に `process.nextTick queue` に `zoo()` を追加します。そして、追加されたばかりの `zoo()` を呼び出します。最後に、`macrotask queue` 内の `baz()` が呼び出されます。
 
-The principle aforementioned holds true in CommonJS cases, but keep in mind in ES Modules, e.g. `mjs` files, the execution order will be different:
+上記の原則は CommonJS の場合にも当てはまりますが、ES モジュール（例: `mjs` ファイル）では実行順序が異なることに注意してください。
 
 ```js
 // start bar foo zoo baz
 ```
 
-This is because the ES Module being loaded is wrapped as an asynchronous operation, and thus the entire script is actually already in the `promises microtask queue`. So when the promise is immediately resolved, its callback is appended to the `microtask` queue. Node.js will attempt to clear the queue until moving to any other queue, and hence you will see it outputs `bar` first.
+これは、ロードされるESモジュールが非同期操作としてラップされているため、スクリプト全体が実際には既に「promises microtask queue」に格納されているからです。そのため、promiseが即座に解決されると、そのコールバックが「microtask」キューに追加されます。Node.jsは他のキューに移動するまでキューをクリアしようとするため、最初に「bar」が出力されます。

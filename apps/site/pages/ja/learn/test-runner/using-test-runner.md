@@ -4,9 +4,9 @@ layout: learn
 authors: JakobJingleheimer
 ---
 
-# Using Node.js's test runner
+# Node.js のテストランナーの使用
 
-Node.js has a flexible and robust built-in test runner. This guide will show you how to set up and use it.
+Node.js には、柔軟で堅牢な組み込みテストランナーが搭載されています。このガイドでは、その設定方法と使い方を説明します。
 
 ```text displayName="Architecture overview"
 example/
@@ -41,11 +41,11 @@ npm install --save-dev concurrently
 }
 ```
 
-> **Note**: globs require node v21+, and the globs must themselves be wrapped in quotes (without, you'll get different behaviour than expected, wherein it may first appear to be working but isn't).
+> **注**: globs は Node.js バージョン 21 以降で使用でき、globs 自体を引用符で囲む必要があります (引用符で囲まないと、最初は動作しているように見えても実際には動作しないなど、想定とは異なる動作をする可能性があります)。
 
-There are some things you always want, so put them in a base setup file like the following. This file will get imported by other, more bespoke setups.
+常に必要な項目がいくつかあるため、以下のような基本設定ファイルに記述しておきます。このファイルは、他のよりカスタマイズされた設定によってインポートされます。
 
-## General setup
+## 一般的な設定
 
 <details>
 <summary>`test/setup.mjs`</summary>
@@ -60,15 +60,15 @@ register('some-typescript-loader');
 
 </details>
 
-Then for each setup, create a dedicated `setup` file (ensuring the base `setup.mjs` file is imported within each). There are a number of reasons to isolate the setups, but the most obvious reason is [YAGNI](https://en.wikipedia.org/wiki/You_aren't_gonna_need_it) + performance: much of what you may be setting up are environment-specific mocks/stubs, which can be quite expensive and will slow down test runs. You want to avoid those costs (literal money you pay to CI, time waiting for tests to finish, etc) when you don't need them.
+次に、各セットアップごとに専用の `setup` ファイルを作成します（各セットアップにベースの `setup.mjs` ファイルがインポートされていることを確認してください）。セットアップを分離する理由はいくつかありますが、最も明白な理由は [YAGNI](https://en.wikipedia.org/wiki/You_aren't_gonna_need_it) とパフォーマンスです。セットアップするものの多くは環境固有のモック/スタブであり、これらは非常にコストがかかり、テスト実行の速度を低下させる可能性があります。不要な場合は、これらのコスト（CI に支払う実際の費用、テストの完了を待つ時間など）を回避する必要があります。
 
-Each example below was taken from real-world projects; they may not be appropriate/applicable to yours, but each demonstrate general concepts that are broadly applicable.
+以下の各例は実際のプロジェクトから抜粋したものです。必ずしもお客様のプロジェクトに適切/適用できるとは限りませんが、いずれも広く適用可能な一般的な概念を示しています。
 
-## Dynamically generating test cases
+## テストケースの動的生成
 
-Some times, you may want to dynamically generate test-cases. For instance, you want to test the same thing across a bunch of files. This is possible, albeit slightly arcane. You must use `test` (you cannot use `describe`) + `testContext.test`:
+テストケースを動的に生成したい場合があります。例えば、複数のファイルにわたって同じテストを実行したい場合などです。これは少し複雑ですが、可能です。`test` と `testContext.test` を使用する必要があります（`describe` は使用できません）。
 
-### Simple example
+### 簡単な例
 
 ```js displayName="23.8.0 and later"
 import assert from 'node:assert/strict';
@@ -111,7 +111,7 @@ test('Detect OS via user-agent', { concurrency: true }, async t => {
 });
 ```
 
-### Advanced example
+### 高度な例
 
 ```js displayName="23.8.0 and later"
 import assert from 'node:assert/strict';
@@ -160,9 +160,9 @@ test('Check package.jsons', { concurrency: true }, async t => {
 import { globSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-// Note: This would be better implemented as an async generator, leveraging fs.glob (instead of fs.globSync);
-// however, generators and especially async generators are much less understood,
-// so this simplified example is provided for easier understanding.
+// 注: これは、fs.globSync ではなく fs.glob を活用した非同期ジェネレーターとして
+// 実装する方が適切ですが、ジェネレーター、特に非同期ジェネレーターはあまり理解されていないため、
+// 理解しやすいようにこの簡略化された例が提供されています。
 
 /**
  * Get all the package.json files, by default 1-level deep within ./workspaces/
@@ -170,18 +170,18 @@ import { fileURLToPath } from 'node:url';
 export function getWorkspacePJSONs(path = './workspaces/*/package.json') {
   return Promise.all(
     globSync(
-      // ⚠️ Passing a file URL string, like from import.meta.resolve, causes glob* to fail silently
+      // ⚠️ import.meta.resolve のようなファイル URL 文字列を渡すと、glob* は何も言わずに失敗する。
       fileURLToPath(import.meta.resolve(path))
     ).map(path => import(path, { with: { type: 'json' } }))
   );
 }
 ```
 
-> **Note**: Prior to version 23.8.0, the setup is quite different because `testContext.test` was not automatically awaited.
+> **注**: バージョン 23.8.0 より前では、`testContext.test` が自動的に待機されないため、設定が大きく異なります。
 
-## ServiceWorker tests
+## ServiceWorker テスト
 
-[`ServiceWorkerGlobalScope`](https://developer.mozilla.org/docs/Web/API/ServiceWorkerGlobalScope) contains very specific APIs that don't exist in other environments, and some of its APIs are seemingly similar to others (ex `fetch`) but have augmented behaviour. You do not want these to spill into unrelated tests.
+[`ServiceWorkerGlobalScope`](https://developer.mozilla.org/docs/Web/API/ServiceWorkerGlobalScope) には、他の環境に存在しない非常に特殊な API が含まれており、その一部の API は一見他の API と似ていますが (例 `fetch`)、動作が拡張されています。これらの API を無関係なテストに含めないようにする必要があります。
 
 <details>
 <summary>`test/setup.sw.mjs`</summary>
@@ -236,16 +236,16 @@ describe('ServiceWorker::onActivate()', () => {
 });
 ```
 
-## Snapshot tests
+## スナップショットテスト
 
-These were popularised by Jest; now, many libraries implement such functionality, including Node.js as of v22.3.0. There are several use-cases such as verifying component rendering output and [Infrastructure as Code](https://en.wikipedia.org/wiki/Infrastructure_as_code) config. The concept is the same regardless of use-case.
+これはJestによって普及し、現在では多くのライブラリがこの機能を搭載しており、Node.jsもv22.3.0以降で実装されています。コンポーネントのレンダリング出力や[Infrastructure as Code](https://en.wikipedia.org/wiki/Infrastructure_as_code)設定の検証など、様々なユースケースがあります。ユースケースに関わらず、概念は同じです。
 
-There is no specific configuration _required_ except enabling the feature via [`--experimental-test-snapshots`](). But to demonstrate the optional configuration, you would probably add something like the following to one of your existing test config files.
+[`--experimental-test-snapshots`]() でこの機能を有効にする以外に、特に必要な設定はありません。ただし、オプションの設定を確認するには、既存のテスト設定ファイルに次のようなコードを追加するとよいでしょう。
 
 <details>
 <summary>`test/setup.ui.mjs`</summary>
 
-By default, node generates a filename that is incompatible with syntax highlighting detection: `.js.snapshot`. The generated file is actually a CJS file, so a more appropriate file name would end with `.snapshot.cjs` (or more succinctly `.snap.cjs` as below); this will also handle better in ESM projects.
+デフォルトでは、node は構文の強調表示検出と互換性のないファイル名 `.js.snapshot` を生成します。生成されたファイルは実際には CJS ファイルなので、より適切なファイル名は `.snapshot.cjs` (または以下のように簡潔に `.snap.cjs`) で終わります。この方がESMプロジェクトでも適切に処理されます。
 
 ```js
 import { basename, dirname, extname, join } from 'node:path';
@@ -267,7 +267,7 @@ function generateSnapshotPath(testFilePath) {
 
 </details>
 
-The example below demonstrates snapshot testing with [testing library](https://testing-library.com/) for UI components; note the two different ways of accessing `assert.snapshot`):
+以下の例は、UI コンポーネントの [テスト ライブラリ](https://testing-library.com/) を使用したスナップショット テストを示しています。`assert.snapshot` にアクセスする 2 つの異なる方法に注意してください。):
 
 ```js
 import { describe, it } from 'node:test';
@@ -278,7 +278,7 @@ import { render } from '@testing-library/react'; // Any framework (ex svelte)
 import { SomeComponent } from './SomeComponent.jsx';
 
 describe('<SomeComponent>', () => {
-  // For people preferring "fat-arrow" syntax, the following is probably better for consistency
+  // 「fat-arrow」構文を好む人にとっては、一貫性を保つために次の構文の方が良いでしょう。
   it('should render defaults when no props are provided', t => {
     const component = render(<SomeComponent />).container.firstChild;
 
@@ -294,12 +294,11 @@ describe('<SomeComponent>', () => {
 });
 ```
 
-> ⚠️ `assert.snapshot` comes from the test's context (`t` or `this`), **not** `node:assert`. This is necessary because the test context has access to scope that is impossible for `node:assert` (you would have to manually provide it every time `assert.snapshot` is used, like `snapshot(this, value)`, which would be rather tedious).
+> ⚠️ `assert.snapshot` はテストのコンテキスト（`t` または `this`）から取得され、**`node:assert` からは取得されません**。これは、テストのコンテキストが `node:assert` ではアクセスできないスコープにアクセスできるため必要です（`assert.snapshot` を使用するたびに、`snapshot(this, value)` のように手動でスコープを指定する必要があり、非常に面倒です）。
 
-## Unit tests
+## ユニットテスト
 
-Unit tests are the simplest tests and generally require relatively nothing special. The vast majority of your tests will likely be unit tests, so it is important to keep this setup minimal because a small decrease to setup performance will magnify and cascade.
-
+ユニットテストは最も単純なテストであり、通常は特別な設定は必要ありません。テストの大部分はユニットテストになる可能性が高いため、この設定は最小限に抑えることが重要です。設定パフォーマンスがわずかに低下すると、それが拡大し、連鎖的に影響を及ぼします。
 <details>
 <summary>`test/setup.units.mjs`</summary>
 
@@ -340,19 +339,20 @@ describe('Cat', () => {
 });
 ```
 
-## User Interface tests
+## ユーザーインターフェーステスト
 
-UI tests generally require a DOM, and possibly other browser-specific APIs (such as [`IndexedDb`](https://developer.mozilla.org/docs/Web/API/IndexedDB_API) used below). These tend to be very complicated and expensive to setup.
+UI テストには通常、DOM と、場合によってはブラウザ固有の API（以下で使用されている [`IndexedDb`](https://developer.mozilla.org/docs/Web/API/IndexedDB_API) など）が必要です。これらの API の設定は非常に複雑で、コストがかかる傾向があります。
 
 <details>
 <summary>`test/setup.ui.mjs`</summary>
 
-If you use an API like `IndexedDb` but it's very isolated, a global mock like below is perhaps not the way to go. Instead, perhaps move this `beforeEach` into the specific test where `IndexedDb` will be accessed. Note that if the module accessing `IndexedDb` (or whatever) is itself widely accessed, either mock that module (probably the better option), or _do_ keep this here.
+`IndexedDb` のような API を使用しているものの、それが非常に独立している場合、以下のようなグローバルモックはおそらく適切ではありません。代わりに、この `beforeEach` を `IndexedDb` がアクセスされる特定のテストに移動することをお勧めします。`IndexedDb`（または他のモジュール）にアクセスするモジュール自体が広くアクセスされている場合は、そのモジュールをモック化するか（おそらくこちらの方がより良い選択肢です）、またはこのモジュールをそのままにしておくことをお勧めします。
 
 ```js
 import { register } from 'node:module';
 
-// ⚠️ Ensure only 1 instance of JSDom is instantiated; multiples will lead to many 🤬
+// ⚠️ JSDomのインスタンスが1つだけインスタンス化されていることを確認してください。
+// 複数インスタンス化されている場合は、🤬
 import jsdom from 'global-jsdom';
 
 import './setup.units.mjs'; // 💡
@@ -362,11 +362,11 @@ import { IndexedDb } from './globals/IndexedDb.js';
 register('some-css-modules-loader');
 
 jsdom(undefined, {
-  url: 'https://test.example.com', // ⚠️ Failing to specify this will likely lead to many 🤬
+  url: 'https://test.example.com', // ⚠️ これを明記しないと、多くの 🤬
 });
 
-// Example of how to decorate a global.
-// JSDOM's `history` does not handle navigation; the following handles most cases.
+// グローバルを装飾する方法の例。
+// JSDOM の `history` はナビゲーションを処理しません。次のコードでほとんどのケースを処理します。
 const pushState = globalThis.history.pushState.bind(globalThis.history);
 globalThis.history.pushState = function mock_pushState(data, unused, url) {
   pushState(data, unused, url);
@@ -381,7 +381,7 @@ function globalUIBeforeEach() {
 
 </details>
 
-You can have 2 different levels of UI tests: a unit-like (wherein externals & dependencies are mocked) and a more end-to-end (where only externals like IndexedDb are mocked but the rest of the chain is real). The former is generally the purer option, and the latter is generally deferred to a fully end-to-end automated usability test via something like [Playwright](https://playwright.dev/) or [Puppeteer](https://pptr.dev/). Below is an example of the former.
+UIテストには2つの異なるレベルがあります。ユニットテスト（外部と依存関係をモック化したもの）と、エンドツーエンドテスト（IndexedDbなどの外部のみをモック化し、残りのチェーンは実際のもの）です。一般的に前者はより純粋な選択肢であり、後者は[Playwright](https://playwright.dev/)や[Puppeteer](https://pptr.dev/)などのツールによるエンドツーエンドの完全自動化ユーザビリティテストに委ねられるのが一般的です。以下は前者の例です。
 
 ```js
 import { before, describe, mock, it } from 'node:test';
@@ -389,17 +389,17 @@ import { before, describe, mock, it } from 'node:test';
 import { screen } from '@testing-library/dom';
 import { render } from '@testing-library/react'; // Any framework (ex svelte)
 
-// ⚠️ Note that SomeOtherComponent is NOT a static import;
-// this is necessary in order to facilitate mocking its own imports.
+// ⚠️ SomeOtherComponent は静的インポートではないことに注意してください。
+// これは、自身のインポートのモックを容易にするために必要です。
 
 describe('<SomeOtherComponent>', () => {
   let SomeOtherComponent;
   let calcSomeValue;
 
   before(async () => {
-    // ⚠️ Sequence matters: the mock must be set up BEFORE its consumer is imported.
+    // ⚠️ 順序が重要です。モックは、そのコンシューマーがインポートされる前にセットアップする必要があります。
 
-    // Requires the `--experimental-test-module-mocks` be set.
+    // `--experimental-test-module-mocks` を設定する必要があります。
     calcSomeValue = mock.module('./calcSomeValue.js', {
       calcSomeValue: mock.fn(),
     });
@@ -408,10 +408,9 @@ describe('<SomeOtherComponent>', () => {
   });
 
   describe('when calcSomeValue fails', () => {
-    // This you would not want to handle with a snapshot because that would be brittle:
-    // When inconsequential updates are made to the error message,
-    // the snapshot test would erroneously fail
-    // (and the snapshot would need to be updated for no real value).
+    // これをスナップショットで処理することは、脆弱であるため望ましくありません。
+    // エラー メッセージに重要でない更新が加えられると、スナップショットテストが
+    // 誤って失敗します (そして、実際の価値がないのにスナップショットを更新する必要があります)。
 
     it('should fail gracefully by displaying a pretty error', () => {
       calcSomeValue.mockImplementation(function mock__calcSomeValue() {

@@ -4,13 +4,13 @@ layout: learn
 authors: flaviocopes, MylesBorins, LaRuaNa, amiller-gh, ahmadawais, ovflowd
 ---
 
-# Discover JavaScript Timers
+# JavaScript タイマーについて学ぶ
 
 ## `setTimeout()`
 
-When writing JavaScript code, you might want to delay the execution of a function.
+JavaScript コードを書いているときに、関数の実行を遅らせたい場合があります。
 
-This is the job of `setTimeout`. You specify a callback function to execute later, and a value expressing how later you want it to run, in milliseconds:
+これが `setTimeout` の役割です。後で実行するコールバック関数と、その関数の実行をどれくらい遅らせたいかを表す値（ミリ秒単位）を指定します。
 
 ```js
 setTimeout(() => {
@@ -22,7 +22,7 @@ setTimeout(() => {
 }, 50);
 ```
 
-This syntax defines a new function. You can call whatever other function you want in there, or you can pass an existing function name, and a set of parameters:
+この構文は新しい関数を定義します。この中で任意の関数を呼び出すことも、既存の関数名とパラメータのセットを渡すこともできます。
 
 ```js
 const myFunction = (firstParam, secondParam) => {
@@ -33,7 +33,7 @@ const myFunction = (firstParam, secondParam) => {
 setTimeout(myFunction, 2000, firstParam, secondParam);
 ```
 
-`setTimeout` returns a [`Timeout`](https://nodejs.org/api/timers.html#class-timeout) instance in Node.js, whereas in browsers it returns a numeric timer ID. This object or ID can be used to cancel the scheduled function execution:
+`setTimeout` は、Node.js では [`Timeout`](https://nodejs.org/api/timers.html#class-timeout) インスタンスを返しますが、ブラウザでは数値のタイマー ID を返します。このオブジェクトまたは ID は、スケジュールされた関数の実行をキャンセルするために使用できます。
 
 ```js
 const timeout = setTimeout(() => {
@@ -44,9 +44,9 @@ const timeout = setTimeout(() => {
 clearTimeout(timeout);
 ```
 
-### Zero delay
+### 遅延ゼロ
 
-If you specify the timeout delay to `0`, the callback function will be executed as soon as possible, but after the current function execution:
+タイムアウト遅延を `0` に指定すると、コールバック関数は可能な限り早く実行されますが、現在の関数の実行後に以下の処理が行われます。
 
 ```js
 setTimeout(() => {
@@ -56,20 +56,20 @@ setTimeout(() => {
 console.log(' before ');
 ```
 
-This code will print
+このコードは次のように出力されます
 
 ```bash
 before
 after
 ```
 
-This is especially useful to avoid blocking the CPU on intensive tasks and let other functions be executed while performing a heavy calculation, by queuing functions in the scheduler.
+これは、スケジューラで関数をキューイングすることで、高負荷タスクによるCPUのブロックを回避し、高負荷計算の実行中に他の関数を実行できるようにする場合に特に便利です。
 
-> Some browsers (IE and Edge) implement a `setImmediate()` method that does this same exact functionality, but it's not standard and [unavailable on other browsers](https://caniuse.com/#feat=setimmediate). But it's a standard function in Node.js.
+> 一部のブラウザ（IEとEdge）には、これと全く同じ機能を実行する `setImmediate()` メソッドが実装されていますが、これは標準ではなく、[他のブラウザでは利用できません](https://caniuse.com/#feat=setimmediate)。ただし、Node.jsでは標準関数です。
 
 ## `setInterval()`
 
-`setInterval` is a function similar to `setTimeout`, with a difference: instead of running the callback function once, it will run it forever, at the specific time interval you specify (in milliseconds):
+`setInterval` は `setTimeout` に似た関数ですが、コールバック関数を1回実行するのではなく、指定した時間間隔（ミリ秒単位）で永続的に実行するという点が異なります。
 
 ```js
 setInterval(() => {
@@ -77,7 +77,7 @@ setInterval(() => {
 }, 2000);
 ```
 
-The function above runs every 2 seconds unless you tell it to stop, using `clearInterval`, passing it the interval id that `setInterval` returned:
+上記の関数は、`clearInterval` を使用して停止するように指示し、`setInterval` が返した間隔 ID を渡さない限り、2 秒ごとに実行されます。
 
 ```js
 const timeout = setInterval(() => {
@@ -87,7 +87,7 @@ const timeout = setInterval(() => {
 clearInterval(timeout);
 ```
 
-It's common to call `clearInterval` inside the setInterval callback function, to let it auto-determine if it should run again or stop. For example this code runs something unless App.somethingIWait has the value `arrived`:
+setIntervalコールバック関数内で`clearInterval`を呼び出すのは一般的です。これにより、再実行または停止を自動判断できます。例えば、次のコードはApp.somethingIWaitの値が`arrived`でない限り、何かを実行します。
 
 ```js
 const interval = setInterval(() => {
@@ -98,23 +98,23 @@ const interval = setInterval(() => {
 }, 100);
 ```
 
-## Recursive setTimeout
+## 再帰的な setTimeout
 
-`setInterval` starts a function every n milliseconds, without any consideration about when a function finished its execution.
+`setInterval` は、関数の実行終了時刻を考慮せずに、n ミリ秒ごとに関数を開始します。
 
-If a function always takes the same amount of time, it's all fine:
+関数の実行時間が常に同じであれば、問題ありません。
 
-![setInterval working fine](/static/images/learn/javascript-timers/setinterval-ok.png)
+![setInterval は正常に動作しています](/static/images/learn/javascript-timers/setinterval-ok.png)
 
-Maybe the function takes different execution times, depending on network conditions for example:
+ネットワーク状況によっては、関数の実行時間が異なる場合があります。例えば、次のようになります。
 
-![setInterval varying duration](/static/images/learn/javascript-timers/setinterval-varying-duration.png)
+![setInterval の実行時間が変動します](/static/images/learn/javascript-timers/setinterval-varying-duration.png)
 
-And maybe one long execution overlaps the next one:
+また、長時間実行される関数が次の関数と重複する場合もあります。
 
-![setInterval overlapping](/static/images/learn/javascript-timers/setinterval-overlapping.png)
+![setInterval が重複しています](/static/images/learn/javascript-timers/setinterval-overlapping.png)
 
-To avoid this, you can schedule a recursive setTimeout to be called when the callback function finishes:
+これを回避するには、コールバック関数の終了時に再帰的な setTimeout が呼び出されるようにスケジュールを設定します。
 
 ```js
 const myFunction = () => {
@@ -126,10 +126,10 @@ const myFunction = () => {
 setTimeout(myFunction, 1000);
 ```
 
-to achieve this scenario:
+このシナリオを実現するには、次のコードを使用します。
 
-![Recursive setTimeout](/static/images/learn/javascript-timers/recursive-settimeout.png)
+![再帰的な setTimeout](/static/images/learn/javascript-timers/recursive-settimeout.png)
 
-`setTimeout` and `setInterval` are available in Node.js, through the [Timers module](https://nodejs.org/api/timers.html).
+`setTimeout` と `setInterval` は、Node.js の [Timers モジュール](https://nodejs.org/api/timers.html) を通じて利用できます。
 
-Node.js also provides `setImmediate()`, which is equivalent to using `setTimeout(() => {}, 0)`, mostly used to work with the Node.js Event Loop.
+Node.js には `setImmediate()` も用意されています。これは `setTimeout(() => {}, 0)` と同等で、主に Node.js イベントループで使用されます。

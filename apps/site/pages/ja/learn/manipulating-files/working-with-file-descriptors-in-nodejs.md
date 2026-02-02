@@ -4,11 +4,11 @@ layout: learn
 authors: flaviocopes, MylesBorins, fhemberger, LaRuaNa, ahmadawais, clean99, vaishnav-mk
 ---
 
-# Working with file descriptors in Node.js
+# Node.js でのファイル記述子の操作
 
-Before you're able to interact with a file that sits in your filesystem, you must get a file descriptor.
+ファイルシステム内のファイルを操作するには、まずファイル記述子を取得する必要があります。
 
-A file descriptor is a reference to an open file, a number (fd) returned by opening the file using the `open()` method offered by the `fs` module. This number (`fd`) uniquely identifies an open file in operating system:
+ファイル記述子は、開いているファイルへの参照であり、`fs` モジュールが提供する `open()` メソッドを使用してファイルを開いたときに返される数値 (fd) です。この数値 (`fd`) は、オペレーティングシステム内で開いているファイルを一意に識別します。
 
 ```cjs
 const fs = require('node:fs');
@@ -26,20 +26,20 @@ fs.open('/Users/joe/test.txt', 'r', (err, fd) => {
 });
 ```
 
-Notice the `r` we used as the second parameter to the `fs.open()` call.
+`fs.open()` 呼び出しの 2 番目のパラメータとして `r` を使用していることに注意してください。
 
-That flag means we open the file for reading.
+このフラグは、ファイルを読み取り用に開くことを意味します。
 
-**Other flags you'll commonly use are:**
+**よく使用するその他のフラグは次のとおりです。**
 
-| Flag | Description                                                                                                    | File gets created if it doesn't exist |
-| ---- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| r+   | This flag opens the file for reading and writing                                                               | ❌                                    |
-| w+   | This flag opens the file for reading and writing and it also positions the stream at the beginning of the file | ✅                                    |
-| a    | This flag opens the file for writing and it also positions the stream at the end of the file                   | ✅                                    |
-| a+   | This flag opens the file for reading and writing and it also positions the stream at the end of the file       | ✅                                    |
+| フラグ | 説明 | ファイルが存在しない場合は作成されます |
+| ---- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| r+ | このフラグは、ファイルを読み書き用に開きます | ❌ |
+| w+ | このフラグは、ファイルを読み書き用に開き、ストリームをファイルの先頭に配置します | ✅ |
+| a | このフラグは、ファイルを書き込み用に開き、ストリームをファイルの末尾に配置します | ✅ |
+| a+ | このフラグは、ファイルを読み書き用に開き、ストリームをファイルの末尾に配置します | ✅ |
 
-You can also open the file by using the `fs.openSync` method, which returns the file descriptor, instead of providing it in a callback:
+コールバックでファイル記述子を渡す代わりに、ファイル記述子を返す `fs.openSync` メソッドを使用してファイルを開くこともできます。
 
 ```cjs
 const fs = require('node:fs');
@@ -61,11 +61,11 @@ try {
 }
 ```
 
-Once you get the file descriptor, in whatever way you choose, you can perform all the operations that require it, like calling `fs.close()` and many other operations that interact with the filesystem.
+ファイル記述子を取得したら、任意の方法で、`fs.close()` の呼び出しやファイルシステムを操作するその他の多くの操作など、ファイル記述子を必要とするすべての操作を実行できます。
 
-You can also open the file by using the promise-based `fsPromises.open` method offered by the `fs/promises` module.
+`fs/promises` モジュールが提供する promise ベースの `fsPromises.open` メソッドを使用してファイルを開くこともできます。
 
-The `fs/promises` module is available starting only from Node.js v14. Before v14, after v10, you can use `require('fs').promises` instead. Before v10, after v8, you can use `util.promisify` to convert `fs` methods into promise-based methods.
+`fs/promises` モジュールは、Node.js v14 以降でのみ利用可能です。v14 より前、v10 より後では、代わりに `require('fs').promises` を使用できます。v10 より前、v8 より後では、`util.promisify` を使用して `fs` メソッドを promise ベースのメソッドに変換できます。
 
 ```cjs
 const fs = require('node:fs/promises');
@@ -100,7 +100,7 @@ try {
 }
 ```
 
-Here is an example of `util.promisify`:
+以下は `util.promisify` の例です。
 
 ```cjs
 const fs = require('node:fs');
@@ -124,4 +124,4 @@ async function example() {
 example();
 ```
 
-To see more details about the `fs/promises` module, please check [fs/promises API](https://nodejs.org/api/fs.html#promise-example).
+`fs/promises` モジュールの詳細については、[fs/promises API](https://nodejs.org/api/fs.html#promise-example) を参照してください。

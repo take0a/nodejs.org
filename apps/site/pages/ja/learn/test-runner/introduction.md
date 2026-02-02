@@ -4,20 +4,20 @@ layout: learn
 authors: AugustinMauroy
 ---
 
-# Discovering Node.js's test runner
+# Node.js のテストランナーについて知る
 
-In this series of resources, we will discover how to use Node.js's test runner to test our code.
+このリソースシリーズでは、Node.js のテストランナーを使ってコードをテストする方法を学びます。
 
-## What is a test runner?
+## テストランナーとは？
 
-A test runner is a tool that allows you to run tests on your code. It will execute your tests and give you feedback on whether they pass or fail. It can also provide you with additional information such as code coverage.
+テストランナーは、コードに対してテストを実行できるツールです。テストを実行し、成功か失敗かをフィードバックします。また、コードカバレッジなどの追加情報も提供できます。
 
-There are many test runners available for Node.js, but we will focus on the built-in test runner that comes with Node.js. It's cool because you don't need to install any additional dependencies to use it.
+Node.js には多くのテストランナーがありますが、ここでは Node.js に付属する組み込みのテストランナーに焦点を当てます。これは、追加の依存関係をインストールする必要がないため便利です。
 
-## Why test your code?
+## コードをテストする理由
 
-Testing your code is important because it allows you to verify that your code works as expected. It helps you catch bugs early in the development process and ensures that your code is reliable and maintainable.
+コードをテストすることが重要なのは、コードが期待どおりに動作することを検証できるためです。開発プロセスの早い段階でバグを検出し、コードの信頼性と保守性を確保するのに役立ちます。
 
-## Running tests with Node.js
+## Node.js でテストを実行する
 
-To run tests with Node.js, we recommend you to read the [test runner documentation](https://nodejs.org/docs/latest/api/test.html#test-runner).
+Node.js でテストを実行するには、[テストランナーのドキュメント](https://nodejs.org/docs/latest/api/test.html#test-runner) を読むことをお勧めします。

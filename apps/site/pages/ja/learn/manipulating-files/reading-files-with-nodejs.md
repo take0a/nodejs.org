@@ -4,9 +4,9 @@ layout: learn
 authors: flaviocopes, MylesBorins, fhemberger, LaRuaNa, ahmadawais, clean99, benhalverson
 ---
 
-# Reading files with Node.js
+# Node.js でファイルを読み込む
 
-The simplest way to read a file in Node.js is to use the `fs.readFile()` method, passing it the file path, encoding and a callback function that will be called with the file data (and the error):
+Node.js でファイルを読み込む最も簡単な方法は、`fs.readFile()` メソッドにファイルパス、エンコーディング、そしてファイルデータ（およびエラー）を引数として呼び出されるコールバック関数を渡すことです。
 
 ```cjs
 const fs = require('node:fs');
@@ -32,7 +32,7 @@ fs.readFile('/Users/joe/test.txt', 'utf8', (err, data) => {
 });
 ```
 
-Alternatively, you can use the synchronous version `fs.readFileSync()`:
+あるいは、同期バージョンの `fs.readFileSync()` を使用することもできます。
 
 ```cjs
 const fs = require('node:fs');
@@ -56,7 +56,7 @@ try {
 }
 ```
 
-You can also use the promise-based `fsPromises.readFile()` method offered by the `fs/promises` module:
+`fs/promises` モジュールが提供する promise ベースの `fsPromises.readFile()` メソッドを使用することもできます。
 
 ```cjs
 const fs = require('node:fs/promises');
@@ -83,11 +83,11 @@ try {
 }
 ```
 
-All three of `fs.readFile()`, `fs.readFileSync()` and `fsPromises.readFile()` read the full content of the file in memory before returning the data.
+`fs.readFile()`、`fs.readFileSync()`、`fsPromises.readFile()` の 3 つはすべて、データを返す前にファイルの内容全体をメモリ上で読み取ります。
 
-This means that big files are going to have a major impact on your memory consumption and speed of execution of the program.
+つまり、大きなファイルはメモリ消費量とプログラムの実行速度に大きな影響を与えます。
 
-In this case, a better option is to read the file content using streams.
+このような場合、ストリームを使用してファイルの内容を読み取る方が適切です。
 
 ```mjs
 import fs from 'fs';

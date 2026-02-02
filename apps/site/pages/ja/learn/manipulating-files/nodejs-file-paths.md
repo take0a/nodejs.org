@@ -4,23 +4,23 @@ layout: learn
 authors: flaviocopes, MylesBorins, fhemberger, LaRuaNa, amiller-gh, ahmadawais
 ---
 
-# Node.js File Paths
+# Node.js のファイルパス
 
-Every file in the system has a path. On Linux and macOS, a path might look like: `/users/joe/file.txt` while Windows computers are different, and have a structure such as: `C:\users\joe\file.txt`
+システム内のすべてのファイルにはパスがあります。Linux や macOS ではパスは `/users/joe/file.txt` のようになりますが、Windows では `C:\users\joe\file.txt` のような構造になります。
 
-You need to pay attention when using paths in your applications, as this difference must be taken into account.
+アプリケーションでパスを使用する際は、この違いを考慮する必要があるため、注意が必要です。
 
-You include this module in your files using `const path = require('node:path');` and you can start using its methods.
+`const path = require('node:path');` を使用してこのモジュールをファイルにインクルードすると、そのメソッドを使用できるようになります。
 
-## Getting information out of a path
+## パスから情報を取得する
 
-Given a path, you can extract information out of it using those methods:
+パスを指定すると、以下のメソッドを使って情報を抽出できます。
 
-- `dirname`: gets the parent folder of a file
-- `basename`: gets the filename part
-- `extname`: gets the file extension
+- `dirname`: ファイルの親フォルダを取得します。
+- `basename`: ファイル名部分を取得します。
+- `extname`: ファイル拡張子を取得します。
 
-### Example
+### 例
 
 ```cjs
 const path = require('node:path');
@@ -42,43 +42,43 @@ path.basename(notes); // notes.txt
 path.extname(notes); // .txt
 ```
 
-You can get the file name without the extension by specifying a second argument to `basename`:
+`basename` に 2 番目の引数を指定すると、拡張子のないファイル名を取得できます。
 
 ```js
 path.basename(notes, path.extname(notes)); // notes
 ```
 
-## Working with paths
+## パスの操作
 
-You can join two or more parts of a path by using `path.join()`:
+`path.join()` を使用すると、パスの2つ以上の部分を結合できます。
 
 ```js
 const name = 'joe';
 path.join('/', 'users', name, 'notes.txt'); // '/users/joe/notes.txt'
 ```
 
-You can get the absolute path calculation of a relative path using `path.resolve()`:
+`path.resolve()` を使用して相対パスから絶対パスへの変換結果を取得できます。
 
 ```js
 path.resolve('joe.txt'); // '/Users/joe/joe.txt' if run from my home folder
 ```
 
-In this case Node.js will simply append `/joe.txt` to the current working directory. If you specify a second parameter folder, `resolve` will use the first as a base for the second:
+この場合、Node.jsは単に`/joe.txt`を現在の作業ディレクトリに追加します。2番目のパラメータでフォルダを指定した場合、`resolve`は最初のフォルダを2番目のフォルダのベースとして使用します。
 
 ```js
 path.resolve('tmp', 'joe.txt'); // '/Users/joe/tmp/joe.txt' if run from my home folder
 ```
 
-If the first parameter starts with a slash, that means it's an absolute path:
+最初のパラメータがスラッシュで始まる場合、それは絶対パスであることを意味します。
 
 ```js
 path.resolve('/etc', 'joe.txt'); // '/etc/joe.txt'
 ```
 
-`path.normalize()` is another useful function, that will try and calculate the actual path, when it contains relative specifiers like `.` or `..`, or double slashes:
+`path.normalize()` は、`.` や `..` などの相対指定子や二重スラッシュが含まれている場合に、実際のパスを計算しようとするもう 1 つの便利な関数です。
 
 ```js
 path.normalize('/users/joe/..//test.txt'); // '/users/test.txt'
 ```
 
-**Neither resolve nor normalize will check if the path exists**. They just calculate a path based on the information they got.
+**resolve も normalize もパスが存在するかどうかを確認しません**。取得した情報に基づいてパスを計算するだけです。

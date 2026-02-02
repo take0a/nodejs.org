@@ -4,46 +4,46 @@ layout: learn
 authors: AugustinMauroy, khaosdoctor, jakebailey, robpalme
 ---
 
-# Running TypeScript Natively
+# TypeScript をネイティブに実行
 
-You can write code that's valid TypeScript directly in Node.js without the need to transpile it first.
+Node.js で TypeScript として有効なコードを直接記述できます。事前にトランスパイルする必要はありません。
 
-If you are using v22.18.0 or later and your source code contains only [erasable TypeScript syntax](https://devblogs.microsoft.com/typescript/announcing-typescript-5-8-beta/#the---erasablesyntaxonly-option), you can execute TypeScript code without any flags.
+v22.18.0 以降を使用しており、ソースコードに [消去可能な TypeScript 構文](https://devblogs.microsoft.com/typescript/announceing-typescript-5-8-beta/#the---erasablesyntaxonly-option) のみが含まれている場合は、フラグを指定せずに TypeScript コードを実行できます。
 
 ```bash
 node example.ts
 ```
 
-If you are using a version less than v22.18.0, you can use the `--experimental-strip-types` flag to run TypeScript files directly in Node.js.
+v22.18.0 未満のバージョンを使用している場合は、`--experimental-strip-types` フラグを使用して、TypeScript ファイルを Node.js で直接実行できます。
 
 ```bash
 node --experimental-strip-types example.ts
 ```
 
-And that's it! You can now run TypeScript code directly in Node.js without the need to transpile it first, and use TypeScript to catch type-related errors.
+これで完了です！TypeScript コードを事前にトランスパイルすることなく Node.js で直接実行できるようになり、TypeScript を使用して型関連のエラーをキャッチできるようになりました。
 
-You can disable it via [`--no-experimental-strip-types`](https://nodejs.org/docs/latest-v22.x/api/cli.html#--no-experimental-strip-types) flag if needed.
+必要に応じて、[`--no-experimental-strip-types`](https://nodejs.org/docs/latest-v22.x/api/cli.html#--no-experimental-strip-types) フラグで無効化できます。
 
 ```bash
 node --no-experimental-strip-types example.ts
 ```
 
-In v22.7.0 the flag [`--experimental-transform-types`](https://nodejs.org/docs/latest-v22.x/api/cli.html#--experimental-transform-types) was added to enable TypeScript-only syntax that requires transformation, like `enum`s and `namespace`. Enabling `--experimental-transform-types` automatically implies that `--experimental-strip-types` is enabled, so there's no need to use both flags in the same command:
+v22.7.0 では、`enum` や `namespace` などの変換を必要とする TypeScript 専用の構文を有効にするフラグ [`--experimental-transform-types`](https://nodejs.org/docs/latest-v22.x/api/cli.html#--experimental-transform-types) が追加されました。`--experimental-transform-types` を有効にすると、自動的に `--experimental-strip-types` も有効になるため、同じコマンドで両方のフラグを使用する必要はありません。
 
 ```bash
 node --experimental-transform-types another-example.ts
 ```
 
-This flag is opt-in, and you should only use it if your code requires it.
+このフラグはオプトインであり、コードで必要な場合にのみ使用する必要があります。
 
-## Constraints
+## 制約事項
 
-The support for TypeScript in Node.js has some constraints to keep in mind:
+Node.js における TypeScript のサポートには、留意すべき制約事項がいくつかあります。
 
-You can get more information on the [API docs](https://nodejs.org/docs/latest-v22.x/api/typescript.html#typescript-features).
+詳細については、[API ドキュメント](https://nodejs.org/docs/latest-v22.x/api/typescript.html#typescript-features) をご覧ください。
 
-### Configuration
+### 設定
 
-The Node.js TypeScript loader ([Amaro](https://github.com/nodejs/amaro)) does not need or use `tsconfig.json` to run TypeScript code.
+Node.js TypeScript ローダー ([Amaro](https://github.com/nodejs/amaro)) は、TypeScript コードの実行に `tsconfig.json` を必要としません。また、使用しません。
 
-We recommend configuring your editor and `tsc` to reflect Node.js behavior by creating a `tsconfig.json` using the `compilerOptions` listed [here](https://nodejs.org/api/typescript.html#type-stripping), as well as using TypeScript version **5.7 or higher**.
+Node.js の動作を反映するようにエディターと `tsc` を設定することをお勧めします。そのためには、[こちら](https://nodejs.org/api/typescript.html#type-stripping) に記載されている `compilerOptions` を使用して `tsconfig.json` を作成し、TypeScript バージョン **5.7 以上** を使用することをお勧めします。

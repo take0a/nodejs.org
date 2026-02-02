@@ -3,15 +3,12 @@ title: User Journey
 layout: learn
 ---
 
-# User Journey
+# ユーザージャーニー
 
-These diagnostics guides were created by the [Diagnostics Working Group][]
-and the [Node.js Website Team][] with the objective of providing guidance
-when diagnosing an issue in a user's application.
+これらの診断ガイドは、[診断ワーキンググループ][]
+と[Node.js ウェブサイトチーム][] によって作成され、ユーザーのアプリケーションにおける問題を診断する際のガイダンスを提供することを目的としています。
 
-The documentation project is organized based on user journey. Those journeys
-are a coherent set of step-by-step procedures that a user can follow to
-root-cause their issues.
+このドキュメントプロジェクトは、ユーザージャーニーに基づいて構成されています。これらのジャーニーは、ユーザーが問題の根本原因を特定するために実行できる、一貫したステップバイステップの手順です。
 
-[Diagnostics Working Group]: https://github.com/nodejs/diagnostics
-[Node.js Website Team]: https://github.com/nodejs/nodejs.org
+[診断ワーキンググループ]: https://github.com/nodejs/diagnostics
+[Node.js ウェブサイトチーム]: https://github.com/nodejs/nodejs.org

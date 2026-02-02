@@ -3,52 +3,46 @@ title: Using Heap Snapshot
 layout: learn
 ---
 
-# Using Heap Snapshot
+# ヒープスナップショットの使用
 
-You can take a Heap Snapshot from your running application and load it into
-[Chrome Developer Tools][] to inspect certain variables or check retainer size.
-You can also compare multiple snapshots to see differences over time.
+実行中のアプリケーションからヒープスナップショットを取得し、[Chrome デベロッパーツール][] に読み込むことで、特定の変数を調べたり、リテーナーのサイズを確認したりできます。
+複数のスナップショットを比較して、経時的な変化を確認することもできます。
 
-## Warning
+## 警告
 
-When creating a snapshot, all other work in your main thread is stopped.
-Depending on the heap contents it could even take more than a minute.
-The snapshot is built in memory, so it can double the heap size, resulting
-in filling up entire memory and then crashing the app.
+スナップショットを作成すると、メインスレッドの他のすべての作業が停止します。
+ヒープの内容によっては、1分以上かかる場合もあります。
+スナップショットはメモリ内に作成されるため、ヒープサイズが2倍になり、メモリ全体がいっぱいになってアプリがクラッシュする可能性があります。
 
-If you're going to take a heap snapshot in production, make sure the process
-you're taking it from can crash without impacting your application's
-availability.
+本番環境でヒープスナップショットを取得する場合は、スナップショットを取得するプロセスがクラッシュしてもアプリケーションの可用性に影響がないことを確認してください。
 
-## How To
+## 方法
 
-### Get the Heap Snapshot
+### ヒープスナップショットの取得
 
-There are multiple ways to obtain a heap snapshot:
+ヒープスナップショットを取得する方法は複数あります。
 
-1. via the inspector,
-2. via an external signal and command-line flag,
-3. via a `writeHeapSnapshot` call within the process,
-4. via the inspector protocol.
+1. インスペクタ経由
+2. 外部シグナルとコマンドラインフラグ経由
+3. プロセス内での `writeHeapSnapshot` 呼び出し経由
+4. インスペクタプロトコル経由
 
-#### 1. Use memory profiling in inspector
+#### 1. インスペクターでメモリプロファイリングを使用する
 
-> Works in all actively maintained versions of Node.js
+> アクティブにメンテナンスされているすべてのバージョンの Node.js で動作します
 
-Run node with `--inspect` flag and open the inspector.
+`--inspect` フラグを付けて Node.js を実行し、インスペクターを開きます。
 ![open inspector][open inspector image]
 
-The simplest way to get a Heap Snapshot is to connect a inspector to your
-process running locally. Then go to Memory tab and take a heap snapshot.
+ヒープスナップショットを取得する最も簡単な方法は、ローカルで実行されているプロセスにインスペクターを接続することです。次に、「メモリ」タブに移動して、ヒープスナップショットを取得します。
 
 ![take a heap snapshot][take a heap snapshot image]
 
-#### 2. Use `--heapsnapshot-signal` flag
+#### 2. `--heapsnapshot-signal` フラグを使用する
 
-> Works in v12.0.0 or later
+> v12.0.0 以降で動作します
 
-You can start node with a command-line flag enabling reacting to a signal to
-create a heap snapshot.
+シグナルに反応してヒープスナップショットを作成するコマンドラインフラグを指定してノードを起動できます。
 
 ```
 $ node --heapsnapshot-signal=SIGUSR2 index.js
@@ -63,37 +57,33 @@ $ ls
 Heap.20190718.133405.15554.0.001.heapsnapshot
 ```
 
-For details, see the latest documentation of [heapsnapshot-signal flag][].
+詳細については、[heapsnapshot-signal flag][] の最新のドキュメントを参照してください。
 
-#### 3. Use `writeHeapSnapshot` function
+#### 3. `writeHeapSnapshot` 関数を使用する
 
-> Works in v11.13.0 or later
-> Can work in older versions with [heapdump package][]
+> v11.13.0 以降で動作します
+> [heapdump パッケージ][] を使用することで、それ以前のバージョンでも動作します
 
-If you need a snapshot from a working process, like an application running on a
-server, you can implement getting it using:
+サーバー上で実行されているアプリケーションなど、動作中のプロセスのスナップショットが必要な場合は、以下の方法で取得できます。
 
 ```js
 require('v8').writeHeapSnapshot();
 ```
 
-Check [`writeHeapSnapshot` docs][] for file name options.
+ファイル名のオプションについては、[`writeHeapSnapshot` ドキュメント][] を参照してください。
 
-You need to have a way to invoke it without stopping the process, so calling it
-in a HTTP handler or as a reaction to a signal from the operating system
-is advised. Be careful not to expose the HTTP endpoint triggering a snapshot.
-It should not be possible for anybody else to access it.
+プロセスを停止せずに呼び出す方法が必要なため、HTTP ハンドラー内、またはオペレーティングシステムからのシグナルへの反応として呼び出すことをお勧めします。スナップショットをトリガーする HTTP エンドポイントを公開しないように注意してください。
+他のユーザーがアクセスできないようにする必要があります。
 
-For versions of Node.js before v11.13.0 you can use the [heapdump package][].
+Node.js v11.13.0 より前のバージョンでは、[heapdump パッケージ][] を使用できます。
 
-#### 4. Trigger Heap Snapshot using inspector protocol
+#### 4. インスペクタープロトコルを使用してヒープスナップショットをトリガーする
 
-Inspector protocol can be used to trigger Heap Snapshot from outside of the
-process.
+インスペクタープロトコルを使用すると、プロセス外部からヒープスナップショットをトリガーできます。
 
-It's not necessary to run the actual inspector from Chromium to use the API.
+APIを使用するために、Chromiumから実際のインスペクターを実行する必要はありません。
 
-Here's an example snapshot trigger in bash, using `websocat` and `jq`:
+以下は、`websocat`と`jq`を使用したbashでのスナップショットトリガーの例です。
 
 ```bash
 #!/bin/bash
@@ -121,36 +111,26 @@ done < <(cat out | tail -n +2 | head -n -1)
 exec 3>&-
 ```
 
-Here is a non-exhaustive list of memory profiling tools usable with the
-inspector protocol:
+以下は、インスペクタ プロトコルで使用できるメモリ プロファイリング ツールの一覧です (網羅的ではありません)。
 
 - [OpenProfiling for Node.js][openprofiling]
 
-## How to find a memory leak with Heap Snapshots
+## ヒープスナップショットでメモリリークを見つける方法
 
-You can find a memory leak by comparing two snapshots. It's important to make
-sure the snapshots difference does not contain unnecessary information.
-Following steps should produce a clean diff between snapshots.
+2つのスナップショットを比較することで、メモリリークを検出できます。スナップショットの差分に不要な情報が含まれていないことを確認することが重要です。
+以下の手順で、スナップショット間のクリーンな差分が生成されます。
 
-1. Let the process load all sources and finish bootstrapping. It should take a
-   few seconds at most.
-2. Start using the functionality you suspect of leaking memory. It's likely it
-   makes some initial allocations that are not the leaking ones.
-3. Take one heap snapshot.
-4. Continue using the functionality for a while, preferably without running
-   anything else in between.
-5. Take another heap snapshot. The difference between the two should mostly
-   contain what was leaking.
-6. Open Chromium/Chrome dev tools and go to _Memory_ tab
-7. Load the older snapshot file first, and the newer one second.
-   ![Load button in tools][load button image]
-8. Select the newer snapshot and switch mode in the dropdown at the top from
-   _Summary_ to _Comparison_. ![Comparison dropdown][comparison image]
-9. Look for large positive deltas and explore the references that caused
-   them in the bottom panel.
+1. プロセスがすべてのソースを読み込み、ブートストラップを完了するまで待ちます。最大でも数秒かかります。
+2. メモリリークが発生していると思われる機能の使用を開始します。リークの原因ではない初期割り当てが行われている可能性があります。
+3. ヒープスナップショットを1つ取得します。
+4. しばらくその機能を使用し続けます。できればその間、他の処理を実行しないでください。
+5. もう一度ヒープスナップショットを取得します。2つのスナップショットの差分には、リークの原因となっていた内容がほぼ含まれているはずです。
+6. Chromium/Chrome 開発者ツールを開き、 _Memory_ タブに移動します。
+7. 古いスナップショットファイルを最初に読み込み、次に新しいスナップショットファイルを読み込みます。 ![Load button in tools][load button image]
+8. 新しいスナップショットを選択し、上部のドロップダウンでモードを「_Summary_」から「_Comparison_」に切り替えます。![Comparison dropdown][comparison image]
+9. 大きな正の差分を探し、下部のパネルでその原因となった参照を調べます。
 
-You can practice capturing heap snapshots and finding memory leaks with [this
-heap snapshot exercise][heapsnapshot exercise].
+[このヒープスナップショット演習][heapsnapshot exercise]で、ヒープスナップショットの取得とメモリリークの検出を練習できます。
 
 [open inspector image]: /static/images/docs/guides/diagnostics/tools.png
 [take a heap snapshot image]: /static/images/docs/guides/diagnostics/snapshot.png

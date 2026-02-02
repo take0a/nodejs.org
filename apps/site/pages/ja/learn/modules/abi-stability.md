@@ -3,120 +3,42 @@ title: ABI Stability
 layout: learn
 ---
 
-# ABI Stability
+# ABI の安定性
 
-## Introduction
+## はじめに
 
-An Application Binary Interface (ABI) is a way for programs to call functions
-and use data structures from other compiled programs. It is the compiled version
-of an Application Programming Interface (API). In other words, the headers files
-describing the classes, functions, data structures, enumerations, and constants
-which enable an application to perform a desired task correspond by way of
-compilation to a set of addresses and expected parameter values and memory
-structure sizes and layouts with which the provider of the ABI was compiled.
+アプリケーションバイナリインターフェース (ABI) は、プログラムが他のコンパイル済みプログラムの関数を呼び出したり、データ構造を使用したりするための手段です。これは、アプリケーションプログラミングインターフェース (API) のコンパイル済みバージョンです。言い換えれば、アプリケーションが目的のタスクを実行できるようにするクラス、関数、データ構造、列挙型、定数を記述したヘッダーファイルは、コンパイル時に、ABI プロバイダーがコンパイルされたアドレス、想定されるパラメータ値、メモリ構造のサイズとレイアウトのセットに対応します。
 
-The application using the ABI must be compiled such that the available
-addresses, expected parameter values, and memory structure sizes and layouts
-agree with those with which the ABI provider was compiled. This is usually
-accomplished by compiling against the headers provided by the ABI provider.
+ABI を使用するアプリケーションは、利用可能なアドレス、想定されるパラメータ値、メモリ構造のサイズとレイアウトが、ABI プロバイダーがコンパイルされたときのものと一致するようにコンパイルする必要があります。これは通常、ABI プロバイダーが提供するヘッダーを使用してコンパイルすることで実現されます。
 
-Since the provider of the ABI and the user of the ABI may be compiled at
-different times with different versions of the compiler, a portion of the
-responsibility for ensuring ABI compatibility lies with the compiler. Different
-versions of the compiler, perhaps provided by different vendors, must all
-produce the same ABI from a header file with a certain content, and must produce
-code for the application using the ABI that accesses the API described in a
-given header according to the conventions of the ABI resulting from the
-description in the header. Modern compilers have a fairly good track record of
-not breaking the ABI compatibility of the applications they compile.
+ABI プロバイダーと ABI ユーザーは、異なる時期に異なるバージョンのコンパイラを使用してコンパイルされる可能性があるため、ABI の互換性を確保する責任の一部はコンパイラにあります。異なるバージョンのコンパイラ（異なるベンダーから提供される場合もある）は、特定の内容を持つヘッダーファイルからすべて同じABIを生成する必要があり、ヘッダー内の記述から得られるABIの規則に従って、特定のヘッダーに記述されたAPIにアクセスするABIを使用するアプリケーションのコードを生成する必要があります。最新のコンパイラは、コンパイルするアプリケーションのABI互換性を損なわないという、かなり優れた実績を誇っています。
 
-The remaining responsibility for ensuring ABI compatibility lies with the team
-maintaining the header files which provide the API that results, upon
-compilation, in the ABI that is to remain stable. Changes to the header files
-can be made, but the nature of the changes has to be closely tracked to ensure
-that, upon compilation, the ABI does not change in a way that will render
-existing users of the ABI incompatible with the new version.
+ABI互換性を確保するための残りの責任は、コンパイル時に安定したABIを生成するAPIを提供するヘッダーファイルを保守するチームにあります。ヘッダーファイルに変更を加えることは可能ですが、コンパイル時にABIが変更され、既存のABIユーザーが新しいバージョンと互換性を失うようなことがないように、変更内容を綿密に追跡する必要があります。
 
-## ABI Stability in Node.js
+## Node.js における ABI の安定性
 
-Node.js provides header files maintained by several independent teams. For
-example, header files such as `node.h` and `node_buffer.h` are maintained by
-the Node.js team. `v8.h` is maintained by the V8 team, which, although in close
-co-operation with the Node.js team, is independent, and with its own schedule
-and priorities. Thus, the Node.js team has only partial control over the
-changes that are introduced in the headers the project provides. As a result,
-the Node.js project has adopted [semantic versioning](https://semver.org/).
-This ensures that the APIs provided by the project will result in a stable ABI
-for all minor and patch versions of Node.js released within one major version.
-In practice, this means that the Node.js project has committed itself to
-ensuring that a Node.js native addon compiled against a given major version of
-Node.js will load successfully when loaded by any Node.js minor or patch version
-within the major version against which it was compiled.
+Node.js は、複数の独立したチームによってメンテナンスされているヘッダーファイルを提供しています。例えば、`node.h` や `node_buffer.h` などのヘッダーファイルは、Node.js チームによってメンテナンスされています。`v8.h` は V8 チームによってメンテナンスされています。V8 チームは Node.js チームと緊密に協力しながらも独立しており、独自のスケジュールと優先順位を持っています。そのため、Node.js チームは、プロジェクトが提供するヘッダーに導入される変更を部分的にしか制御できません。そのため、Node.js プロジェクトは [セマンティック バージョニング](https://semver.org/) を採用しています。
+これにより、プロジェクトが提供する API は、1 つのメジャーバージョン内でリリースされるすべてのマイナーバージョンとパッチバージョンにおいて、安定した ABI を実現します。
+実際には、これは、Node.js プロジェクトが、特定の Node.js メジャー バージョンに対してコンパイルされた Node.js ネイティブ アドオンが、コンパイルされたメジャー バージョン内の任意の Node.js マイナー バージョンまたはパッチ バージョンで読み込まれたときに正常に読み込まれることを保証することに取り組んでいることを意味します。
 
 ## N-API
 
-Demand has arisen for equipping Node.js with an API that results in an ABI that
-remains stable across multiple Node.js major versions. The motivation for
-creating such an API is as follows:
+Node.js に API を実装し、複数の Node.js メジャーバージョン間で安定した ABI を実現することへの要望が高まっています。このような API を作成する理由は次のとおりです。
 
-- The JavaScript language has remained compatible with itself since its very
-  early days, whereas the ABI of the engine executing the JavaScript code changes
-  with every major version of Node.js. This means that applications consisting of
-  Node.js packages written entirely in JavaScript need not be recompiled,
-  reinstalled, or redeployed as a new major version of Node.js is dropped into
-  the production environment in which such applications run. In contrast, if an
-  application depends on a package that contains a native addon, the application
-  has to be recompiled, reinstalled, and redeployed whenever a new major version
-  of Node.js is introduced into the production environment. This disparity
-  between Node.js packages containing native addons and those that are written
-  entirely in JavaScript has added to the maintenance burden of production
-  systems which rely on native addons.
+- JavaScript 言語は初期の頃から互換性を維持していますが、JavaScript コードを実行するエンジンの ABI は Node.js のメジャーバージョンごとに変更されます。つまり、JavaScript のみで記述された Node.js パッケージで構成されるアプリケーションは、Node.js の新しいメジャーバージョンが本番環境に導入されても、再コンパイル、再インストール、再デプロイする必要はありません。一方、ネイティブアドオンを含むパッケージに依存するアプリケーションは、Node.js の新しいメジャーバージョンが本番環境に導入されるたびに、再コンパイル、再インストール、再デプロイを行う必要があります。ネイティブアドオンを含む Node.js パッケージと JavaScript のみで記述された Node.js パッケージ間のこの差異は、ネイティブアドオンに依存する本番システムのメンテナンス負担を増大させていました。
 
-- Other projects have started to produce JavaScript interfaces that are
-  essentially alternative implementations of Node.js. Since these projects are
-  usually built on a different JavaScript engine than V8, their native addons
-  necessarily take on a different structure and use a different API. Nevertheless,
-  using a single API for a native addon across different implementations of the
-  Node.js JavaScript API would allow these projects to take advantage of the
-  ecosystem of JavaScript packages that has accrued around Node.js.
+- 他のプロジェクトでは、本質的にNode.jsの代替実装となるJavaScriptインターフェースの開発が始まっています。これらのプロジェクトは通常、V8とは異なるJavaScriptエンジン上に構築されているため、ネイティブアドオンは必然的に異なる構造となり、異なるAPIを使用します。しかしながら、Node.js JavaScript APIの異なる実装間でネイティブアドオンに単一のAPIを使用することで、これらのプロジェクトはNode.jsを中心に構築されてきたJavaScriptパッケージのエコシステムを活用できるようになります。
 
-- Node.js may contain a different JavaScript engine in the future. This means
-  that, externally, all Node.js interfaces would remain the same, but the V8
-  header file would be absent. Such a step would cause the disruption of the
-  Node.js ecosystem in general, and that of the native addons in particular, if
-  an API that is JavaScript engine agnostic is not first provided by Node.js and
-  adopted by native addons.
+- Node.jsは将来、異なるJavaScriptエンジンを搭載する可能性があります。つまり、外部的にはすべてのNode.jsインターフェースは同じままですが、V8ヘッダーファイルは存在しないことになります。JavaScriptエンジンに依存しないAPIがNode.jsによって最初に提供され、ネイティブアドオンに採用されなければ、このような動きはNode.jsエコシステム全体、特にネイティブアドオンのエコシステムに混乱をもたらすでしょう。
 
-To these ends Node.js has introduced N-API in version 8.6.0 and marked it as a
-stable component of the project as of Node.js 8.12.0. The API is defined in the
-headers [`node_api.h`][] and [`node_api_types.h`][], and provides a forward-
-compatibility guarantee that crosses the Node.js major version boundary. The
-guarantee can be stated as follows:
+これらの目的のため、Node.js はバージョン 8.6.0 で N-API を導入し、Node.js 8.12.0 以降ではプロジェクトの安定コンポーネントとしてマークされています。この API はヘッダー [`node_api.h`][] および [`node_api_types.h`][] で定義されており、Node.js のメジャーバージョン境界を越えた前方互換性保証を提供します。この保証は以下のように記述できます。
 
-**A given version _n_ of N-API will be available in the major version of
-Node.js in which it was published, and in all subsequent versions of Node.js,
-including subsequent major versions.**
+**N-API の特定のバージョン _n_ は、それが公開された Node.js のメジャーバージョン、およびそれ以降のすべての Node.js バージョン（それ以降のメジャーバージョンを含む）で利用できます。**
 
-A native addon author can take advantage of the N-API forward compatibility
-guarantee by ensuring that the addon makes use only of APIs defined in
-`node_api.h` and data structures and constants defined in `node_api_types.h`.
-By doing so, the author facilitates adoption of their addon by indicating to
-production users that the maintenance burden for their application will increase
-no more by the addition of the native addon to their project than it would by
-the addition of a package written purely in JavaScript.
+ネイティブアドオンの作者は、アドオンが `node_api.h` で定義された API と `node_api_types.h` で定義されたデータ構造および定数のみを使用することで、N-API の前方互換性保証を活用できます。
+これにより、作者は本番環境のユーザーに対し、ネイティブアドオンをプロジェクトに追加しても、純粋にJavaScriptで書かれたパッケージを追加した場合と比べてアプリケーションのメンテナンス負担はそれほど増加しないことを示すことで、アドオンの採用を促進します。
 
-N-API is versioned because new APIs are added from time to time. Unlike
-semantic versioning, N-API versioning is cumulative. That is, each version of
-N-API conveys the same meaning as a minor version in the semver system, meaning
-that all changes made to N-API will be backwards compatible. Additionally, new
-N-APIs are added under an experimental flag to give the community an opportunity
-to vet them in a production environment. Experimental status means that,
-although care has been taken to ensure that the new API will not have to be
-modified in an ABI-incompatible way in the future, it has not yet been
-sufficiently proven in production to be correct and useful as designed and, as
-such, may undergo ABI-incompatible changes before it is finally incorporated
-into a forthcoming version of N-API. That is, an experimental N-API is not yet
-covered by the forward compatibility guarantee.
+N-APIは、新しいAPIが随時追加されるため、バージョン管理されています。セマンティックバージョニングとは異なり、N-APIのバージョン管理は累積的です。つまり、N-APIの各バージョンは、セマンティックバージョニングシステムのマイナーバージョンと同じ意味を持ち、N-APIに加えられたすべての変更は後方互換性を持ちます。さらに、新しいN-APIは、コミュニティが本番環境で検証する機会を与えるため、試験的なフラグの下で追加されます。試験的なステータスとは、将来的に新しいAPIがABI非互換な方法で変更される必要がないように注意が払われているものの、設計どおりに正しく有用であることが本番環境で十分に証明されていないことを意味します。そのため、N-APIの次期バージョンに最終的に組み込まれる前に、ABI非互換な変更が行われる可能性があります。つまり、実験的な N-API はまだ前方互換性の保証の対象外です。
 
 [`node_api.h`]: https://github.com/nodejs/node/blob/main/src/node_api.h
 [`node_api_types.h`]: https://github.com/nodejs/node/blob/main/src/node_api_types.h

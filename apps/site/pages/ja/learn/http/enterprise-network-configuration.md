@@ -4,24 +4,24 @@ layout: learn
 authors: joyeecheung
 ---
 
-# Enterprise Network Configuration
+# エンタープライズネットワーク構成
 
-## Overview
+## 概要
 
-Enterprise environments often require applications to operate behind corporate proxies and use custom certificate authorities (CAs) for SSL/TLS validation. Node.js provides built-in support for these requirements through environment variables and command-line flags, eliminating the need for third-party proxy libraries in many cases.
+エンタープライズ環境では、多くの場合、アプリケーションを企業プロキシの背後で動作させ、SSL/TLS 検証にカスタム証明機関 (CA) を使用する必要があります。Node.js は、環境変数とコマンドラインフラグを通じてこれらの要件を組み込みでサポートしているため、多くの場合、サードパーティ製のプロキシライブラリは不要です。
 
-This guide covers how to configure Node.js applications to work in enterprise network environments:
+このガイドでは、エンタープライズネットワーク環境で動作するように Node.js アプリケーションを構成する方法について説明します。
 
-- Configuring proxies via the `NODE_USE_ENV_PROXY` environment variable or the `--use-env-proxy` flag
-- Adding certificate authorities from system store via the `NODE_USE_SYSTEM_CA` environment variable or the `--use-system-ca` flag.
+- `NODE_USE_ENV_PROXY` 環境変数または `--use-env-proxy` フラグを使用してプロキシを構成する
+- `NODE_USE_SYSTEM_CA` 環境変数または `--use-system-ca` フラグを使用してシステムストアから証明機関を追加する
 
-## Proxy Configuration
+## プロキシ設定
 
-In many enterprise environments, internet access to external services may need to be routed through HTTP/HTTPS proxies for security and monitoring. This requires applications to be aware of and use these proxies when making network requests.
+多くの企業環境では、セキュリティと監視のために、外部サービスへのインターネットアクセスをHTTP/HTTPSプロキシ経由でルーティングする必要がある場合があります。そのため、アプリケーションはネットワークリクエストを行う際にこれらのプロキシを認識し、使用する必要があります。
 
-Proxy settings are often provided via environment variables such as `HTTP_PROXY`, `HTTPS_PROXY`, and `NO_PROXY`. Node.js supports these when `NODE_USE_ENV_PROXY` or `--use-env-proxy` is enabled. This works with `node:http` and `node:https` (v22.21.0 or v24.5.0+) methods as well as `fetch()` (v22.21.0 or v24.0.0+).
+プロキシ設定は、多くの場合、`HTTP_PROXY`、`HTTPS_PROXY`、`NO_PROXY`などの環境変数を介して提供されます。Node.jsは、`NODE_USE_ENV_PROXY`または`--use-env-proxy`が有効になっている場合にこれらをサポートします。これは、`node:http`および`node:https`（v22.21.0またはv24.5.0以降）メソッド、および`fetch()`（v22.21.0またはv24.0.0以降）メソッドで機能します。
 
-Example (POSIX shells):
+例（POSIXシェル）：
 
 ```bash
 # The proxy settings might be configured in the system by your IT department
@@ -35,7 +35,7 @@ export NODE_USE_ENV_PROXY=1
 node app.js
 ```
 
-Alternatively, enable it via the command-line flag `--use-env-proxy` on Node.js v22.21.0 or v24.5.0 and above:
+あるいは、Node.js v22.21.0 または v24.5.0 以降でコマンドライン フラグ `--use-env-proxy` を使用して有効にします。
 
 ```bash
 # The proxy settings might be configured in the system by your IT department
@@ -48,7 +48,7 @@ export NO_PROXY=localhost,127.0.0.1,.company.com
 node --use-env-proxy app.js
 ```
 
-Or, if `--env-file` is used to load environment variables from a file:
+または、`--env-file` を使用してファイルから環境変数を読み込む場合:
 
 ```txt
 # In .env file
@@ -62,13 +62,13 @@ NODE_USE_ENV_PROXY=1
 node --env-file ./.env app.js
 ```
 
-Once enabled, `http`, `https`, and `fetch()` requests use the configured proxies by default, unless an agent is overridden or the target matches `NO_PROXY`.
+有効にすると、エージェントがオーバーライドされているか、ターゲットが `NO_PROXY` に一致しない限り、`http`、`https`、`fetch()` リクエストはデフォルトで設定されたプロキシを使用します。
 
-### Configure the Proxy Programmatically
+### プログラムによるプロキシの設定
 
-To configure the proxy programmatically, override the agents. This is currently supported by `https.request()` and other methods built upon it such as `https.get()`.
+プログラムでプロキシを設定するには、エージェントをオーバーライドします。これは現在、`https.request()` と、それを基に構築された `https.get()` などのメソッドでサポートされています。
 
-To override the agent on a per-request basis, use the `agent` option for `http.request()`/`https.request()` and similar methods:
+リクエストごとにエージェントをオーバーライドするには、`http.request()`/`https.request()` などのメソッドで `agent` オプションを使用します。
 
 ```cjs
 const https = require('node:https');
@@ -112,11 +112,11 @@ https.request(
 );
 ```
 
-To override the agent globally, reset `http.globalAgent` and `https.globalAgent`:
+エージェントをグローバルに上書きするには、`http.globalAgent` と `https.globalAgent` をリセットします。
 
 <!-- TODO(joyeecheung): update this when Node.js has a method that supports global configuration for all requesters -->
 
-**Note**: Global agents do not affect `fetch()`.
+**注**: グローバル エージェントは `fetch()` に影響しません。
 
 ```cjs
 const http = require('node:http');
@@ -158,69 +158,69 @@ https.request('https://external.com', res => {
 });
 ```
 
-### Using Proxies with Authentication
+### 認証付きプロキシの使用
 
-If the proxy requires authentication, include credentials in the proxy URL:
+プロキシで認証が​​必要な場合は、プロキシURLに認証情報を含めます。
 
 ```bash
 export HTTPS_PROXY=http://username:password@proxy.company.com:8080
 ```
 
-**Security Note**: Avoid committing credentials in env files. Prefer a secret manager and programmatic configuration.
+**セキュリティに関する注意**: env ファイルに認証情報をコミットすることは避けてください。シークレットマネージャーとプログラムによる設定を推奨します。
 
-### Proxy Bypass Configuration
+### プロキシバイパス設定
 
-The `NO_PROXY` variable supports:
+`NO_PROXY` 変数は以下をサポートします。
 
-- `*` - Bypass proxy for all hosts
-- `company.com` - Exact host name match
-- `.company.com` - Domain suffix match (matches `sub.company.com`)
-- `*.company.com` - Wildcard domain match
-- `192.168.1.100` - Exact IP address match
-- `192.168.1.1-192.168.1.100` - IP address range
-- `company.com:8080` - Hostname with specific port
+- `*` - すべてのホストでプロキシをバイパス
+- `company.com` - ホスト名の完全一致
+- `.company.com` - ドメインサフィックスの一致（`sub.company.com` に一致）
+- `*.company.com` - ワイルドカードドメインの一致
+- `192.168.1.100` - IP アドレスの完全一致
+- `192.168.1.1-192.168.1.100` - IP アドレスの範囲
+- `company.com:8080` - 特定のポート番号を持つホスト名
 
-If a target matches `NO_PROXY`, the request bypasses the proxy.
+ターゲットが `NO_PROXY` に一致する場合、リクエストはプロキシをバイパスします。
 
-## Certificate Authority Configuration
+## 証明機関の設定
 
-By default, Node.js uses Mozilla’s bundled root CAs and does not consult the OS store. In many enterprise environments, internal CAs are installed in the OS store and are expected to be trusted when connecting to internal services; connections to certificates signed by those CAs can fail validation with errors such as:
+デフォルトでは、Node.js は Mozilla にバンドルされているルート CA を使用し、OS ストアを参照しません。多くのエンタープライズ環境では、内部 CA が OS ストアにインストールされており、社内サービスへの接続時に信頼されることが想定されています。これらの CA によって署名された証明書への接続は、次のようなエラーで検証に失敗する可能性があります。
 
 ```
 Error: self signed certificate in certificate chain
 ```
 
-From Node.js v22.15.0, v23.9.0, v24.0.0 and above, Node.js can be configured to trust these custom CAs using the system's certificate store.
+Node.js v22.15.0、v23.9.0、v24.0.0 以降では、システムの証明書ストアを使用してこれらのカスタム CA を信頼するように Node.js を構成できます。
 
-### Adding CA Certificates from the System Store
+### システムストアからのCA証明書の追加
 
-- From environment variable: `NODE_USE_SYSTEM_CA=1 node app.js`
-- From command-line flag: `node --use-system-ca app.js`
+- 環境変数から: `NODE_USE_SYSTEM_CA=1 node app.js`
+- コマンドラインフラグから: `node --use-system-ca app.js`
 
-When enabled, Node.js loads system CAs and uses them in addition to its bundled CAs for TLS validation.
+有効にすると、Node.jsはシステムCAを読み込み、バンドルされているCAに加えてTLS検証に使用します。
 
-Node.js reads certificates from different locations depending on the platform:
+Node.jsは、プラットフォームに応じて異なる場所から証明書を読み取ります。
 
-- Windows: Windows Certificate Store (via Windows Crypto API)
-- macOS: macOS Keychain
-- Linux: OpenSSL defaults, typically via `SSL_CERT_FILE`/`SSL_CERT_DIR`, or paths like `/etc/ssl/cert.pem` and `/etc/ssl/certs/` depending on the OpenSSL build
+- Windows: Windows証明書ストア（Windows Crypto API経由）
+- macOS: macOSキーチェーン
+- Linux: OpenSSLのデフォルト（通常は`SSL_CERT_FILE`/`SSL_CERT_DIR`経由、またはOpenSSLのビルドに応じて`/etc/ssl/cert.pem`や`/etc/ssl/certs/`などのパス）
 
-Node.js follows a policy similar to that of Chromium. See [the Node.js documentation](https://nodejs.org/api/cli.html#--use-system-ca) for more details.
+Node.jsはChromiumと同様のポリシーに従います。詳細については、[Node.js のドキュメント](https://nodejs.org/api/cli.html#--use-system-ca)を参照してください。
 
-### Adding additional CA Certificates
+### CA 証明書の追加
 
-To add specific CA certificates without relying on the system store:
+システムストアに依存せずに特定の CA 証明書を追加するには:
 
 ```bash
 export NODE_EXTRA_CA_CERTS=/path/to/company-ca-bundle.pem
 node app.js
 ```
 
-The file should contain one or more PEM-encoded certificates.
+ファイルには、PEM エンコードされた証明書が 1 つ以上含まれている必要があります。
 
-#### Combining Options
+#### オプションの組み合わせ
 
-You can combine `NODE_USE_SYSTEM_CA` with `NODE_EXTRA_CA_CERTS`:
+`NODE_USE_SYSTEM_CA` と `NODE_EXTRA_CA_CERTS` を組み合わせることができます。
 
 ```bash
 export NODE_USE_SYSTEM_CA=1
@@ -228,13 +228,13 @@ export NODE_EXTRA_CA_CERTS=/path/to/additional-cas.pem
 node app.js
 ```
 
-With both enabled, Node.js trusts bundled CAs, system CAs, and the additional certificates specified by `NODE_EXTRA_CA_CERTS`.
+両方を有効にすると、Node.js はバンドルされた CA、システム CA、および `NODE_EXTRA_CA_CERTS` で指定された追加の証明書を信頼します。
 
-### Configure CA Certificates Programmatically
+### CA 証明書をプログラムで設定する
 
-#### Configure Global CA Certificates
+#### グローバル CA 証明書を設定する
 
-Use [`tls.getCACertificates()`](https://nodejs.org/api/tls.html#tlsgetcacertificatestype) and [`tls.setDefaultCACertificates()`](https://nodejs.org/api/tls.html#tlssetdefaultcacertificatescerts) to configure global CA certificates. For example, to add system certificates into the default store:
+[`tls.getCACertificates()`](https://nodejs.org/api/tls.html#tlsgetcacertificatestype) と [`tls.setDefaultCACertificates()`](https://nodejs.org/api/tls.html#tlssetdefaultcacertificatescerts) を使用して、グローバル CA 証明書を設定します。たとえば、システム証明書をデフォルトストアに追加するには、次のようにします。
 
 ```cjs
 const https = require('node:https');
@@ -268,9 +268,9 @@ fetch('https://internal.company.com').then(res => {
 });
 ```
 
-#### Configure CA Certificates for Individual Requests
+#### 個々のリクエストごとに CA 証明書を設定する
 
-To override CA certificates per request, use the `ca` option. This is currently only supported by `tls.connect()`/`https.request()` and methods built upon them such as `https.get()`.
+リクエストごとに CA 証明書をオーバーライドするには、`ca` オプションを使用します。これは現在、`tls.connect()`/`https.request()` と、それらに基づいて構築された `https.get()` などのメソッドでのみサポートされています。
 
 ```cjs
 const https = require('node:https');

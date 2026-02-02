@@ -4,19 +4,19 @@ layout: learn
 authors: flaviocopes, potch, MylesBorins, fhemberger, LaRuaNa, amiller-gh, ahmadawais, AugustinMauroy
 ---
 
-# Output to the command line using Node.js
+# Node.js を使用したコマンドラインへの出力
 
-### Basic output using the console module
+### console モジュールを使用した基本的な出力
 
-Node.js provides a [`console` module](https://nodejs.org/docs/latest-v22.x/api/console.html) which provides tons of very useful ways to interact with the command line.
+Node.js は [`console` モジュール](https://nodejs.org/docs/latest-v22.x/api/console.html) を提供しており、コマンドラインを操作するための非常に便利な方法を数多く提供しています。
 
-It is basically the same as the `console` object you find in the browser.
+これは基本的に、ブラウザにある `console` オブジェクトと同じです。
 
-The most basic and most used method is `console.log()`, which prints the string you pass to it to the console.
+最も基本的かつ最もよく使われるメソッドは `console.log()` で、渡された文字列をコンソールに出力します。
 
-If you pass an object, it will render it as a string.
+オブジェクトを渡した場合は、文字列としてレンダリングされます。
 
-You can pass multiple variables to `console.log`, for example:
+`console.log` には複数の変数を渡すことができます。例:
 
 ```js
 const x = 'x';
@@ -25,36 +25,36 @@ const y = 'y';
 console.log(x, y);
 ```
 
-and Node.js will print both.
+Node.js は両方を出力します。
 
-We can also format pretty phrases by passing variables and a format specifier.
+変数と書式指定子を渡すことで、きれいなフレーズをフォーマットすることもできます。
 
-For example:
+例えば:
 
 ```js
 console.log('My %s has %d ears', 'cat', 2);
 ```
 
-- `%s` format a variable as a string
-- `%d` format a variable as a number
-- `%i` format a variable as its integer part only
-- `%o` format a variable as an object
+- `%s` は変数を文字列としてフォーマットします
+- `%d` は変数を数値としてフォーマットします
+- `%i` は変数を整数部分のみとしてフォーマットします
+- `%o` は変数をオブジェクトとしてフォーマットします
 
-Example:
+例:
 
 ```js
 console.log('%o', Number);
 ```
 
-### Clear the console
+### コンソールをクリアします
 
-`console.clear()` clears the console (the behavior might depend on the console used)
+`console.clear()` はコンソールをクリアします（動作は使用するコンソールによって異なる場合があります）
 
-### Counting elements
+### 要素のカウント
 
-`console.count()` is a handy method.
+`console.count()` は便利なメソッドです。
 
-Take this code:
+次のコードをご覧ください。
 
 ```js
 const x = 1;
@@ -74,9 +74,9 @@ console.count(
 );
 ```
 
-What happens is that `console.count()` will count the number of times a string is printed, and print the count next to it:
+`console.count()` は文字列が印刷された回数をカウントし、その横にカウント結果を表示します。
 
-You can just count apples and oranges:
+リンゴとオレンジを数えることもできます。
 
 ```js
 const oranges = ['orange', 'orange'];
@@ -90,11 +90,11 @@ apples.forEach(fruit => {
 });
 ```
 
-### Reset counting
+### カウントのリセット
 
-The console.countReset() method resets counter used with console.count().
+console.countReset() メソッドは、console.count() で使用されるカウンターをリセットします。
 
-We will use the apples and orange example to demonstrate this.
+リンゴとオレンジの例を使ってこれを説明します。
 
 ```js
 const oranges = ['orange', 'orange'];
@@ -114,13 +114,13 @@ oranges.forEach(fruit => {
 });
 ```
 
-Notice how the call to `console.countReset('orange')` resets the value counter to zero.
+`console.countReset('orange')` の呼び出しによって値カウンターがゼロにリセットされることに注意してください。
 
-### Print the stack trace
+### スタックトレースを出力する
 
-There might be cases where it's useful to print the call stack trace of a function, maybe to answer the question _how did you reach that part of the code?_
+関数の呼び出しスタックトレースを出力すると便利な場合があります。たとえば、「コードのその部分にどうやって到達したのか？」という疑問に答える場合などです。
 
-You can do so using `console.trace()`:
+`console.trace()` を使用すると、これを実行できます。
 
 ```js
 const function2 = () => console.trace();
@@ -128,7 +128,7 @@ const function1 = () => function2();
 function1();
 ```
 
-This will print the stack trace. This is what's printed if we try this in the Node.js REPL:
+スタックトレースが出力されます。Node.js REPLでこれを実行した場合の出力は次のとおりです。
 
 ```bash
 Trace
@@ -144,9 +144,9 @@ Trace
     at REPLServer.emit (events.js:210:7)
 ```
 
-### Calculate the time spent
+### 所要時間を計算する
 
-You can easily calculate how much time a function takes to run, using `time()` and `timeEnd()`
+`time()` と `timeEnd()` を使うと、関数の実行にかかる時間を簡単に計算できます。
 
 ```js
 const doSomething = () => console.log('test');
@@ -159,24 +159,24 @@ const measureDoingSomething = () => {
 measureDoingSomething();
 ```
 
-### stdout and stderr
+### stdout と stderr
 
-As we saw console.log is great for printing messages in the Console. This is what's called the standard output, or `stdout`.
+前述の通り、console.log はコンソールにメッセージを出力するのに最適です。これは標準出力、または `stdout` と呼ばれます。
 
-`console.error` prints to the `stderr` stream.
+`console.error` は `stderr` ストリームに出力します。
 
-It will appear in the console, but can be handled separately from regular output.
+これはコンソールに表示されますが、通常の出力とは別に処理できます。
 
-### Color the output
+### 出力に色を付ける
 
-> **NOTE**
-> This part of the resource is designed with version 22.11 which notes `styleText` as ‘Active development’.
+> **注意**
+> このリソースの部分はバージョン 22.11 に基づいて設計されており、`styleText` は「開発中」と記載されています。
 
-In many cases, you will be tempted to paste certain text to get a nice output at the terminal.
+多くの場合、ターミナルに適切な出力を得るために、特定のテキストを貼り付けたくなるでしょう。
 
-There is a `styleText` function provided by the `node:util` module. Let's discover how to use it.
+`node:util` モジュールには `styleText` 関数が用意されています。使い方を確認しましょう。
 
-First of all, you need to import the `styleText` function from the `node:util` module:
+まず、`node:util` モジュールから `styleText` 関数をインポートする必要があります。
 
 ```mjs
 import { styleText } from 'node:util';
@@ -196,4 +196,4 @@ console.log(
 );
 ```
 
-The first argument is an array of styles, and the second argument is the text you want to style. We invite you to read [the docs](https://nodejs.org/docs/latest-v22.x/api/util.html#utilstyletextformat-text-options)
+最初の引数はスタイルの配列、2番目の引数はスタイルを適用したいテキストです。[ドキュメント](https://nodejs.org/docs/latest-v22.x/api/util.html#utilstyletextformat-text-options)をご覧ください。

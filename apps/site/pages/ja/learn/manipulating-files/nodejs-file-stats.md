@@ -4,11 +4,11 @@ layout: learn
 authors: flaviocopes, ZYSzys, MylesBorins, fhemberger, LaRuaNa, ahmadawais, clean99, ovflowd, vaishnav-mk
 ---
 
-# Node.js file stats
+# Node.js のファイル情報
 
-Every file comes with a set of details that we can inspect using Node.js. In particular, using the `stat()` method provided by the [`fs` module](https://nodejs.org/api/fs.html).
+すべてのファイルには、Node.js を使って調べることができる詳細情報が付属しています。特に、[`fs` モジュール](https://nodejs.org/api/fs.html) が提供する `stat()` メソッドを使用すると便利です。
 
-You call it passing a file path, and once Node.js gets the file details it will call the callback function you pass, with 2 parameters: an error message, and the file stats:
+ファイルパスを渡してこのメ​​ソッドを呼び出すと、Node.js はファイルの詳細を取得すると、渡されたコールバック関数を呼び出します。この関数には、エラーメッセージとファイル情報の 2 つのパラメータが渡されます。
 
 ```cjs
 const fs = require('node:fs');
@@ -32,7 +32,7 @@ fs.stat('/Users/joe/test.txt', (err, stats) => {
 });
 ```
 
-Node.js also provides a sync method, which blocks the thread until the file stats are ready:
+Node.js には、ファイルの情報が準備されるまでスレッドをブロックする sync メソッドも用意されています。
 
 ```cjs
 const fs = require('node:fs');
@@ -54,15 +54,15 @@ try {
 }
 ```
 
-The file information is included in the stats variable. What kind of information can we extract using the stats?
+ファイル情報は stats 変数に含まれています。この stats 変数を使ってどのような情報を抽出できるでしょうか？
 
-**A lot, including:**
+**多くの情報を取得できます。例えば、以下の情報です。**
 
-- if the file is a directory or a file, using `stats.isFile()` and `stats.isDirectory()`
-- if the file is a symbolic link using `stats.isSymbolicLink()`
-- the file size in bytes using `stats.size`.
+- ファイルがディレクトリかファイルかを確認するには、`stats.isFile()` と `stats.isDirectory()` を使用します。
+- ファイルがシンボリックリンクかを確認するには、`stats.isSymbolicLink()` を使用します。
+- ファイルサイズ（バイト単位）を確認するには、`stats.size` を使用します。
 
-There are other advanced methods, but the bulk of what you'll use in your day-to-day programming is this.
+他にも高度なメソッドはありますが、日常のプログラミングで主に使うのはこのメソッドです。
 
 ```cjs
 const fs = require('node:fs');
@@ -96,7 +96,7 @@ fs.stat('/Users/joe/test.txt', (err, stats) => {
 });
 ```
 
-You can also use promise-based `fsPromises.stat()` method offered by the `fs/promises` module if you like:
+必要に応じて、`fs/promises` モジュールが提供する promise ベースの `fsPromises.stat()` メソッドを使用することもできます。
 
 ```cjs
 const fs = require('node:fs/promises');
@@ -129,4 +129,4 @@ try {
 }
 ```
 
-You can read more about the `fs` module in the [official documentation](https://nodejs.org/api/fs.html).
+`fs` モジュールの詳細については、[公式ドキュメント](https://nodejs.org/api/fs.html) を参照してください。

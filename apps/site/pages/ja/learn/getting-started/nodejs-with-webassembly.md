@@ -4,20 +4,20 @@ layout: learn
 authors: lancemccluskey, ovflowd
 ---
 
-# Node.js with WebAssembly
+# Node.js と WebAssembly
 
-**[WebAssembly](https://webassembly.org)** is a high-performance assembly-like language that can be compiled from various languages, including C/C++, Rust, and AssemblyScript. Currently, it is supported by Chrome, Firefox, Safari, Edge, and Node.js!
+**[WebAssembly](https://webassembly.org)** は、C/C++、Rust、AssemblyScript など、様々な言語からコンパイル可能な、高性能なアセンブリ言語です。現在、Chrome、Firefox、Safari、Edge、Node.js でサポートされています。
 
-The WebAssembly specification details two file formats, a binary format called a WebAssembly Module with a `.wasm` extension and corresponding text representation called WebAssembly Text format with a `.wat` extension.
+WebAssembly 仕様では、2 つのファイル形式が規定されています。1 つは WebAssembly モジュールと呼ばれるバイナリ形式で、拡張子は `.wasm` です。もう 1 つは WebAssembly テキスト形式で、拡張子は `.wat` です。
 
-## Key Concepts
+## 主要な概念
 
-- Module - A compiled WebAssembly binary, i.e. a `.wasm` file.
-- Memory - A resizable ArrayBuffer.
-- Table - A resizable typed array of references not stored in Memory.
-- Instance - An instantiation of a Module with its Memory, Table, and variables.
+- モジュール - コンパイル済みの WebAssembly バイナリ（`.wasm` ファイル）。
+- メモリ - サイズ変更可能な ArrayBuffer。
+- テーブル - メモリに格納されていない参照の、サイズ変更可能な型付き配列。
+- インスタンス - メモリ、テーブル、および変数を含むモジュールのインスタンス化。
 
-In order to use WebAssembly, you need a `.wasm` binary file and a set of APIs to communicate with WebAssembly. Node.js provides the necessary APIs via the global `WebAssembly` object.
+WebAssembly を使用するには、`.wasm` バイナリファイルと、WebAssembly と通信するための一連の API が必要です。Node.js は、グローバル `WebAssembly` オブジェクトを通じて必要な API を提供します。
 
 ```js
 console.log(WebAssembly);
@@ -30,20 +30,20 @@ Object [WebAssembly] {
 */
 ```
 
-## Generating WebAssembly Modules
+## WebAssembly モジュールの生成
 
-There are multiple methods available to generate WebAssembly binary files including:
+WebAssembly バイナリファイルを生成するには、以下の複数の方法があります。
 
-- Writing WebAssembly (`.wat`) by hand and converting to binary format using tools such as [wabt](https://github.com/webassembly/wabt)
-- Using [emscripten](https://emscripten.org/) with a C/C++ application
-- Using [wasm-pack](https://rustwasm.github.io/wasm-pack/book/) with a Rust application
-- Using [AssemblyScript](https://www.assemblyscript.org/) if you prefer a TypeScript-like experience
+- WebAssembly (`.wat`) を手動で記述し、[wabt](https://github.com/webassembly/wabt) などのツールを使用してバイナリ形式に変換する
+- C/C++ アプリケーションで [emscripten](https://emscripten.org/) を使用する
+- Rust アプリケーションで [wasm-pack](https://rustwasm.github.io/wasm-pack/book/) を使用する
+- TypeScript のような操作性を好む場合は [AssemblyScript](https://www.assemblyscript.org/) を使用する
 
-> Some of these tools generate not only the binary file, but the JavaScript "glue" code and corresponding HTML files to run in the browser.
+> これらのツールの中には、バイナリファイルだけでなく、ブラウザで実行するための JavaScript の「グルー」コードと対応する HTML ファイルも生成するものがあります。
 
-## How to use it
+## 使い方
 
-Once you have a WebAssembly module, you can use the Node.js `WebAssembly` object to instantiate it.
+WebAssembly モジュールを作成したら、Node.js の `WebAssembly` オブジェクトを使ってインスタンス化できます。
 
 ```js
 // Assume add.wasm file exists that contains a single function adding 2 provided arguments
@@ -79,12 +79,12 @@ const sum = add(5, 6);
 console.log(sum); // Outputs: 11
 ```
 
-## Interacting with the OS
+## OS とのやり取り
 
-WebAssembly modules cannot directly access OS functionality on its own. A third-party tool [Wasmtime](https://docs.wasmtime.dev/) can be used to access this functionality. `Wasmtime` utilizes the [WASI](https://wasi.dev/) API to access the OS functionality.
+WebAssembly モジュールは、単体では OS 機能に直接アクセスできません。この機能にアクセスするには、サードパーティ製ツール [Wasmtime](https://docs.wasmtime.dev/) を使用します。`Wasmtime` は [WASI](https://wasi.dev/) API を利用して OS 機能にアクセスします。
 
-## Resources
+## リソース
 
-- [General WebAssembly Information](https://webassembly.org/)
-- [MDN Docs](https://developer.mozilla.org/en-US/docs/WebAssembly)
-- [Write WebAssembly by hand](https://webassembly.github.io/spec/core/text/index.html)
+- [WebAssembly の一般情報](https://webassembly.org/)
+- [MDN ドキュメント](https://developer.mozilla.org/en-US/docs/WebAssembly)
+- [WebAssembly を手書きする](https://webassembly.github.io/spec/core/text/index.html)

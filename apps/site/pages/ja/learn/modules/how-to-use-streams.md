@@ -4,81 +4,81 @@ layout: learn
 authors: mcollina, ceres6, simoneb, codyzu
 ---
 
-# How To Use Streams
+# ストリームの使い方
 
-Working with large amounts of data in Node.js applications can be a double-edged sword. The ability to handle massive amounts of data is extremely handy but can also lead to performance bottlenecks and memory exhaustion. Traditionally, developers tackled this challenge by reading the entire dataset into memory at once. This approach, while intuitive for smaller datasets, becomes inefficient and resource-intensive for large data (e.g., files, network requests…).
+Node.js アプリケーションで大量のデータを扱うことは、諸刃の剣です。膨大なデータ量に対応できることは非常に便利ですが、パフォーマンスのボトルネックやメモリ枯渇につながる可能性もあります。従来、開発者はこの課題に対処するために、データセット全体を一度にメモリに読み込むという手法を採用していました。このアプローチは、小規模なデータセットでは直感的に操作できますが、大規模なデータ（ファイル、ネットワークリクエストなど）では非効率的で、多くのリソースを消費します。
 
-This is where Node.js streams come in. Streams offer a fundamentally different approach, allowing you to process data incrementally and optimize memory usage. By handling data in manageable chunks, streams empower you to build scalable applications that can efficiently tackle even the most daunting datasets. As popularly quoted, “streams are arrays over time.”
+ここで Node.js ストリームの出番です。ストリームは根本的に異なるアプローチを提供し、データを段階的に処理し、メモリ使用量を最適化します。扱いやすいチャンク単位でデータを処理することで、ストリームは、最も困難なデータセットにも効率的に対応できるスケーラブルなアプリケーションを構築できます。よく言われるように、「ストリームは時間軸上の配列である」のです。
 
-In this guide, we give an overview of the Stream concept, history, and API as well as some recommendations on how to use and operate them.
+このガイドでは、ストリームの概念、歴史、API の概要、そして使用方法と操作方法に関する推奨事項について説明します。
 
-## What are Node.js Streams?
+## Node.js ストリームとは？
 
-Node.js streams offer a powerful abstraction for managing data flow in your applications. They excel at processing large datasets, such as reading or writing from files and network requests, without compromising performance.
+Node.js ストリームは、アプリケーション内のデータフローを管理するための強力な抽象化を提供します。パフォーマンスを犠牲にすることなく、ファイルの読み取りや書き込み、ネットワークリクエストなど、大規模なデータセットの処理に優れています。
 
-This approach differs from loading the entire dataset into memory at once. Streams process data in chunks, significantly reducing memory usage. All streams in Node.js inherit from the [`EventEmitter`][] class, allowing them to emit events at various stages of data processing. These streams can be readable, writable, or both, providing flexibility for different data-handling scenarios.
+このアプローチは、データセット全体を一度にメモリにロードするのとは異なります。ストリームはデータをチャンク単位で処理するため、メモリ使用量を大幅に削減します。Node.js のすべてのストリームは [`EventEmitter`][] クラスを継承しており、データ処理のさまざまな段階でイベントを発行できます。これらのストリームは読み取り可能、書き込み可能、​​またはその両方にすることができ、さまざまなデータ処理シナリオに柔軟に対応できます。
 
-### Event-Driven Architecture
+### イベント駆動型アーキテクチャ
 
-Node.js thrives on an event-driven architecture, making it ideal for real-time I/O. This means consuming input as soon as it's available and sending output as soon as the application generates it. Streams seamlessly integrate with this approach, enabling continuous data processing.
+Node.js はイベント駆動型アーキテクチャを採用しており、リアルタイム I/O に最適です。これは、入力が利用可能になるとすぐに消費し、アプリケーションが出力を生成するとすぐに送信することを意味します。ストリームはこのアプローチとシームレスに統合され、継続的なデータ処理を可能にします。
 
-They achieve this by emitting events at key stages. These events include signals for received data ([`data`][] event) and the stream's completion ([`end`][] event). Developers can listen to these events and execute custom logic accordingly. This event-driven nature makes streams highly efficient for the processing of data from external sources.
+ストリームは、重要な段階でイベントを発行することでこれを実現します。これらのイベントには、受信データのシグナル ([`data`][] イベント) とストリームの完了シグナル ([`end`][] イベント) が含まれます。開発者はこれらのイベントをリッスンし、それに応じてカスタムロジックを実行できます。このイベント駆動型の性質により、ストリームは外部ソースからのデータ処理において非常に効率的です。
 
-## Why use Streams?
+## ストリームを使用する理由
 
-Streams provide three key advantages over other data-handling methods:
+ストリームは、他のデータ処理方法に比べて3つの重要な利点があります。
 
-- **Memory Efficiency**: Streams process data incrementally, consuming and processing data in chunks rather than loading the entire dataset into memory. This is a major advantage when dealing with large datasets, as it significantly reduces memory usage and prevents memory-related performance issues.
-- **Improved Response Time**: Streams allow for immediate data processing. When a chunk of data arrives, it can be processed without waiting for the entire payload or dataset to be received. This reduces latency and improves your application's overall responsiveness.
-- **Scalability for Real-Time Processing**: By handling data in chunks, Node.js streams can efficiently handle large amounts of data with limited resources. This scalability makes streams ideal for applications that process high volumes of data in real time.
+- **メモリ効率**: ストリームは、データセット全体をメモリにロードするのではなく、データをチャンク単位で消費・処理することで、データを段階的に処理します。これは、大規模なデータセットを扱う際に大きなメリットとなり、メモリ使用量を大幅に削減し、メモリ関連のパフォーマンス問題を防ぎます。
+- **応答時間の向上**: ストリームは即時のデータ処理を可能にします。データのチャンクが到着すると、ペイロード全体またはデータセット全体の受信を待たずに処理できます。これにより、レイテンシが削減され、アプリケーション全体の応答性が向上します。
+- **リアルタイム処理のためのスケーラビリティ**: データをチャンク単位で処理することで、Node.js ストリームは限られたリソースで大量のデータを効率的に処理できます。このスケーラビリティにより、ストリームは大量のデータをリアルタイムで処理するアプリケーションに最適です。
 
-These advantages make streams a powerful tool for building high-performance, scalable Node.js applications, particularly when working with large datasets or real-time data processing.
+これらの利点により、ストリームは、特に大規模なデータセットやリアルタイムのデータ処理を行う場合に、高性能でスケーラブルな Node.js アプリケーションを構築するための強力なツールになります。
 
-### Note on performance
+### パフォーマンスに関する注意
 
-If your application already has all the data readily available in memory, using streams might add unnecessary overhead, complexity, and slow down your application.
+アプリケーションで既にすべてのデータがメモリ上に用意されている場合、ストリームを使用すると不要なオーバーヘッドや複雑さが生じ、アプリケーションの速度が低下する可能性があります。
 
-## Stream history
+## ストリームの歴史
 
-This section is a reference of the history of streams in Node.js. Unless you’re working with a codebase written for a Node.js version prior to 0.11.5 (2013), you will rarely encounter older versions of the streams API, but the terms might still be in use.
+このセクションでは、Node.js におけるストリームの歴史について説明します。Node.js バージョン 0.11.5 (2013) より前のバージョンで記述されたコードベースで作業していない限り、古いバージョンのストリーム API に遭遇することはほとんどありませんが、これらの用語は現在も使用されている可能性があります。
 
-### Streams 0
+### ストリーム 0
 
-The first version of streams was released at the same time as Node.js. Although there wasn't a Stream class yet, different modules used the concept and implemented the `read`/`write` functions. The `util.pump()` function was available to control the flow of data between streams.
+ストリームの最初のバージョンは、Node.js と同時にリリースされました。Stream クラスはまだ存在しませんでしたが、さまざまなモジュールがこの概念を採用し、`read`/`write` 関数を実装していました。`util.pump()` 関数は、ストリーム間のデータフローを制御するために使用されていました。
 
-### Streams 1 (Classic)
+### Streams 1 (クラシック)
 
-With the release of Node v0.4.0 in 2011, the Stream class was introduced, as well as the `pipe()` method.
+2011年の Node.js v0.4.0 のリリースで、Stream クラスと `pipe()` メソッドが導入されました。
 
 ### Streams 2
 
-In 2012, with the release of Node v0.10.0, Streams 2 were unveiled. This update brought new stream subclasses, including Readable, Writable, Duplex, and Transform. Additionally, the `readable` event was added. To maintain backwards compatibility, streams could be switched to the old mode by adding a `data` event listener or calling `pause()` or `resume()` methods.
+2012年、Node.js v0.10.0 のリリースとともに、Streams 2 が発表されました。このアップデートでは、Readable、Writable、Duplex、Transform などの新しいストリームサブクラスが追加されました。さらに、`readable` イベントも追加されました。後方互換性を維持するため、`data` イベントリスナーを追加するか、`pause()` メソッドまたは `resume()` メソッドを呼び出すことで、ストリームを旧モードに切り替えることができました。
 
 ### Streams 3
 
-In 2013, Streams 3 were released with Node v0.11.5, to address the problem of a stream having both a `data` and `readable` event handlers. This removed the need to choose between 'current' and 'old' modes. Streams 3 is the current version of streams in Node.js.
+2013年、Node.js v0.11.5 で Streams 3 がリリースされました。これは、ストリームに `data` イベントハンドラーと `readable` イベントハンドラーの両方が存在するという問題に対処するためのものです。これにより、「現在の」モードと「古い」モードを選択する必要がなくなりました。Streams 3 は、Node.js におけるストリームの最新バージョンです。
 
-## Stream types
+## ストリームの種類
 
 ### Readable
 
-[`Readable`][] is the class that we use to sequentially read a source of data. Typical examples of `Readable` streams in Node.js API are [`fs.ReadStream` ][] when reading files, [`http.IncomingMessage` ][] when reading HTTP requests, and [`process.stdin` ][] when reading from the standard input.
+[`Readable`][] は、データソースを順次読み取るために使用するクラスです。Node.js API における `Readable` ストリームの代表的な例としては、ファイル読み取り時の [`fs.ReadStream` ][]、HTTP リクエスト読み取り時の [`http.IncomingMessage` ][]、標準入力読み取り時の [`process.stdin` ][] などがあります。
 
-#### Key Methods and Events
+#### 主要なメソッドとイベント
 
-A readable stream operates with several core methods and events that allow fine control over data handling:
+Readable ストリームは、データ処理を細かく制御できるいくつかのコアメソッドとイベントによって動作します。
 
-- **[`on('data')`][]**: This event is triggered whenever data is available from the stream. It is very fast, as the stream pushes data as quickly as it can handle, making it suitable for high-throughput scenarios.
-- **[`on('end')`][]**: Emitted when there is no more data to read from the stream. It signifies the completion of data delivery. This event is only fired when all the data from the stream has been consumed.
-- **[`on('readable')`][]**: This event is triggered when there is data available to read from the stream or when the end of the stream has been reached. It allows for more controlled data reading when needed.
-- **[`on('close')`][]**: This event is emitted when the stream and its underlying resources have been closed and indicates that no more events will be emitted.
-- **[`on('error')`][]**: This event can be emitted at any point, signaling that there was an error processing. A handler for this event can be used to avoid uncaught exceptions.
+- **[`on('data')`][]**: このイベントは、ストリームからデータが利用可能になるたびにトリガーされます。ストリームは処理可能な限り高速にデータをプッシュするため、非常に高速であり、高スループットのシナリオに適しています。
+- **[`on('end')`][]**: ストリームから読み取るデータがなくなったときに発行されます。これは、データ配信の完了を示します。このイベントは、ストリームからすべてのデータが消費された場合にのみ発生します。
+- **[`on('readable')`][]**: このイベントは、ストリームから読み取り可能なデータが存在する場合、またはストリームの終端に達した場合にトリガーされます。これにより、必要に応じてより制御されたデータ読み取りが可能になります。
+- **[`on('close')`][]**: このイベントは、ストリームとその基盤となるリソースが閉じられたときに発行され、これ以上イベントが発行されないことを示します。
+- **[`on('error')`][]**: このイベントは、処理中にエラーが発生したことを通知するために、いつでも発行される可能性があります。このイベントのハンドラーを使用することで、キャッチされない例外を回避できます。
 
-A demonstration of the use of these events can be seen in the following sections.
+これらのイベントの使用方法のデモについては、次のセクションで説明します。
 
-#### Basic Readable Stream
+#### 基本的な読み取り可能ストリーム
 
-Here's an example of a simple readable stream implementation that generates data dynamically:
+動的にデータを生成するシンプルな読み取り可能ストリームの実装例を次に示します。
 
 ```js
 class MyStream extends Readable {
@@ -98,11 +98,11 @@ stream.on('data', chunk => {
 });
 ```
 
-In this code, the `MyStream` class extends Readable and overrides the [`_read()`][] method to push a string ":-)" to the internal buffer. After pushing the string five times, it signals the end of the stream by pushing `null`. The [`on('data')`][] event handler logs each chunk to the console as it is received.
+このコードでは、`MyStream` クラスは Readable を拡張し、[`_read()`][] メソッドをオーバーライドして文字列 ":-)" を内部バッファにプッシュします。文字列を 5 回プッシュした後、`null` をプッシュすることでストリームの終了を通知します。[`on('data')`][] イベントハンドラは、受信した各チャンクをコンソールに出力します。
 
-#### Advanced Control with the readable Event
+#### readable イベントによる高度な制御
 
-For even finer control over data flow, the readable event can be used. This event is more complex but provides better performance for certain applications by allowing explicit control over when data is read from the stream:
+データフローをさらに細かく制御するには、readable イベントを使用します。このイベントはより複雑ですが、ストリームからデータを読み取るタイミングを明示的に制御できるため、特定のアプリケーションではパフォーマンスが向上します。
 
 ```js
 const stream = new MyStream({
@@ -119,9 +119,9 @@ stream.on('readable', () => {
 stream.on('end', () => console.log('>> end event'));
 ```
 
-Here, the readable event is used to pull data from the stream as needed manually. The loop inside the readable event handler continues to read data from the stream buffer until it returns `null`, indicating that the buffer is temporarily empty or the stream has ended. Setting `highWaterMark` to 1 keeps the buffer size small, triggering the readable event more frequently and allowing more granular control over the data flow.
+ここでは、readableイベントを使用して、必要に応じて手動でストリームからデータを取得します。readableイベントハンドラ内のループは、バッファが一時的に空になったか、ストリームが終了したことを示す「null」を返すまで、ストリームバッファからデータを読み取り続けます。「highWaterMark」を1に設定するとバッファサイズが小さくなり、readableイベントがより頻繁にトリガーされ、データフローをより細かく制御できるようになります。
 
-With the previous code, you’ll get an output like
+前のコードでは、次のような出力が得られます。
 
 ```bash
 >> readable event: 1
@@ -135,11 +135,11 @@ With the previous code, you’ll get an output like
 >> end event
 ```
 
-Let’s try to digest that. When we attach the `on('readable')` event, it makes a first call to `read()` because that is what might trigger the emission of a `readable` event. After the emission of said event, we call `read` on the first iteration of the `while` loop. That’s why we get the first two smileys in one row. After that, we keep calling `read` until `null` is pushed. Each call to `read` programs the emission of a new `readable` event, but as we are in “flow” mode (i.e., using the `readable` event), the emission is scheduled for the `nextTick`. That’s why we get them all at the end, when the synchronous code of the loop is finished.
+理解を深めてみましょう。`on('readable')` イベントをアタッチすると、最初に `read()` が呼び出されます。これは、`readable` イベントの発行をトリガーする可能性があるためです。このイベントの発行後、`while` ループの最初の反復処理で `read` を呼び出します。そのため、最初の 2 つのスマイリーが 1 行に表示されます。その後、`null` がプッシュされるまで `read` を呼び出し続けます。`read` の呼び出しごとに新しい `readable` イベントの発行がプログラムされますが、「flow」モード（つまり `readable` イベントを使用）であるため、イベントの発行は `nextTick` にスケジュールされます。そのため、ループの同期コードが終了した時点で、すべてのイベントが最後に表示されます。
 
-NOTE: You can try to run the code with `NODE_DEBUG=stream` to see that `emitReadable` is triggered after each `push`.
+注: `NODE_DEBUG=stream` を指定してコードを実行すると、各 `push` の後に `emitReadable` がトリガーされていることを確認できます。
 
-If we want to see readable events called before each smiley, we can wrap `push` into a `setImmediate` or `process.nextTick` like this:
+各スマイリーの前に呼び出される読み取り可能なイベントを確認したい場合は、次のように `push` を `setImmediate` または `process.nextTick` にラップできます。
 
 ```js
 class MyStream extends Readable {
@@ -174,16 +174,16 @@ And we’ll get:
 
 ### Writable
 
-[`Writable`][] streams are useful for creating files, uploading data, or any task that involves sequentially outputting data. While readable streams provide the source of data, writable streams in Node.js act as the destination for your data. Typical examples of writable streams in the Node.js API are [`fs.WriteStream` ][], [`process.stdout` ][], and [`process.stderr` ][].
+[`Writable`][] ストリームは、ファイルの作成、データのアップロード、またはデータの連続出力を伴うあらゆるタスクに役立ちます。読み取り可能ストリームがデータのソースを提供するのに対し、Node.js の書き込み可能ストリームはデータの宛先として機能します。Node.js API における書き込み可能ストリームの代表的な例としては、[`fs.WriteStream` ][]、[`process.stdout` ][]、[`process.stderr` ][] などがあります。
 
-#### Key Methods and Events in Writable Streams
+#### 書き込み可能ストリームの主要メソッドとイベント
 
-- **[`.write()`][]**: This method is used to write a chunk of data to the stream. It handles the data by buffering it up to a defined limit (highWaterMark), and returns a boolean indicating whether more data can be written immediately.
-- **[`.end()`][]**: This method signals the end of the data writing process. It signals the stream to complete the write operation and potentially perform any necessary cleanup.
+- **[`.write()`][]**: このメソッドは、ストリームにデータチャンクを書き込むために使用されます。このメソッドは、定義された制限 (highWaterMark) までデータをバッファリングし、さらにデータをすぐに書き込むことができるかどうかを示すブール値を返します。
+- **[`.end()`][]**: このメソッドは、データ書き込みプロセスの終了を通知します。ストリームに書き込み操作を完了し、必要に応じてクリーンアップを実行するように通知します。
 
-#### Creating a Writable
+#### 書き込み可能なストリームの作成
 
-Here's an example of creating a writable stream that converts all incoming data to uppercase before writing it to the standard output:
+以下は、すべての入力データを大文字に変換してから標準出力に書き込む書き込み可能なストリームを作成する例です。
 
 ```cjs
 const { once } = require('node:events');
@@ -243,11 +243,11 @@ for (let i = 0; i < 10; i++) {
 stream.end('world');
 ```
 
-In this code, `MyStream` is a custom [`Writable`][] stream with a buffer capacity ([`highWaterMark`][]) of 10 bytes. It overrides the [`_write`][] method to convert data to uppercase before writing it out.
+このコードでは、`MyStream` はバッファ容量 ([`highWaterMark`][]) が 10 バイトのカスタム [`Writable`][] ストリームです。[`_write`][] メソッドをオーバーライドして、データを書き出す前に大文字に変換します。
 
-The loop attempts to write hello ten times to the stream. If the buffer fills up (`waitDrain` becomes `true`), it waits for a [`drain`][] event before continuing, ensuring we do not overwhelm the stream's buffer.
+ループはストリームに hello を 10 回書き込もうとします。バッファがいっぱいになった場合 (`waitDrain` が `true` になった場合)、ストリームのバッファがオーバーフローしないように、[`drain`][] イベントを待機してから処理を続行します。
 
-The output will be:
+出力は次のようになります。
 
 ```bash
 HELLO
@@ -268,15 +268,15 @@ HELLO
 WORLD
 ```
 
-### Duplex
+### デュプレックス
 
-[`Duplex`][] streams implement both the readable and writable interfaces.
+[`Duplex`][] ストリームは、読み取り可能インターフェースと書き込み可能インターフェースの両方を実装しています。
 
-#### Key Methods and Events in Duplex Streams
+#### デュプレックスストリームの主なメソッドとイベント
 
-Duplex streams implement all the methods and events described in Readable and Writable Streams.
+デュプレックスストリームは、「読み取り可能および書き込み可能ストリーム」で説明されているすべてのメソッドとイベントを実装しています。
 
-A good example of a duplex stream is the `Socket` class in the `net` module:
+デュプレックスストリームの良い例として、`net` モジュールの `Socket` クラスが挙げられます。
 
 ```cjs
 const net = require('node:net');
@@ -324,7 +324,7 @@ server.listen(8080, () => {
 });
 ```
 
-The previous code will open a TCP socket on port 8080, send `Hello from server!` to any connecting client, and log any data received.
+前のコードは、ポート 8080 で TCP ソケットを開き、接続中のクライアントに `Hello from server!` を送信し、受信したデータをログに記録します。
 
 ```cjs
 const net = require('node:net');
@@ -362,21 +362,21 @@ client.on('end', () => {
 });
 ```
 
-The previous code will connect to the TCP socket, send a `Hello from client` message, and log any received data.
+上記のコードは、TCP ソケットに接続し、`Hello from client` メッセージを送信し、受信したデータをログに記録します。
 
-### Transform
+### 変換
 
-[`Transform`][] streams are duplex streams, where the output is computed based on the input. As the name suggests, they are usually used between a readable and a writable stream to transform the data as it passes through.
+[`Transform`][] ストリームは双方向ストリームであり、出力は入力に基づいて計算されます。名前が示すように、通常は読み取り可能なストリームと書き込み可能なストリームの間で使用され、通過するデータを変換します。
 
-#### Key Methods and Events in Transform Streams
+#### 変換ストリームの主なメソッドとイベント
 
-Apart from all the methods and events in Duplex Streams, there is:
+双方向ストリームのすべてのメソッドとイベントに加えて、以下のメソッドとイベントがあります。
 
-- **[`_transform`][]**: This function is called internally to handle the flow of data between the readable and writable parts. This MUST NOT be called by application code.
+- **[`_transform`][]**: この関数は、読み取り可能な部分と書き込み可能な部分の間のデータフローを処理するために内部的に呼び出されます。アプリケーションコードからこれを呼び出してはなりません。
 
-#### Creating a Transform Stream
+#### 変換ストリームの作成
 
-To create a new transform stream, we can pass an `options` object to the `Transform` constructor, including a `transform` function that handles how the output data is computed from the input data using the `push` method.
+新しい変換ストリームを作成するには、`Transform` コンストラクターに `options` オブジェクトを渡します。このオブジェクトには、`push` メソッドを使用して入力データから出力データを計算する `transform` 関数が含まれています。
 
 ```cjs
 const { Transform } = require('node:stream');
@@ -400,17 +400,17 @@ const upper = new Transform({
 });
 ```
 
-This stream will take any input and output it in uppercase.
+このストリームは、あらゆる入力を受け取り、それを大文字で出力します。
 
-## How to operate with streams
+## ストリームの操作方法
 
-When working with streams, we usually want to read from a source and write to a destination, possibly needing some transformation of the data in between. The following sections will cover different ways to do so.
+ストリームを操作する場合、通常はソースからデータを読み取り、出力先にデータを書き込むことになりますが、その際にデータの変換が必要になる場合もあります。以下のセクションでは、そのためのさまざまな方法について説明します。
 
 ### `.pipe()`
 
-The [`.pipe()`][] method concatenates one readable stream to a writable (or transform) stream. Although this seems like a simple way to achieve our goal, it delegates all error handling to the programmer, making it difficult to get it right.
+[`.pipe()`][] メソッドは、読み取り可能なストリームを書き込み可能（または変換可能）なストリームに連結します。これは目的を達成する簡単な方法のように見えますが、すべてのエラー処理をプログラマに委譲するため、正しく実行するのが困難です。
 
-The following example shows a pipe trying to output the current file in uppercase to the console.
+次の例は、パイプが現在のファイルを大文字でコンソールに出力しようとしている様子を示しています。
 
 ```cjs
 const fs = require('node:fs');
@@ -490,7 +490,7 @@ writeStream.on('close', () => {
 });
 ```
 
-After writing 10 characters, `upper` will return an error in the callback, which will cause the stream to close. However, the other streams won’t be notified, resulting in memory leaks. The output will be:
+10文字を書き込んだ後、`upper` はコールバックでエラーを返し、ストリームを終了します。しかし、他のストリームには通知されないため、メモリリークが発生します。出力は次のようになります。
 
 ```bash
 CONST FS =
@@ -500,9 +500,9 @@ Transform stream closed
 
 ### `pipeline()`
 
-To avoid the pitfalls and low-level complexity of the `.pipe()` method, in most cases, it is recommended to use the [`pipeline()`][] method. This method is a safer and more robust way to pipe streams together, handling errors and cleanup automatically.
+`.pipe()` メソッドの落とし穴や低レベルの複雑さを回避するには、ほとんどの場合、[`pipeline()`][] メソッドの使用をお勧めします。このメソッドは、エラー処理とクリーンアップ処理を自動的に実行することで、ストリームをパイプするより安全で堅牢な方法です。
 
-The following example demonstrates how using `pipeline()` prevents the pitfalls of the previous example:
+次の例は、`pipeline()` を使用することで、前の例の落とし穴を回避する方法を示しています。
 
 ```cjs
 const fs = require('node:fs');
@@ -584,7 +584,7 @@ pipeline(readStream, upper, writeStream, err => {
 });
 ```
 
-In this case, all streams will be closed with the following output:
+この場合、すべてのストリームは次の出力で閉じられます。
 
 ```bash
 CONST FS =
@@ -594,25 +594,25 @@ Pipeline error: BOOM!
 Readable stream closed
 ```
 
-The [`pipeline()`][] method also has an [`async pipeline()`][] version, which doesn’t accept a callback but instead returns a promise that is rejected if the pipeline fails.
+[`pipeline()`][] メソッドには [`async pipeline()`][] バージョンもあり、こちらはコールバックを受け取らず、パイプラインが失敗した場合に拒否される Promise を返します。
 
-### Async Iterators
+### 非同期イテレータ
 
-Async iterators are recommended as the standard way of interfacing with the Streams API. Compared to all the stream primitives in both the Web and Node.js, async iterators are easier to understand and use, contributing to fewer bugs and more maintainable code. In recent versions of Node.js, async iterators have emerged as a more elegant and readable way to interact with streams. Building upon the foundation of events, async iterators provide a higher-level abstraction that simplifies stream consumption.
+非同期イテレータは、Streams API とのインターフェースの標準的な方法として推奨されています。Web と Node.js の両方におけるすべてのストリームプリミティブと比較して、非同期イテレータは理解しやすく使いやすく、バグの減少とコードの保守性向上に貢献します。Node.js の最新バージョンでは、非同期イテレータはストリームを操作するためのよりエレガントで読みやすい方法として登場しました。イベントを基盤として構築された非同期イテレータは、ストリームの利用を簡素化する高レベルの抽象化を提供します。
 
-In Node.js, all readable streams are asynchronous iterables. This means you can use the `for await...of` syntax to loop through the stream's data as it becomes available, handling each piece of data with the efficiency and simplicity of asynchronous code.
+Node.js では、すべての読み取り可能なストリームは非同期イテレータです。つまり、`for await...of` 構文を使用して、ストリームのデータが利用可能になるとループ処理を行い、各データを非同期コードの効率性と簡潔性で処理できます。
 
-#### Benefits of Using Async Iterators with Streams
+#### ストリームで非同期イテレータを使用するメリット
 
-Using async iterators with streams simplifies the handling of asynchronous data flows in several ways:
+ストリームで非同期イテレータを使用すると、非同期データフローの処理がいくつかの点で簡素化されます。
 
-- **Enhanced Readability**: The code structure is cleaner and more readable, particularly when dealing with multiple asynchronous data sources.
-- **Error Handling**: Async iterators allow straightforward error handling using try/catch blocks, akin to regular asynchronous functions.
-- **Flow Control**: They inherently manage backpressure, as the consumer controls the flow by awaiting the next piece of data, allowing for more efficient memory usage and processing.
+- **可読性の向上**: コード構造がよりクリーンで読みやすくなります。特に複数の非同期データソースを処理する場合に有効です。
+- **エラー処理**: 非同期イテレータでは、通常の非同期関数と同様に、try/catch ブロックを使用して簡単にエラーを処理できます。
+- **フロー制御**: コンシューマーが次のデータを待機することでフローを制御するため、非同期イテレータは本質的にバックプレッシャーを管理し、メモリの使用と処理をより効率的に行うことができます。
 
-Async iterators offer a more modern and often more readable way to work with readable streams, especially when dealing with asynchronous data sources or when you prefer a more sequential, loop-based approach to data processing.
+非同期イテレータは、特に非同期データソースを処理する場合や、よりシーケンシャルなループベースのデータ処理を好む場合に、読み取り可能なストリームを操作するための、より現代的で読みやすい方法を提供します。
 
-Here's an example demonstrating the use of async iterators with a readable stream:
+読み取り可能なストリームで非同期イテレータを使用する例を以下に示します。
 
 ```cjs
 const fs = require('node:fs');
@@ -648,11 +648,11 @@ await pipeline(
 );
 ```
 
-This code achieves the same result as the previous examples, without the need to define a new transform stream. The error from the previous examples has been removed for the sake of brevity. The async version of the pipeline has been used, and it should be wrapped in a `try...catch` block to handle possible errors.
+このコードは、新しい変換ストリームを定義することなく、前の例と同じ結果を実現します。簡潔にするために、前の例のエラーは削除されています。パイプラインの非同期バージョンが使用されており、発生する可能性のあるエラーを処理するために `try...catch` ブロックで囲む必要があります。
 
-### Object mode
+### オブジェクトモード
 
-By default, streams can work with strings, [`Buffer`][], [`TypedArray`][], or [`DataView`][]. If an arbitrary value different from these (e.g., an object) is pushed into a stream, a `TypeError` will be thrown. However, it is possible to work with objects by setting the `objectMode` option to `true`. This allows the stream to work with any JavaScript value, except for `null`, which is used to signal the end of the stream. This means you can `push` and `read` any value in a readable stream, and `write` any value in a writable stream.
+デフォルトでは、ストリームは文字列、[`Buffer`][]、[`TypedArray`][]、または [`DataView`][] を処理できます。これらとは異なる任意の値（オブジェクトなど）がストリームにプッシュされると、`TypeError` がスローされます。ただし、`objectMode` オプションを `true` に設定することで、オブジェクトを処理できるようになります。これにより、ストリームは、ストリームの終了を示すために使用される `null` を除く、任意の JavaScript 値を処理できるようになります。つまり、読み取り可能なストリームでは任意の値を `push` および `read` でき、書き込み可能なストリームでは任意の値を `write` できます。
 
 ```cjs
 const { Readable } = require('node:stream');
@@ -678,29 +678,29 @@ const readable = Readable({
 });
 ```
 
-When working in object mode, it is important to remember that the `highWaterMark` option refers to the number of objects, not bytes.
+オブジェクトモードで作業する場合、`highWaterMark` オプションはバイト数ではなくオブジェクト数を指すことに注意することが重要です。
 
-### Backpressure
+### バックプレッシャー
 
-When using streams, it is important to make sure the producer doesn't overwhelm the consumer. For this, the backpressure mechanism is used in all streams in the Node.js API, and implementors are responsible for maintaining that behavior.
+ストリームを使用する場合、プロデューサーがコンシューマーに過負荷をかけないようにすることが重要です。そのため、Node.js API のすべてのストリームでバックプレッシャーメカニズムが使用されており、実装者はその動作を維持する責任があります。
 
-In any scenario where the data buffer has exceeded the [`highWaterMark`][] or the write queue is currently busy, [`.write()`][] will return `false`.
+データバッファが [`highWaterMark`][] を超えた場合、または書き込みキューが現在ビジー状態の場合、[`.write()`][] は `false` を返します。
 
-When a `false` value is returned, the backpressure system kicks in. It will pause the incoming [`Readable`][] stream from sending any data and wait until the consumer is ready again. Once the data buffer is emptied, a [`'drain'`][] event will be emitted to resume the incoming data flow.
+`false` 値が返されると、バックプレッシャーシステムが起動します。バックプレッシャーシステムは、受信する [`Readable`][] ストリームへのデータ送信を一時停止し、コンシューマーが再び準備ができるまで待機します。データバッファが空になると、[`'drain'`][] イベントが発行され、受信データフローが再開されます。
 
-For a deeper understanding of backpressure, check the [`backpressure guide`][].
+バックプレッシャーをより深く理解するには、[`バックプレッシャーガイド`][] をご覧ください。
 
-## Streams vs Web streams
+## ストリームと Web ストリーム
 
-The stream concept is not exclusive to Node.js. In fact, Node.js has a different implementation of the stream concept called [`Web Streams`][], which implements the [`WHATWG Streams Standard`][]. Although the concepts behind them are similar, it is important to be aware that they have different APIs and are not directly compatible.
+ストリームの概念は Node.js に限ったものではありません。実際、Node.js には [`Web Streams`][] と呼ばれるストリーム概念の別の実装があり、これは [`WHATWG Streams Standard`][] を実装しています。これらの背後にある概念は似ていますが、API が異なり、直接的な互換性がないことに留意することが重要です。
 
-[`Web Streams`][] implement the [`ReadableStream`][], [`WritableStream`][], and [`TransformStream`][] classes, which are homologous to Node.js's [`Readable`][], [`Writable`][], and [`Transform`][] streams.
+[`Web Streams`][] は [`ReadableStream`][]、[`WritableStream`][]、[`TransformStream`][] クラスを実装しており、これらは Node.js の [`Readable`][]、[`Writable`][]、[`Transform`][] ストリームと相同です。
 
-### Interoperability of streams and Web Streams
+### ストリームと Web ストリームの相互運用性
 
-Node.js provides utility functions to convert to/from Web Streams and Node.js streams. These functions are implemented as `toWeb` and `fromWeb` methods in each stream class.
+Node.js は、Web ストリームと Node.js ストリーム間の変換を行うユーティリティ関数を提供しています。これらの関数は、各ストリームクラスの `toWeb` メソッドと `fromWeb` メソッドとして実装されています。
 
-The following example in the [`Duplex`][] class demonstrates how to work with both readable and writable streams converted to Web Streams:
+[`Duplex`][] クラスの次の例は、読み取り可能ストリームと書き込み可能ストリームの両方を Web ストリームに変換して操作する方法を示しています。
 
 ```cjs
 const { Duplex } = require('node:stream');
@@ -752,7 +752,7 @@ readable
   });
 ```
 
-The helper functions are useful if you need to return a Web Stream from a Node.js module or vice versa. For regular consumption of streams, async iterators enable seamless interaction with both Node.js and Web Streams.
+ヘルパー関数は、Node.jsモジュールからWebストリームを返す必要がある場合、あるいはその逆の場合に役立ちます。ストリームを定期的に使用する場合は、非同期イテレータを使用することで、Node.jsとWebストリームの両方とシームレスに連携できます。
 
 ```cjs
 const { pipeline } = require('node:stream/promises');
@@ -792,9 +792,9 @@ await pipeline(
 );
 ```
 
-Be aware that the fetch body is a `ReadableStream<Uint8Array>`, and therefore a [`TextDecoderStream`][] is needed to work with chunks as strings.
+フェッチ本体は `ReadableStream<Uint8Array>` であるため、チャンクを文字列として扱うには [`TextDecoderStream`][] が必要であることに注意してください。
 
-This work is derived from content published by [Matteo Collina][] in [Platformatic's Blog][].
+この作業は、[Matteo Collina][] が [Platformatic's Blog][] で公開したコンテンツに基づいています。
 
 [`Stream`]: https://nodejs.org/api/stream.html
 [`Buffer`]: https://nodejs.org/api/buffer.html

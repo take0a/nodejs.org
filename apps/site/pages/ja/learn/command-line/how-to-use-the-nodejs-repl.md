@@ -4,42 +4,42 @@ layout: learn
 authors: flaviocopes, MylesBorins, fhemberger, LaRuaNa, ahmadawais, vaishnav-mk, AugustinMauyroy
 ---
 
-# How to use the Node.js REPL
+# Node.js REPLの使い方
 
-## What is the Node.js REPL?
+## Node.js REPLとは？
 
-Node.js comes with a built-in REPL (Read-Eval-Print Loop) environment that allows you to execute JavaScript code interactively. The REPL is accessible through the terminal and is a great way to test out small pieces of code.
+Node.jsには、JavaScriptコードを対話的に実行できるREPL（Read-Eval-Print Loop）環境が組み込まれています。REPLはターミナルからアクセスでき、小さなコードをテストするのに最適です。
 
-## How to use the Node.js REPL
+## Node.js REPL の使い方
 
-The `node` command is the one we use to run our Node.js scripts:
+`node` コマンドは、Node.js スクリプトを実行するために使用します。
 
 ```bash
 node script.js
 ```
 
-If we run the `node` command without any script to execute or without any arguments, we start a REPL session:
+実行するスクリプトや引数を指定せずに `node` コマンドを実行すると、REPL セッションが開始されます。
 
 ```bash
 node
 ```
 
-> **Note:** `REPL` stands for Read Evaluate Print Loop, and it is a programming language environment (basically a console window) that takes single expression as user input and returns the result back to the console after execution. The REPL session provides a convenient way to quickly test simple JavaScript code.
+> **注:** `REPL` は Read Evaluate Print Loop の略で、ユーザー入力として単一の式を受け取り、実行後に結果をコンソールに返すプログラミング言語環境（基本的にはコンソールウィンドウ）です。REPL セッションは、単純な JavaScript コードを素早くテストするための便利な方法を提供します。
 
-If you try it now in your terminal, this is what happens:
+ターミナルで試してみると、次のような結果になります。
 
 ```bash
 ❯ node
 >
 ```
 
-The command stays in idle mode and waits for us to enter something.
+コマンドはアイドル モードのまま、何かが入力されるまで待機します。
 
-> **Tip:** if you are unsure how to open your terminal, google "How to open terminal on your-operating-system".
+> **ヒント:** ターミナルの開き方がわからない場合は、「お使いのオペレーティングシステムでターミナルを開く方法」をGoogleで検索してください。
 
-The REPL is waiting for us to enter some JavaScript code, to be more precise.
+REPLは、より正確にはJavaScriptコードの入力を待機しています。
 
-Start simple and enter
+まずはシンプルに、次のように入力してみましょう。
 
 ```console
 > console.log('test')
@@ -48,10 +48,10 @@ undefined
 >
 ```
 
-The first value, `test`, is the output we told the console to print, then we get `undefined` which is the return value of running `console.log()`.
-Node read this line of code, evaluated it, printed the result, and then went back to waiting for more lines of code. Node will loop through these three steps for every piece of code we execute in the REPL until we exit the session. That is where the REPL got its name.
+最初の値「test」は、コンソールに出力するように指示した出力です。次に「undefined」が返されます。これは「console.log()」を実行した際の戻り値です。
+Node はこのコード行を読み取り、評価し、結果を出力した後、次のコード行を待機する状態に戻ります。Node は、セッションが終了するまで、REPL で実行されるすべてのコードに対して、この 3 つのステップをループします。これが REPL の名前の由来です。
 
-Node automatically prints the result of any line of JavaScript code without the need to instruct it to do so. For example, type in the following line and press enter:
+Node は、JavaScript コードの任意の行の結果を自動的に出力します。出力を指示する必要はありません。例えば、次の行を入力して Enter キーを押します。
 
 ```console
 > 5 === '5'
@@ -59,16 +59,16 @@ false
 >
 ```
 
-Note the difference in the outputs of the above two lines. The Node REPL printed `undefined` after executing `console.log()`, while on the other hand, it just printed the result of `5 === '5'`. You need to keep in mind that the former is just a statement in JavaScript, and the latter is an expression.
+上記の2行の出力の違いに注目してください。Node.jsのREPLは`console.log()`の実行後に`undefined`を出力しましたが、一方では`5 === '5'`の結果のみを出力しています。前者はJavaScriptの単なる文であり、後者は式であることを覚えておいてください。
 
-In some cases, the code you want to test might need multiple lines. For example, say you want to define a function that generates a random number, in the REPL session type in the following line and press enter:
+場合によっては、テストしたいコードが複数行に渡ることがあります。例えば、乱数を生成する関数を定義したい場合、REPLセッションで次の行を入力してEnterキーを押します。
 
 ```console
 function generateRandom() {
 ...
 ```
 
-The Node REPL is smart enough to determine that you are not done writing your code yet, and it will go into a multi-line mode for you to type in more code. Now finish your function definition and press enter:
+Node REPLは、コードの記述がまだ完了していないことを判断して、複数行モードに移行し、さらにコードを入力できるようにします。関数定義を終えてEnterキーを押してください。
 
 ```console
 function generateRandom() {
@@ -77,46 +77,46 @@ function generateRandom() {
 undefined
 ```
 
-### The `_` special variable
+### 特殊変数 `_`
 
-If after some code you type `_`, that is going to print the result of the last operation.
+コードの後に​​ `_` と入力すると、直前の操作の結果が表示されます。
 
-### The Up arrow key
+### 上矢印キー
 
-If you press the `up` arrow key, you will get access to the history of the previous lines of code executed in the current, and even previous REPL sessions.
+上矢印キーを押すと、現在の REPL セッション、さらには以前の REPL セッションで実行されたコード行の履歴にアクセスできます。
 
-### Dot commands
+### ドットコマンド
 
-The REPL has some special commands, all starting with a dot `.`. They are
+REPLには、ドット「.」で始まる特別なコマンドがいくつかあります。
 
-- `.help`: shows the dot commands help
-- `.editor`: enables editor mode, to write multiline JavaScript code with ease. Once you are in this mode, enter ctrl-D to run the code you wrote.
-- `.break`: when inputting a multi-line expression, entering the .break command will abort further input. Same as pressing ctrl-C.
-- `.clear`: resets the REPL context to an empty object and clears any multi-line expression currently being input.
-- `.load`: loads a JavaScript file, relative to the current working directory
-- `.save`: saves all you entered in the REPL session to a file (specify the filename)
-- `.exit`: exits the repl (same as pressing ctrl-C two times)
+- `.help`: ドットコマンドのヘルプを表示します。
+- `.editor`: エディターモードを有効にし、複数行のJavaScriptコードを簡単に記述できます。このモードに入ったら、Ctrl + D を押すと記述したコードが実行されます。
+- `.break`: 複数行の式を入力中に .break コマンドを入力すると、それ以降の入力が中断されます。Ctrl + C を押すのと同じです。
+- `.clear`: REPLコンテキストを空のオブジェクトにリセットし、現在入力中の複数行の式をクリアします。
+- `.load`: 現在の作業ディレクトリを基準としたJavaScriptファイルを読み込みます。
+- `.save`: REPLセッションで入力した内容をすべてファイルに保存します（ファイル名を指定してください）。
+- `.exit`: REPLを終了します（Ctrl + Cを2回押すのと同じ動作です）。
 
-The REPL knows when you are typing a multi-line statement without the need to invoke `.editor`.
+REPLは、`.editor`を起動しなくても、複数行の文を入力していることを認識します。
 
-For example if you start typing an iteration like this:
+例えば、次のような反復処理を入力し始めたとします。
 
 ```console
 [1, 2, 3].forEach(num => {
 ```
 
-and you press `enter`, the REPL will go to a new line that starts with 3 dots, indicating you can now continue to work on that block.
+そして `enter` を押すと、REPL は 3 つのドットで始まる新しい行に移動し、そのブロックで作業を続行できることを示します。
 
 ```console
 ... console.log(num)
 ... })
 ```
 
-If you type `.break` at the end of a line, the multiline mode will stop and the statement will not be executed.
+行末に `.break` と入力すると、複数行モードが停止し、ステートメントは実行されません。
 
-### Run REPL from JavaScript file
+### JavaScript ファイルから REPL を実行する
 
-We can import the REPL in a JavaScript file using `repl`.
+`repl` を使って、JavaScript ファイルに REPL をインポートできます。
 
 ```cjs
 const repl = require('node:repl');
@@ -126,14 +126,14 @@ const repl = require('node:repl');
 import repl from 'node:repl';
 ```
 
-Using the repl variable we can perform various operations.
-To start the REPL command prompt, type in the following line
+repl変数を使うと、様々な操作を実行できます。
+REPLコマンドプロンプトを起動するには、次の行を入力します。
 
 ```js
 repl.start();
 ```
 
-Run the file in the command line.
+コマンドラインでファイルを実行します。
 
 ```bash
 node repl.js
@@ -143,14 +143,14 @@ node repl.js
 > const n = 10
 ```
 
-You can pass a string which shows when the REPL starts. The default is '> ' (with a trailing space), but we can define custom prompt.
+REPLの起動時に表示する文字列を渡すことができます。デフォルトは「>」（末尾にスペースあり）ですが、カスタムプロンプトを定義することもできます。
 
 ```js
 // a Unix style prompt
 const local = repl.start('$ ');
 ```
 
-You can display a message while exiting the REPL
+REPLを終了するときにメッセージを表示できます
 
 ```js
 local.on('exit', () => {
@@ -159,4 +159,4 @@ local.on('exit', () => {
 });
 ```
 
-You can read more about the REPL module in the [repl documentation](https://nodejs.org/api/repl.html).
+REPL モジュールの詳細については、[repl ドキュメント](https://nodejs.org/api/repl.html) を参照してください。

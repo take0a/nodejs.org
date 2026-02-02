@@ -3,118 +3,120 @@ title: Don't Block the Event Loop (or the Worker Pool)
 layout: learn
 ---
 
-# Don't Block the Event Loop (or the Worker Pool)
+# イベントループ（またはワーカープール）をブロックしないでください
 
-## Should you read this guide?
+## このガイドを読むべきですか？
 
-If you're writing anything more complicated than a brief command-line script, reading this should help you write higher-performance, more-secure applications.
+簡単なコマンドラインスクリプトよりも複雑なものを作成する場合は、このガイドを読むことで、より高性能で安全なアプリケーションを作成するのに役立ちます。
 
-This document is written with Node.js servers in mind, but the concepts apply to complex Node.js applications as well.
-Where OS-specific details vary, this document is Linux-centric.
+このドキュメントはNode.jsサーバーを念頭に置いて書かれていますが、その概念は複雑なNode.jsアプリケーションにも適用できます。
+OS固有の詳細は異なりますが、このドキュメントはLinuxを中心としています。
 
-## Summary
+## まとめ
 
-Node.js runs JavaScript code in the Event Loop (initialization and callbacks), and offers a Worker Pool to handle expensive tasks like file I/O.
-Node.js scales well, sometimes better than more heavyweight approaches like Apache.
-The secret to the scalability of Node.js is that it uses a small number of threads to handle many clients.
-If Node.js can make do with fewer threads, then it can spend more of your system's time and memory working on clients rather than on paying space and time overheads for threads (memory, context-switching).
-But because Node.js has only a few threads, you must structure your application to use them wisely.
+Node.js は JavaScript コードをイベントループ（初期化とコールバック）で実行し、ファイル I/O などの高負荷タスクを処理するためのワーカープールを提供します。
+Node.js はスケーラビリティに優れており、Apache のようなより高負荷なアプローチよりも優れている場合もあります。
+Node.js のスケーラビリティの秘訣は、少数のスレッドで多数のクライアントを処理していることです。
+Node.js が少ないスレッド数で済む場合、スレッド（メモリ、コンテキストスイッチ）のスペースと時間のオーバーヘッドを支払うのではなく、システムの時間とメモリをクライアントの処理に多く割り当てることができます。
+しかし、Node.js には少数のスレッドしかないため、それらを賢く活用するようにアプリケーションを構成する必要があります。
 
-Here's a good rule of thumb for keeping your Node.js server speedy:
-_Node.js is fast when the work associated with each client at any given time is "small"_.
+Node.js サーバーを高速に保つための経験則を以下に示します。
+_Node.js は、ある時点で各クライアントに関連付けられた処理が「小さい」場合に高速です_。
 
-This applies to callbacks on the Event Loop and tasks on the Worker Pool.
+これは、イベントループのコールバックとワーカープールのタスクに当てはまります。
 
-## Why should I avoid blocking the Event Loop and the Worker Pool?
+## イベントループとワーカープールのブロックを避けるべき理由
 
-Node.js uses a small number of threads to handle many clients.
-In Node.js there are two types of threads: one Event Loop (aka the main loop, main thread, event thread, etc.), and a pool of `k` Workers in a Worker Pool (aka the threadpool).
+Node.js は、多数のクライアントを処理するために少数のスレッドを使用します。
+Node.js には、イベントループ（メインループ、メインスレッド、イベントスレッドなど）と、ワーカープール（スレッドプール）内の k 個のワーカーのプールの 2 種類のスレッドがあります。
 
-If a thread is taking a long time to execute a callback (Event Loop) or a task (Worker), we call it "blocked".
-While a thread is blocked working on behalf of one client, it cannot handle requests from any other clients.
-This provides two motivations for blocking neither the Event Loop nor the Worker Pool:
+スレッドがコールバック（イベントループ）またはタスク（ワーカー）の実行に長時間かかっている場合、そのスレッドは「ブロックされている」状態にあるとみなされます。
+スレッドが 1 つのクライアントのためにブロックされている間は、他のクライアントからのリクエストを処理できません。
+このため、イベントループもワーカープールもブロックしない理由が 2 つあります。
 
-1. Performance: If you regularly perform heavyweight activity on either type of thread, the _throughput_ (requests/second) of your server will suffer.
-2. Security: If it is possible that for certain input one of your threads might block, a malicious client could submit this "evil input", make your threads block, and keep them from working on other clients. This would be a [Denial of Service](https://en.wikipedia.org/wiki/Denial-of-service_attack) attack.
+1. パフォーマンス：どちらかのスレッドで高負荷のアクティビティを定期的に実行すると、サーバーのスループット（リクエスト数/秒）が低下します。
+2. セキュリティ：特定の入力に対してスレッドの1つがブロックされる可能性がある場合、悪意のあるクライアントがこの「悪意のある入力」を送信し、スレッドをブロックさせて他のクライアントで動作不能にする可能性があります。これは[サービス拒否](https://en.wikipedia.org/wiki/Denial-of-service_attack)攻撃に該当します。
 
-## A quick review of Node
+## Node.js の簡単な概要
 
-Node.js uses the Event-Driven Architecture: it has an Event Loop for orchestration and a Worker Pool for expensive tasks.
+Node.js はイベント駆動型アーキテクチャを採用しています。オーケストレーション用のイベントループと、高負荷タスク用のワーカープールを備えています。
 
-### What code runs on the Event Loop?
+### イベントループではどのようなコードが実行されますか？
 
-When they begin, Node.js applications first complete an initialization phase, `require`'ing modules and registering callbacks for events.
-Node.js applications then enter the Event Loop, responding to incoming client requests by executing the appropriate callback.
-This callback executes synchronously, and may register asynchronous requests to continue processing after it completes.
-The callbacks for these asynchronous requests will also be executed on the Event Loop.
+Node.js アプリケーションは起動時にまず初期化フェーズを完了し、モジュールを `require` し、イベントのコールバックを登録します。
+次に、Node.js アプリケーションはイベントループに入り、適切なコールバックを実行してクライアントからのリクエストに応答します。
+このコールバックは同期的に実行され、完了後に処理を続行するために非同期リクエストを登録する場合があります。
+これらの非同期リクエストのコールバックもイベントループで実行されます。
 
-The Event Loop will also fulfill the non-blocking asynchronous requests made by its callbacks, e.g., network I/O.
+イベントループは、コールバックによって生成された非ブロッキング非同期リクエスト（ネットワーク I/O など）も処理します。
 
-In summary, the Event Loop executes the JavaScript callbacks registered for events, and is also responsible for fulfilling non-blocking asynchronous requests like network I/O.
+まとめると、イベントループはイベント用に登録された JavaScript コールバックを実行するだけでなく、ネットワーク I/O などの非ブロッキング非同期リクエストの処理も担います。
 
-### What code runs on the Worker Pool?
+### ワーカープールではどのようなコードが実行されますか？
 
-The Worker Pool of Node.js is implemented in libuv ([docs](http://docs.libuv.org/en/v1.x/threadpool.html)), which exposes a general task submission API.
+Node.js のワーカープールは libuv ([ドキュメント](http://docs.libuv.org/en/v1.x/threadpool.html)) に実装されており、汎用的なタスク送信 API を公開しています。
 
-Node.js uses the Worker Pool to handle "expensive" tasks.
-This includes I/O for which an operating system does not provide a non-blocking version, as well as particularly CPU-intensive tasks.
+Node.js はワーカープールを使用して「負荷の高い」タスクを処理します。
+これには、オペレーティングシステムが非ブロッキングバージョンを提供していない I/O や、特に CPU を集中的に使用するタスクが含まれます。
 
-These are the Node.js module APIs that make use of this Worker Pool:
+このワーカープールを利用する Node.js モジュール API は次のとおりです。
 
-1. I/O-intensive
-   1. [DNS](https://nodejs.org/api/dns.html): `dns.lookup()`, `dns.lookupService()`.
-   2. [File System](https://nodejs.org/api/fs.html#fs_threadpool_usage): All file system APIs except `fs.FSWatcher()` and those that are explicitly synchronous use libuv's threadpool.
-2. CPU-intensive
-   1. [Crypto](https://nodejs.org/api/crypto.html): `crypto.pbkdf2()`, `crypto.scrypt()`, `crypto.randomBytes()`, `crypto.randomFill()`, `crypto.generateKeyPair()`.
-   2. [Zlib](https://nodejs.org/api/zlib.html#zlib_threadpool_usage): All zlib APIs except those that are explicitly synchronous use libuv's threadpool.
+1. I/O 集中型
+    1. [DNS](https://nodejs.org/api/dns.html): `dns.lookup()`、`dns.lookupService()`。
+    2. [ファイルシステム](https://nodejs.org/api/fs.html#fs_threadpool_usage): `fs.FSWatcher()` と明示的に同期されているものを除くすべてのファイルシステム API は、libuv のスレッドプールを使用します。
+2. CPU を大量に消費します
+    1. [暗号化](https://nodejs.org/api/crypto.html): `crypto.pbkdf2()`、`crypto.scrypt()`、`crypto.randomBytes()`、`crypto.randomFill()`、`crypto.generateKeyPair()`。
+    2. [Zlib](https://nodejs.org/api/zlib.html#zlib_threadpool_usage): 明示的に同期されているものを除くすべての zlib API は、libuv のスレッドプールを使用します。
 
-In many Node.js applications, these APIs are the only sources of tasks for the Worker Pool. Applications and modules that use a [C++ add-on](https://nodejs.org/api/addons.html) can submit other tasks to the Worker Pool.
+多くの Node.js アプリケーションでは、これらの API がワーカープールのタスクの唯一のソースです。 [C++ アドオン](https://nodejs.org/api/addons.html) を使用するアプリケーションとモジュールは、他のタスクをワーカープールに送信できます。
 
-For the sake of completeness, we note that when you call one of these APIs from a callback on the Event Loop, the Event Loop pays some minor setup costs as it enters the Node.js C++ bindings for that API and submits a task to the Worker Pool.
-These costs are negligible compared to the overall cost of the task, which is why the Event Loop is offloading it.
-When submitting one of these tasks to the Worker Pool, Node.js provides a pointer to the corresponding C++ function in the Node.js C++ bindings.
+完全性を保つために、イベントループのコールバックからこれらの API のいずれかを呼び出すと、イベントループはその API の Node.js C++ バインディングに入り、タスクをワーカープールに送信する際に、若干のセットアップコストが発生することに注意してください。
+これらのコストはタスク全体のコストと比較するとごくわずかであるため、イベントループはタスクをオフロードします。
+これらのタスクのいずれかをワーカープールに送信すると、Node.js は Node.js C++ バインディング内の対応する C++ 関数へのポインターを提供します。
 
-### How does Node.js decide what code to run next?
+### Node.js は次に実行するコードをどのように決定するのでしょうか？
 
-Abstractly, the Event Loop and the Worker Pool maintain queues for pending events and pending tasks, respectively.
+抽象的には、イベントループとワーカープールはそれぞれ、保留中のイベントと保留中のタスク用のキューを管理します。
 
-In truth, the Event Loop does not actually maintain a queue.
-Instead, it has a collection of file descriptors that it asks the operating system to monitor, using a mechanism like [epoll](http://man7.org/linux/man-pages/man7/epoll.7.html) (Linux), [kqueue](https://developer.apple.com/library/content/documentation/Darwin/Conceptual/FSEvents_ProgGuide/KernelQueues/KernelQueues.html) (OSX), event ports (Solaris), or [IOCP](https://msdn.microsoft.com/en-us/library/windows/desktop/aa365198.aspx) (Windows).
-These file descriptors correspond to network sockets, any files it is watching, and so on.
-When the operating system says that one of these file descriptors is ready, the Event Loop translates it to the appropriate event and invokes the callback(s) associated with that event.
-You can learn more about this process [here](https://www.youtube.com/watch?v=P9csgxBgaZ8).
+実際には、イベントループはキューを管理していません。
+代わりに、イベントループはファイル記述子のコレクションを保持し、オペレーティングシステムに監視を依頼します。そのメカニズムとしては、[epoll](http://man7.org/linux/man-pages/man7/epoll.7.html) (Linux)、[kqueue](https://developer.apple.com/library/content/documentation/Darwin/Conceptual/FSEvents_ProgGuide/KernelQueues/KernelQueues.html) (OSX)、イベントポート (Solaris)、[IOCP](https://msdn.microsoft.com/en-us/library/windows/desktop/aa365198.aspx) (Windows) などがあります。
+これらのファイル記述子は、ネットワークソケットや監視対象のファイルなどに対応します。
+オペレーティングシステムがこれらのファイル記述子のいずれかが準備完了であると判断すると、イベントループはそれを適切なイベントに変換し、そのイベントに関連付けられたコールバックを呼び出します。
+このプロセスの詳細については、[こちら](https://www.youtube.com/watch?v=P9csgxBgaZ8) をご覧ください。
 
-In contrast, the Worker Pool uses a real queue whose entries are tasks to be processed.
-A Worker pops a task from this queue and works on it, and when finished the Worker raises an "At least one task is finished" event for the Event Loop.
+一方、ワーカープールは、処理対象のタスクをエントリとする実際のキューを使用します。
+ワーカーはこのキューからタスクを取り出して処理を行い、処理が完了すると、イベントループに対して「少なくとも1つのタスクが完了しました」というイベントを発生させます。
 
-### What does this mean for application design?
+### これはアプリケーション設計にとって何を意味するのでしょうか？
 
-In a one-thread-per-client system like Apache, each pending client is assigned its own thread.
-If a thread handling one client blocks, the operating system will interrupt it and give another client a turn.
-The operating system thus ensures that clients that require a small amount of work are not penalized by clients that require more work.
+Apache のようなクライアントごとに 1 スレッドのシステムでは、処理待ちの各クライアントに専用のスレッドが割り当てられます。
 
-Because Node.js handles many clients with few threads, if a thread blocks handling one client's request, then pending client requests may not get a turn until the thread finishes its callback or task.
-_The fair treatment of clients is thus the responsibility of your application_.
-This means that you shouldn't do too much work for any client in any single callback or task.
+あるクライアントを処理しているスレッドがブロックした場合、オペレーティングシステムはそれを中断し、別のクライアントに処理を割り当てます。
 
-This is part of why Node.js can scale well, but it also means that you are responsible for ensuring fair scheduling.
-The next sections talk about how to ensure fair scheduling for the Event Loop and for the Worker Pool.
+このようにオペレーティングシステムは、処理量の少ないクライアントが、より多くの処理を必要とするクライアントによって不利益を被らないようにします。
 
-## Don't block the Event Loop
+Node.js は少数のスレッドで多数のクライアントを処理するため、あるスレッドが 1 つのクライアントのリクエストの処理をブロックした場合、そのスレッドがコールバックまたはタスクを完了するまで、処理待ちのクライアントリクエストは処理されない可能性があります。
+_クライアントの公平な処理は、アプリケーションの責任_ です。
+これは、単一のコールバックまたはタスクで、どのクライアントに対しても過剰な処理を実行すべきではないことを意味します。
 
-The Event Loop notices each new client connection and orchestrates the generation of a response.
-All incoming requests and outgoing responses pass through the Event Loop.
-This means that if the Event Loop spends too long at any point, all current and new clients will not get a turn.
+これは、Node.js が優れたスケーラビリティを持つ理由の 1 つですが、公平なスケジューリングを確保する責任もアプリケーションにあることを意味します。
+次のセクションでは、イベントループとワーカープールの公平なスケジューリングを確保する方法について説明します。
 
-You should make sure you never block the Event Loop.
-In other words, each of your JavaScript callbacks should complete quickly.
-This of course also applies to your `await`'s, your `Promise.then`'s, and so on.
+## イベントループをブロックしないでください
 
-A good way to ensure this is to reason about the ["computational complexity"](https://en.wikipedia.org/wiki/Time_complexity) of your callbacks.
-If your callback takes a constant number of steps no matter what its arguments are, then you'll always give every pending client a fair turn.
-If your callback takes a different number of steps depending on its arguments, then you should think about how long the arguments might be.
+イベントループは、新しいクライアント接続を検知し、レスポンスの生成を調整します。
+すべての受信リクエストと送信レスポンスはイベントループを通過します。
+つまり、イベントループの処理時間が長すぎると、既存のクライアントと新規クライアントの両方が順番を待てなくなります。
 
-Example 1: A constant-time callback.
+イベントループをブロックしないようにしてください。
+言い換えれば、JavaScript コールバックはすべて迅速に完了する必要があります。
+もちろん、これは `await` や `Promise.then` などにも当てはまります。
+
+これを保証する良い方法は、コールバックの ["計算の複雑さ"](https://en.wikipedia.org/wiki/Time_complexity) について考えることです。
+コールバックが引数に関わらず一定のステップ数だけ実行する場合、すべての保留中のクライアントに常に公平な順番を与えることができます。
+コールバックが引数に応じて異なる数のステップを実行する場合は、引数の長さについて考慮する必要があります。
+
+例 1: 一定時間のコールバック。
 
 ```js
 app.get('/constant-time', (req, res) => {
@@ -122,7 +124,7 @@ app.get('/constant-time', (req, res) => {
 });
 ```
 
-Example 2: An `O(n)` callback. This callback will run quickly for small `n` and more slowly for large `n`.
+例2: `O(n)` コールバック。このコールバックは、`n` が小さい場合は高速に実行され、`n` が大きい場合は低速になります。
 
 ```js
 app.get('/countToN', (req, res) => {
@@ -137,7 +139,7 @@ app.get('/countToN', (req, res) => {
 });
 ```
 
-Example 3: An `O(n^2)` callback. This callback will still run quickly for small `n`, but for large `n` it will run much more slowly than the previous `O(n)` example.
+例3: `O(n^2)` コールバック。このコールバックは `n` が小さい場合は高速に実行されますが、 `n` が大きい場合は、前の `O(n)` の例よりもはるかに遅くなります。
 
 ```js
 app.get('/countToN2', (req, res) => {
@@ -154,42 +156,43 @@ app.get('/countToN2', (req, res) => {
 });
 ```
 
-### How careful should you be?
+### どの程度注意すべきでしょうか？
 
-Node.js uses the Google V8 engine for JavaScript, which is quite fast for many common operations.
-Exceptions to this rule are regexps and JSON operations, discussed below.
+Node.js は JavaScript に Google V8 エンジンを使用しており、多くの一般的な操作では非常に高速です。
 
-However, for complex tasks you should consider bounding the input and rejecting inputs that are too long.
-That way, even if your callback has large complexity, by bounding the input you ensure the callback cannot take more than the worst-case time on the longest acceptable input.
-You can then evaluate the worst-case cost of this callback and determine whether its running time is acceptable in your context.
+このルールの例外は、後述する正規表現と JSON 操作です。
 
-### Blocking the Event Loop: REDOS
+ただし、複雑なタスクの場合は、入力を制限し、長すぎる入力を拒否することを検討する必要があります。
+こうすることで、コールバックが非常に複雑であっても、入力を制限することで、許容可能な最長の入力に対してコールバックが最悪ケースの時間を超えることがないようにすることができます。
+その後、このコールバックの最悪ケースのコストを評価し、その実行時間がコンテキストにおいて許容可能かどうかを判断できます。
 
-One common way to block the Event Loop disastrously is by using a "vulnerable" [regular expression](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions).
+### イベントループのブロック：REDOS
 
-#### Avoiding vulnerable regular expressions
+イベントループを壊滅的にブロックする一般的な方法の 1 つは、「脆弱な」[正規表現](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions) を使用することです。
 
-A regular expression (regexp) matches an input string against a pattern.
-We usually think of a regexp match as requiring a single pass through the input string --- `O(n)` time where `n` is the length of the input string.
-In many cases, a single pass is indeed all it takes.
-Unfortunately, in some cases the regexp match might require an exponential number of trips through the input string --- `O(2^n)` time.
-An exponential number of trips means that if the engine requires `x` trips to determine a match, it will need `2*x` trips if we add only one more character to the input string.
-Since the number of trips is linearly related to the time required, the effect of this evaluation will be to block the Event Loop.
+#### 脆弱な正規表現の回避
 
-A _vulnerable regular expression_ is one on which your regular expression engine might take exponential time, exposing you to [REDOS](https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS) on "evil input".
-Whether or not your regular expression pattern is vulnerable (i.e. the regexp engine might take exponential time on it) is actually a difficult question to answer, and varies depending on whether you're using Perl, Python, Ruby, Java, JavaScript, etc., but here are some rules of thumb that apply across all of these languages:
+正規表現（regexp）は、入力文字列をパターンと照合します。
+通常、regexp による照合は、入力文字列を 1 回処理するだけで、つまり `O(n)` 時間（`n` は入力文字列の長さ）で済むと考えられています。
+多くの場合、実際には 1 回の処理で十分です。
+残念ながら、regexp による照合では、入力文字列を指数関数的に処理する回数（`O(2^n)` 時間）が必要になる場合があります。
+処理回数が指数関数的であるということは、エンジンが一致を判断するために `x` 回の処理が必要な場合、入力文字列に文字を 1 つ追加するだけで `2*x` 回の処理が必要になることを意味します。
+処理回数は必要な処理時間と比例関係にあるため、この評価はイベントループをブロックする効果があります。
 
-1. Avoid nested quantifiers like `(a+)*`. V8's regexp engine can handle some of these quickly, but others are vulnerable.
-2. Avoid OR's with overlapping clauses, like `(a|a)*`. Again, these are sometimes-fast.
-3. Avoid using backreferences, like `(a.*) \1`. No regexp engine can guarantee evaluating these in linear time.
-4. If you're doing a simple string match, use `indexOf` or the local equivalent. It will be cheaper and will never take more than `O(n)`.
+_脆弱な正規表現_とは、正規表現エンジンの処理時間が指数関数的に長くなり、「悪意のある入力」によって[REDOS](https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS)攻撃を受ける可能性がある正規表現のことです。
+正規表現パターンが脆弱であるかどうか（つまり、正規表現エンジンの処理時間が指数関数的に長くなるかどうか）は、実際には難しい問題であり、Perl、Python、Ruby、Java、JavaScriptなど、どの言語を使用しているかによって異なります。しかし、これらの言語すべてに当てはまる経験則をいくつかご紹介します。
 
-If you aren't sure whether your regular expression is vulnerable, remember that Node.js generally doesn't have trouble reporting a _match_ even for a vulnerable regexp and a long input string.
-The exponential behavior is triggered when there is a mismatch but Node.js can't be certain until it tries many paths through the input string.
+1. `(a+)*`のようなネストされた量指定子は避けてください。V8の正規表現エンジンは、これらの量指定子の一部を高速に処理できますが、それ以外は脆弱です。
+2. `(a|a)*`のような、重複する句を持つORは避けてください。繰り返しますが、これらのORは高速に処理できる場合もあります。
+3. `(a.*) \1` のような後方参照の使用は避けてください。正規表現エンジンは、これらの評価を線形時間で保証できません。
+4. 単純な文字列一致を行う場合は、`indexOf` またはローカルで同等の関数を使用してください。より低コストで、`O(n)` を超える計算時間も発生しません。
 
-#### A REDOS example
+正規表現が脆弱かどうか確信が持てない場合は、Node.js は一般的に、脆弱な正規表現と長い入力文字列であっても、問題なく一致を報告できることを覚えておいてください。
+指数関数的な動作は、不一致があるものの、Node.js が入力文字列を何度も試行するまで確信が持てない場合に発生します。
 
-Here is an example vulnerable regexp exposing its server to REDOS:
+#### REDOS の例
+
+サーバーを REDOS にさらしてしまう脆弱な正規表現の例を以下に示します。
 
 ```js
 app.get('/redos-me', (req, res) => {
@@ -206,69 +209,69 @@ app.get('/redos-me', (req, res) => {
 });
 ```
 
-The vulnerable regexp in this example is a (bad!) way to check for a valid path on Linux.
-It matches strings that are a sequence of "/"-delimited names, like "/a/b/c".
-It is dangerous because it violates rule 1: it has a doubly-nested quantifier.
+この例の脆弱な正規表現は、Linux 上で有効なパスを確認するための（不適切な！）方法です。
+これは、「/」で区切られた名前のシーケンス（例: 「/a/b/c」）に一致します。
+これはルール 1 に違反しており、二重にネストされた量指定子が含まれているため危険です。
 
-If a client queries with filePath `///.../\n` (100 /'s followed by a newline character that the regexp's "." won't match), then the Event Loop will take effectively forever, blocking the Event Loop.
-This client's REDOS attack causes all other clients not to get a turn until the regexp match finishes.
+クライアントが filePath `///.../\n`（正規表現の「.」に一致しない改行文字が続く 100 個の / ）でクエリを実行した場合、イベントループは事実上永遠に実行され、イベントループがブロックされます。
+このクライアントの REDOS 攻撃により、正規表現の一致が完了するまで他のすべてのクライアントは実行の順番を回らなくなります。
 
-For this reason, you should be leery of using complex regular expressions to validate user input.
+このため、ユーザー入力の検証に複雑な正規表現を使用することは慎重に行う必要があります。
 
-#### Anti-REDOS Resources
+#### REDOS対策リソース
 
-There are some tools to check your regexps for safety, like
+正規表現の安全性をチェックするツールがいくつかあります。
 
 - [safe-regex](https://github.com/davisjam/safe-regex)
-- [rxxr2](https://github.com/superhuman/rxxr2).
+- [rxxr2](https://github.com/superhuman/rxxr2)
 
-However, neither of these will catch all vulnerable regexps.
+ただし、どちらも脆弱な正規表現をすべて検出できるわけではありません。
 
-Another approach is to use a different regexp engine.
-You could use the [node-re2](https://github.com/uhop/node-re2) module, which uses Google's blazing-fast [RE2](https://github.com/google/re2) regexp engine.
-But be warned, RE2 is not 100% compatible with V8's regexps, so check for regressions if you swap in the node-re2 module to handle your regexps.
-And particularly complicated regexps are not supported by node-re2.
+別の方法として、別の正規表現エンジンを使用する方法もあります。
+[node-re2](https://github.com/uhop/node-re2) モジュールを使用できます。このモジュールは、Google の超高速正規表現エンジン [RE2](https://github.com/google/re2) を使用しています。
+ただし、RE2 は V8 の正規表現と完全に互換性があるわけではないので、正規表現の処理に node-re2 モジュールを導入する場合は、必ずリグレッションがないか確認してください。
+また、特に複雑な正規表現は node-re2 ではサポートされていません。
 
-If you're trying to match something "obvious", like a URL or a file path, find an example in a [regexp library](http://www.regexlib.com) or use an npm module, e.g. [ip-regex](https://www.npmjs.com/package/ip-regex).
+URL やファイル パスなどの「明らかな」ものに一致させようとしている場合は、[正規表現ライブラリ](http://www.regexlib.com) で例を探すか、npm モジュール ([ip-regex](https://www.npmjs.com/package/ip-regex) など) を使用してください。
 
-### Blocking the Event Loop: Node.js core modules
+### イベントループのブロック：Node.js コアモジュール
 
-Several Node.js core modules have synchronous expensive APIs, including:
+Node.js コアモジュールには、同期型の高負荷 API がいくつか存在します。以下に例を示します。
 
-- [Encryption](https://nodejs.org/api/crypto.html)
-- [Compression](https://nodejs.org/api/zlib.html)
-- [File system](https://nodejs.org/api/fs.html)
-- [Child process](https://nodejs.org/api/child_process.html)
+- [暗号化](https://nodejs.org/api/crypto.html)
+- [圧縮](https://nodejs.org/api/zlib.html)
+- [ファイルシステム](https://nodejs.org/api/fs.html)
+- [子プロセス](https://nodejs.org/api/child_process.html)
 
-These APIs are expensive, because they involve significant computation (encryption, compression), require I/O (file I/O), or potentially both (child process). These APIs are intended for scripting convenience, but are not intended for use in the server context. If you execute them on the Event Loop, they will take far longer to complete than a typical JavaScript instruction, blocking the Event Loop.
+これらの API は、大量の計算（暗号化、圧縮）を伴う、または I/O を必要とする（ファイル I/O）、あるいはその両方（子プロセス）を伴うため、高負荷です。これらの API はスクリプトの利便性を目的としており、サーバーコンテキストでの使用は想定されていません。イベントループでこれらの API を実行すると、一般的な JavaScript 命令よりも完了までに非常に長い時間がかかり、イベントループがブロックされます。
 
-In a server, _you should not use the following synchronous APIs from these modules_:
+サーバーでは、_これらのモジュールの以下の同期APIは使用しないでください_。
 
-- Encryption:
-  - `crypto.randomBytes` (synchronous version)
+- 暗号化:
+  - `crypto.randomBytes` (同期版)
   - `crypto.randomFillSync`
   - `crypto.pbkdf2Sync`
-  - You should also be careful about providing large input to the encryption and decryption routines.
-- Compression:
+  - 暗号化および復号ルーチンに大きな入力を与える場合も注意が必要です。
+- 圧縮:
   - `zlib.inflateSync`
   - `zlib.deflateSync`
-- File system:
-  - Do not use the synchronous file system APIs. For example, if the file you access is in a [distributed file system](https://en.wikipedia.org/wiki/Clustered_file_system#Distributed_file_systems) like [NFS](https://en.wikipedia.org/wiki/Network_File_System), access times can vary widely.
-- Child process:
+- ファイルシステム:
+  - 同期ファイルシステムAPIは使用しないでください。例えば、アクセスするファイルが[NFS](https://en.wikipedia.org/wiki/Network_File_System)のような[分散ファイルシステム](https://en.wikipedia.org/wiki/Clustered_file_system#Distributed_file_systems)にある場合、アクセス時間が大きく変動する可能性があります。
+- 子プロセス:
   - `child_process.spawnSync`
   - `child_process.execSync`
   - `child_process.execFileSync`
 
-This list is reasonably complete as of Node.js v9.
+このリストは、Node.js v9 時点ではほぼ網羅的です。
 
-### Blocking the Event Loop: JSON DOS
+### イベントループのブロッキング：JSON DOS
 
-`JSON.parse` and `JSON.stringify` are other potentially expensive operations.
-While these are `O(n)` in the length of the input, for large `n` they can take surprisingly long.
+`JSON.parse` と `JSON.stringify` も、潜在的に高負荷な操作です。
+入力の長さに対しては `O(n)` ですが、`n` が大きい場合は驚くほど長い時間がかかることがあります。
 
-If your server manipulates JSON objects, particularly those from a client, you should be cautious about the size of the objects or strings you work with on the Event Loop.
+サーバーが JSON オブジェクト、特にクライアントから取得したオブジェクトを操作する場合、イベントループで操作するオブジェクトまたは文字列のサイズに注意する必要があります。
 
-Example: JSON blocking. We create an object `obj` of size 2^21 and `JSON.stringify` it, run `indexOf` on the string, and then JSON.parse it. The `JSON.stringify`'d string is 50MB. It takes 0.7 seconds to stringify the object, 0.03 seconds to indexOf on the 50MB string, and 1.3 seconds to parse the string.
+例：JSON のブロッキング。サイズが 2^21 のオブジェクト `obj` を作成し、`JSON.stringify` で文字列化した後、その文字列に対して `indexOf` を実行し、最後に JSON.parse を実行します。`JSON.stringify` で文字列化された文字列は 50MB です。オブジェクトの文字列化には 0.7 秒、50MB の文字列に対して indexOf を実行するには 0.03 秒、文字列の解析には 1.3 秒かかります。
 
 ```js
 let obj = { a: 1 };
@@ -298,24 +301,24 @@ duration = process.hrtime(start);
 console.log('JSON.parse took', duration);
 ```
 
-There are npm modules that offer asynchronous JSON APIs. See for example:
+非同期JSON APIを提供するnpmモジュールがいくつかあります。例えば、以下のモジュールをご覧ください。
 
-- [JSONStream](https://www.npmjs.com/package/JSONStream), which has stream APIs.
-- [Big-Friendly JSON](https://www.npmjs.com/package/bfj), which has stream APIs as well as asynchronous versions of the standard JSON APIs using the partitioning-on-the-Event-Loop paradigm outlined below.
+- [JSONStream](https://www.npmjs.com/package/JSONStream) はストリームAPIを備えています。
+- [Big-Friendly JSON](https://www.npmjs.com/package/bfj) はストリームAPIに加え、後述するイベントループによるパーティショニングパラダイムを用いた標準JSON APIの非同期バージョンを備えています。
 
-### Complex calculations without blocking the Event Loop
+### イベントループをブロックせずに複雑な計算を実行する
 
-Suppose you want to do complex calculations in JavaScript without blocking the Event Loop.
-You have two options: partitioning or offloading.
+JavaScript でイベントループをブロックせずに複雑な計算を実行したいとします。
+パーティショニングとオフロードの 2 つの選択肢があります。
 
-#### Partitioning
+#### パーティショニング
 
-You could _partition_ your calculations so that each runs on the Event Loop but regularly yields (gives turns to) other pending events.
-In JavaScript it's easy to save the state of an ongoing task in a closure, as shown in example 2 below.
+計算を分割し、各計算をイベントループで実行しながら、定期的に他の保留中のイベントに処理を譲る（処理を回す）ようにすることができます。
+JavaScriptでは、以下の例2に示すように、実行中のタスクの状態をクロージャに保存するのは簡単です。
 
-For a simple example, suppose you want to compute the average of the numbers `1` to `n`.
+簡単な例として、数値 `1` から `n` の平均を計算するとします。
 
-Example 1: Un-partitioned average, costs `O(n)`
+例1：分割なしの平均、コスト `O(n)`
 
 ```js
 for (let i = 0; i < n; i++) {
@@ -326,7 +329,7 @@ const avg = sum / n;
 console.log('avg: ' + avg);
 ```
 
-Example 2: Partitioned average, each of the `n` asynchronous steps costs `O(1)`.
+例 2: 分割平均、各 `n` 非同期ステップのコストは `O(1)` です。
 
 ```js
 function asyncAvg(n, avgCB) {
@@ -356,165 +359,165 @@ asyncAvg(n, function (avg) {
 });
 ```
 
-You can apply this principle to array iterations and so forth.
+この原則は配列の反復などに適用できます。
 
-#### Offloading
+#### オフロード
 
-If you need to do something more complex, partitioning is not a good option.
-This is because partitioning uses only the Event Loop, and you won't benefit from multiple cores almost certainly available on your machine.
-_Remember, the Event Loop should orchestrate client requests, not fulfill them itself._
-For a complicated task, move the work off of the Event Loop onto a Worker Pool.
+より複雑な処理が必要な場合は、パーティショニングは適切な選択肢ではありません。
+パーティショニングではイベントループのみが使用されるため、マシンに複数コアが搭載されている可能性が高く、そのメリットを享受できないためです。
+_イベントループはクライアントからのリクエストをオーケストレーションするものであり、それ自体で処理するものではないことに注意してください。_
+複雑なタスクの場合は、イベントループからワーカープールへ処理を移行してください。
 
-##### How to offload
+##### オフロード方法
 
-You have two options for a destination Worker Pool to which to offload work.
+オフロード先のワーカープールには、2つの選択肢があります。
 
-1. You can use the built-in Node.js Worker Pool by developing a [C++ addon](https://nodejs.org/api/addons.html). On older versions of Node, build your C++ addon using [NAN](https://github.com/nodejs/nan), and on newer versions use [N-API](https://nodejs.org/api/n-api.html). [node-webworker-threads](https://www.npmjs.com/package/webworker-threads) offers a JavaScript-only way to access the Node.js Worker Pool.
-2. You can create and manage your own Worker Pool dedicated to computation rather than the Node.js I/O-themed Worker Pool. The most straightforward ways to do this is using [Child Process](https://nodejs.org/api/child_process.html) or [Cluster](https://nodejs.org/api/cluster.html).
+1. [C++ アドオン](https://nodejs.org/api/addons.html)を開発することで、組み込みの Node.js ワーカープールを使用できます。Node.js の古いバージョンでは [NAN](https://github.com/nodejs/nan) を使用して C++ アドオンをビルドし、新しいバージョンでは [N-API](https://nodejs.org/api/n-api.html) を使用します。[node-webworker-threads](https://www.npmjs.com/package/webworker-threads) は、JavaScript のみで Node.js ワーカープールにアクセスする方法を提供します。
+2. Node.js の I/O に特化したワーカープールではなく、計算専用の独自のワーカープールを作成および管理できます。最も簡単な方法は、[子プロセス](https://nodejs.org/api/child_process.html) または [クラスター](https://nodejs.org/api/cluster.html) を使用することです。
 
-You should _not_ simply create a [Child Process](https://nodejs.org/api/child_process.html) for every client.
-You can receive client requests more quickly than you can create and manage children, and your server might become a [fork bomb](https://en.wikipedia.org/wiki/Fork_bomb).
+すべてのクライアントに対して [子プロセス](https://nodejs.org/api/child_process.html) を単純に作成することは避けてください。
+子プロセスの作成と管理よりもクライアントからのリクエストの受信の方が速い場合があり、サーバーが [フォーク爆弾](https://en.wikipedia.org/wiki/Fork_bomb) 状態になる可能性があります。
 
-##### Downside of offloading
+##### オフロードの欠点
 
-The downside of the offloading approach is that it incurs overhead in the form of _communication costs_.
-Only the Event Loop is allowed to see the "namespace" (JavaScript state) of your application.
-From a Worker, you cannot manipulate a JavaScript object in the Event Loop's namespace.
-Instead, you have to serialize and deserialize any objects you wish to share.
-Then the Worker can operate on its own copy of these object(s) and return the modified object (or a "patch") to the Event Loop.
+オフロード方式の欠点は、通信コストという形でオーバーヘッドが発生することです。
+アプリケーションの「名前空間」（JavaScriptの状態）を参照できるのはイベントループのみです。
+ワーカーからは、イベントループの名前空間内のJavaScriptオブジェクトを操作することはできません。
+代わりに、共有したいオブジェクトをシリアライズおよびデシリアライズする必要があります。
+その後、ワーカーはこれらのオブジェクトの独自のコピーを操作し、変更されたオブジェクト（または「パッチ」）をイベントループに返すことができます。
 
-For serialization concerns, see the section on JSON DOS.
+シリアライズに関する詳細については、JSON DOSのセクションを参照してください。
 
-##### Some suggestions for offloading
+##### オフロードに関する提案
 
-You may wish to distinguish between CPU-intensive and I/O-intensive tasks because they have markedly different characteristics.
+CPU 集約型タスクと I/O 集約型タスクは特性が大きく異なるため、区別する必要があるかもしれません。
 
-A CPU-intensive task only makes progress when its Worker is scheduled, and the Worker must be scheduled onto one of your machine's [logical cores](https://nodejs.org/api/os.html#os_os_cpus).
-If you have 4 logical cores and 5 Workers, one of these Workers cannot make progress.
-As a result, you are paying overhead (memory and scheduling costs) for this Worker and getting no return for it.
+CPU 集約型タスクは、ワーカーがスケジュールされた場合にのみ進行します。ワーカーはマシンの [論理コア](https://nodejs.org/api/os.html#os_os_cpus) のいずれかにスケジュールされている必要があります。
+論理コアが 4 つでワーカーが 5 つある場合、これらのワーカーのうち 1 つは進行できません。
+その結果、このワーカーに対してオーバーヘッド（メモリとスケジューリングのコスト）を支払っているにもかかわらず、何のメリットも得られません。
 
-I/O-intensive tasks involve querying an external service provider (DNS, file system, etc.) and waiting for its response.
-While a Worker with an I/O-intensive task is waiting for its response, it has nothing else to do and can be de-scheduled by the operating system, giving another Worker a chance to submit their request.
-Thus, _I/O-intensive tasks will be making progress even while the associated thread is not running_.
-External service providers like databases and file systems have been highly optimized to handle many pending requests concurrently.
-For example, a file system will examine a large set of pending write and read requests to merge conflicting updates and to retrieve files in an optimal order.
+I/O 集約型タスクでは、外部サービスプロバイダー（DNS、ファイルシステムなど）にクエリを実行し、その応答を待機します。
+I/O 集約型タスクを実行するワーカーが応答を待機している間は、他に何もすることがないため、オペレーティングシステムによってスケジュール解除され、別のワーカーにリクエストを送信する機会が与えられます。
+そのため、_I/O を集中的に使用するタスクは、関連するスレッドが実行されていない間も進行します_。
+データベースやファイルシステムなどの外部サービスプロバイダーは、多数の保留中のリクエストを同時に処理できるように高度に最適化されています。
+例えば、ファイルシステムは、競合する更新をマージし、最適な順序でファイルを取得するために、保留中の大量の書き込みおよび読み取りリクエストを調べます。
 
-If you rely on only one Worker Pool, e.g. the Node.js Worker Pool, then the differing characteristics of CPU-bound and I/O-bound work may harm your application's performance.
+Node.js ワーカープールなど、1 つのワーカープールのみに依存している場合、CPU バウンドと I/O バウンドの作業の特性の違いにより、アプリケーションのパフォーマンスが低下する可能性があります。
 
-For this reason, you might wish to maintain a separate Computation Worker Pool.
+このため、別の計算ワーカープールを維持することを推奨します。
 
-#### Offloading: conclusions
+#### オフロード：結論
 
-For simple tasks, like iterating over the elements of an arbitrarily long array, partitioning might be a good option.
-If your computation is more complex, offloading is a better approach: the communication costs, i.e. the overhead of passing serialized objects between the Event Loop and the Worker Pool, are offset by the benefit of using multiple cores.
+任意の長さの配列の要素を反復処理するような単純なタスクであれば、パーティショニングは良い選択肢となるかもしれません。
+計算がより複雑な場合は、オフロードの方がより適切なアプローチです。通信コスト、つまりイベントループとワーカープール間でシリアル化されたオブジェクトを受け渡すオーバーヘッドは、マルチコアを使用するメリットによって相殺されます。
 
-However, if your server relies heavily on complex calculations, you should think about whether Node.js is really a good fit. Node.js excels for I/O-bound work, but for expensive computation it might not be the best option.
+ただし、サーバーが複雑な計算に大きく依存している場合は、Node.js が本当に適しているかどうかを検討する必要があります。Node.js は I/O バウンドの作業には優れていますが、高負荷の計算には最適な選択肢ではない可能性があります。
 
-If you take the offloading approach, see the section on not blocking the Worker Pool.
+オフロードアプローチを採用する場合は、「ワーカープールをブロックしない」セクションを参照してください。
 
-## Don't block the Worker Pool
+## ワーカープールをブロックしない
 
-Node.js has a Worker Pool composed of `k` Workers.
-If you are using the Offloading paradigm discussed above, you might have a separate Computational Worker Pool, to which the same principles apply.
-In either case, let us assume that `k` is much smaller than the number of clients you might be handling concurrently.
-This is in keeping with the "one thread for many clients" philosophy of Node.js, the secret to its scalability.
+Node.js には、`k` 個のワーカーで構成されるワーカープールがあります。
+前述のオフロードパラダイムを使用している場合は、同じ原則が適用される別の計算ワーカープールが存在する可能性があります。
+いずれの場合も、`k` は同時に処理するクライアント数よりもはるかに小さいと仮定します。
+これは、Node.js のスケーラビリティの秘訣である「1 つのスレッドで多数のクライアントに対応」という理念に基づいています。
 
-As discussed above, each Worker completes its current Task before proceeding to the next one on the Worker Pool queue.
+前述のように、各ワーカーは、ワーカープールキュー内の次のタスクに進む前に、現在のタスクを完了します。
 
-Now, there will be variation in the cost of the Tasks required to handle your clients' requests.
-Some Tasks can be completed quickly (e.g. reading short or cached files, or producing a small number of random bytes), and others will take longer (e.g reading larger or uncached files, or generating more random bytes).
-Your goal should be to _minimize the variation in Task times_, and you should use _Task partitioning_ to accomplish this.
+ここで、クライアントからのリクエストを処理するために必要なタスクのコストは変動します。
+タスクによっては、すぐに完了するもの（例：短いファイルやキャッシュされたファイルの読み取り、少数のランダムバイトの生成）もあれば、より長い時間がかかるものもあります（例：大きいファイルやキャッシュされていないファイルの読み取り、より多くのランダムバイトの生成）。
+あなたの目標は、_タスク時間の変動を最小限に抑える_ことであり、これを達成するには_タスクのパーティション分割_を使用する必要があります。
 
-### Minimizing the variation in Task times
+### タスク時間の変動を最小限に抑える
 
-If a Worker's current Task is much more expensive than other Tasks, then it will be unavailable to work on other pending Tasks.
-In other words, _each relatively long Task effectively decreases the size of the Worker Pool by one until it is completed_.
-This is undesirable because, up to a point, the more Workers in the Worker Pool, the greater the Worker Pool throughput (tasks/second) and thus the greater the server throughput (client requests/second).
-One client with a relatively expensive Task will decrease the throughput of the Worker Pool, in turn decreasing the throughput of the server.
+あるワーカーの現在のタスクが他のタスクよりもはるかにコストが高い場合、そのワーカーは他の保留中のタスクに使用できなくなります。
+言い換えれば、_比較的長いタスクはそれぞれ、完了するまでワーカープールのサイズを実質的に1つずつ減らします_。
+これは望ましくない状況です。なぜなら、ある程度までは、ワーカープール内のワーカーの数が増えるほど、ワーカープールのスループット（タスク/秒）が向上し、ひいてはサーバーのスループット（クライアントリクエスト/秒）も向上するからです。
+比較的コストの高いタスクを実行するクライアントが1つあるだけで、ワーカープールのスループットが低下し、ひいてはサーバーのスループットも低下します。
 
-To avoid this, you should try to minimize variation in the length of Tasks you submit to the Worker Pool.
-While it is appropriate to treat the external systems accessed by your I/O requests (DB, FS, etc.) as black boxes, you should be aware of the relative cost of these I/O requests, and should avoid submitting requests you can expect to be particularly long.
+これを避けるには、ワーカープールに送信するタスクの長さの変動を最小限に抑えるようにする必要があります。
+I/Oリクエストがアクセスする外部システム（DB、FSなど）をブラックボックスとして扱うことは適切ですが、これらのI/Oリクエストの相対的なコストを認識し、特に長くなると予想されるリクエストの送信は避けるべきです。
 
-Two examples should illustrate the possible variation in task times.
+タスク時間の変動の可能性を示す例を2つ挙げます。
 
-#### Variation example: Long-running file system reads
+#### バリエーションの例：長時間実行されるファイルシステム読み取り
 
-Suppose your server must read files in order to handle some client requests.
-After consulting the Node.js [File system](https://nodejs.org/api/fs.html) APIs, you opted to use `fs.readFile()` for simplicity.
-However, `fs.readFile()` before v10 was not partitioned: it submitted a single `fs.read()` Task spanning the entire file.
-If you read shorter files for some users and longer files for others, `fs.readFile()` may introduce significant variation in Task lengths, to the detriment of Worker Pool throughput.
+サーバーがクライアントからのリクエストを処理するためにファイルを読み取る必要があるとします。
+Node.js の [ファイルシステム](https://nodejs.org/api/fs.html) API を参照した結果、簡潔性を重視して `fs.readFile()` を使用することを選択しました。
+しかし、v10 より前の `fs.readFile()` はパーティション化されておらず、ファイル全体にわたる単一の `fs.read()` タスクを送信していました。
+一部のユーザー向けに短いファイル、別のユーザー向けに長いファイルを読み取る場合、`fs.readFile()` によってタスクの長さに大きなばらつきが生じ、ワーカープールのスループットが低下する可能性があります。
 
-For a worst-case scenario, suppose an attacker can convince your server to read an _arbitrary_ file (this is a [directory traversal vulnerability](https://www.owasp.org/index.php/Path_Traversal)).
-If your server is running Linux, the attacker can name an extremely slow file: [`/dev/random`](http://man7.org/linux/man-pages/man4/random.4.html).
-For all practical purposes, `/dev/random` is infinitely slow, and every Worker asked to read from `/dev/random` will never finish that Task.
-An attacker then submits `k` requests, one for each Worker, and no other client requests that use the Worker Pool will make progress.
+最悪のシナリオとして、攻撃者がサーバーに任意のファイルを読み取るように仕向けたとします（これは [ディレクトリトラバーサルの脆弱性](https://www.owasp.org/index.php/Path_Traversal)）。
+サーバーがLinuxで動作している場合、攻撃者は非常に低速なファイル [`/dev/random`](http://man7.org/linux/man-pages/man4/random.4.html) を指定できます。
+実用上、`/dev/random` は無限に遅く、`/dev/random` からの読み取りを要求されたすべてのワーカーは、そのタスクを完了できません。
+その後、攻撃者はワーカーごとに `k` 個のリクエストを送信します。ワーカープールを使用する他のクライアントリクエストは処理されません。
 
-#### Variation example: Long-running crypto operations
+#### バリエーションの例：長時間実行される暗号処理
 
-Suppose your server generates cryptographically secure random bytes using [`crypto.randomBytes()`](https://nodejs.org/api/crypto.html#crypto_crypto_randombytes_size_callback).
-`crypto.randomBytes()` is not partitioned: it creates a single `randomBytes()` Task to generate as many bytes as you requested.
-If you create fewer bytes for some users and more bytes for others, `crypto.randomBytes()` is another source of variation in Task lengths.
+サーバーが [`crypto.randomBytes()`](https://nodejs.org/api/crypto.html#crypto_crypto_randombytes_size_callback) を使用して、暗号的に安全なランダムバイトを生成するとします。
+`crypto.randomBytes()` は分割されていません。つまり、要求されたバイト数を生成するために、単一の `randomBytes()` タスクを作成します。
+一部のユーザーに対しては少ないバイト数、他のユーザーに対しては多いバイト数を生成する場合、`crypto.randomBytes()` はタスクの長さにばらつきをもたらすもう 1 つの要因となります。
 
-### Task partitioning
+### タスクのパーティショニング
 
-Tasks with variable time costs can harm the throughput of the Worker Pool.
-To minimize variation in Task times, as far as possible you should _partition_ each Task into comparable-cost sub-Tasks.
-When each sub-Task completes it should submit the next sub-Task, and when the final sub-Task completes it should notify the submitter.
+時間コストが変動するタスクは、ワーカープールのスループットに悪影響を与える可能性があります。
+タスク時間の変動を最小限に抑えるには、各タスクを可能な限り同程度のコストを持つサブタスクに分割する必要があります。
+各サブタスクが完了すると、次のサブタスクを送信し、最後のサブタスクが完了すると、送信者に通知する必要があります。
 
-To continue the `fs.readFile()` example, you should instead use `fs.read()` (manual partitioning) or `ReadStream` (automatically partitioned).
+`fs.readFile()` の例を続ける場合は、代わりに `fs.read()` (手動パーティショニング) または `ReadStream` (自動パーティショニング) を使用する必要があります。
 
-The same principle applies to CPU-bound tasks; the `asyncAvg` example might be inappropriate for the Event Loop, but it is well suited to the Worker Pool.
+同じ原則は CPU バウンドのタスクにも当てはまります。`asyncAvg` の例はイベントループには適していないかもしれませんが、ワーカープールには適しています。
 
-When you partition a Task into sub-Tasks, shorter Tasks expand into a small number of sub-Tasks, and longer Tasks expand into a larger number of sub-Tasks.
-Between each sub-Task of a longer Task, the Worker to which it was assigned can work on a sub-Task from another, shorter, Task, thus improving the overall Task throughput of the Worker Pool.
+タスクをサブタスクに分割すると、短いタスクは少数のサブタスクに拡張され、長いタスクは多数のサブタスクに拡張されます。
+長いタスクの各サブタスクの間には、割り当てられたワーカーは別の短いタスクのサブタスクに取り組むことができるため、ワーカープール全体のタスクスループットが向上します。
 
-Note that the number of sub-Tasks completed is not a useful metric for the throughput of the Worker Pool.
-Instead, concern yourself with the number of _Tasks_ completed.
+完了したサブタスクの数は、ワーカープールのスループットを評価する上で有用な指標ではないことに注意してください。
+代わりに、完了したタスクの数に注目してください。
 
-### Avoiding Task partitioning
+### タスクのパーティショニングの回避
 
-Recall that the purpose of Task partitioning is to minimize the variation in Task times.
-If you can distinguish between shorter Tasks and longer Tasks (e.g. summing an array vs. sorting an array), you could create one Worker Pool for each class of Task.
-Routing shorter Tasks and longer Tasks to separate Worker Pools is another way to minimize Task time variation.
+タスクのパーティショニングの目的は、タスク実行時間のばらつきを最小限に抑えることです。
+短いタスクと長いタスク（例：配列の合計とソート）を区別できる場合は、タスクの種類ごとにワーカープールを1つ作成できます。
+短いタスクと長いタスクを別々のワーカープールにルーティングすることも、タスク実行時間のばらつきを最小限に抑える方法です。
 
-In favor of this approach, partitioning Tasks incurs overhead (the costs of creating a Worker Pool Task representation and of manipulating the Worker Pool queue), and avoiding partitioning saves you the costs of additional trips to the Worker Pool.
-It also keeps you from making mistakes in partitioning your Tasks.
+このアプローチの利点は、タスクをパーティショニングするとオーバーヘッド（ワーカープールのタスク表現の作成コストとワーカープールキューの操作コスト）が発生するのに対し、パーティショニングを回避することでワーカープールへの追加アクセスコストを削減できることです。
+また、タスクのパーティショニングにおけるミスを防ぐこともできます。
 
-The downside of this approach is that Workers in all of these Worker Pools will incur space and time overheads and will compete with each other for CPU time.
-Remember that each CPU-bound Task makes progress only while it is scheduled.
-As a result, you should only consider this approach after careful analysis.
+このアプローチの欠点は、すべてのワーカープール内のワーカーがスペースと時間のオーバーヘッドを発生させ、CPU時間を奪い合うことです。
+CPUバウンドのタスクは、スケジュールされている間のみ進行することに注意してください。
+したがって、このアプローチは慎重に検討した上でのみ検討する必要があります。
 
-### Worker Pool: conclusions
+### ワーカープール：結論
 
-Whether you use only the Node.js Worker Pool or maintain separate Worker Pool(s), you should optimize the Task throughput of your Pool(s).
+Node.js ワーカープールのみを使用する場合でも、別のワーカープールを維持する場合でも、プールのタスクスループットを最適化する必要があります。
 
-To do this, minimize the variation in Task times by using Task partitioning.
+そのためには、タスクパーティショニングを使用してタスク実行時間のばらつきを最小限に抑えます。
 
-## The risks of npm modules
+## npm モジュールのリスク
 
-While the Node.js core modules offer building blocks for a wide variety of applications, sometimes something more is needed. Node.js developers benefit tremendously from the [npm ecosystem](https://www.npmjs.com/), with hundreds of thousands of modules offering functionality to accelerate your development process.
+Node.js コアモジュールは、多様なアプリケーションの構築ブロックを提供しますが、場合によってはそれ以上の機能が必要になることがあります。Node.js 開発者は、開発プロセスを加速させる機能を提供する数十万ものモジュールを備えた [npm エコシステム](https://www.npmjs.com/) から多大な恩恵を受けています。
 
-Remember, however, that the majority of these modules are written by third-party developers and are generally released with only best-effort guarantees. A developer using an npm module should be concerned about two things, though the latter is frequently forgotten.
+ただし、これらのモジュールの大部分はサードパーティの開発者によって作成されており、通常はベストエフォートの保証のみでリリースされていることに注意してください。npm モジュールを使用する開発者は、2つの点に注意する必要がありますが、後者はしばしば忘れられがちです。
 
-1. Does it honor its APIs?
-2. Might its APIs block the Event Loop or a Worker?
-   Many modules make no effort to indicate the cost of their APIs, to the detriment of the community.
+1. API に準拠しているか？
+2. API がイベントループやワーカーをブロックしていないか？
+多くのモジュールは API のコストを明示しておらず、コミュニティに悪影響を及ぼしています。
 
-For simple APIs you can estimate the cost of the APIs; the cost of string manipulation isn't hard to fathom.
-But in many cases it's unclear how much an API might cost.
+単純な API であれば、API のコストを見積もることができます。文字列操作のコストは容易に推測できます。
+しかし、多くの場合、API のコストは明確ではありません。
 
-_If you are calling an API that might do something expensive, double-check the cost. Ask the developers to document it, or examine the source code yourself (and submit a PR documenting the cost)._
+_コストの高い処理を実行する可能性のあるAPIを呼び出す場合は、そのコストを再確認してください。開発者にドキュメントの作成を依頼するか、ソースコードを自分で確認し（そしてコストを記載したプルリクエストを送信してください）。_
 
-Remember, even if the API is asynchronous, you don't know how much time it might spend on a Worker or on the Event Loop in each of its partitions.
-For example, suppose in the `asyncAvg` example given above, each call to the helper function summed _half_ of the numbers rather than one of them.
-Then this function would still be asynchronous, but the cost of each partition would be `O(n)`, not `O(1)`, making it much less safe to use for arbitrary values of `n`.
+APIが非同期であっても、各パーティションにおけるワーカーやイベントループの処理にどれだけの時間がかかるかはわかりません。
+例えば、上記の「asyncAvg」の例では、ヘルパー関数の各呼び出しで、数値の1つではなく半分を合計するとします。
+この場合、この関数は非同期のままですが、各パーティションのコストは「O(1)」ではなく「O(n)」となり、任意の「n」値で使用するのは安全性が大幅に低下します。
 
-## Conclusion
+## 結論
 
-Node.js has two types of threads: one Event Loop and `k` Workers.
-The Event Loop is responsible for JavaScript callbacks and non-blocking I/O, and a Worker executes tasks corresponding to C++ code that completes an asynchronous request, including blocking I/O and CPU-intensive work.
-Both types of threads work on no more than one activity at a time.
-If any callback or task takes a long time, the thread running it becomes _blocked_.
-If your application makes blocking callbacks or tasks, this can lead to degraded throughput (clients/second) at best, and complete denial of service at worst.
+Node.js には、イベントループと k 個のワーカーという 2 種類のスレッドがあります。
+イベントループは JavaScript のコールバックと非ブロッキング I/O を担当し、ワーカーは非同期リクエストを完了する C++ コードに対応するタスク（ブロッキング I/O や CPU 負荷の高い作業を含む）を実行します。
+どちらの種類のスレッドも、一度に複数のアクティビティを処理することはできません。
+コールバックまたはタスクの実行に時間がかかる場合、それを実行しているスレッドはブロックされます。
+アプリケーションがブロッキングコールバックまたはタスクを実行すると、最悪の場合、スループット（クライアント/秒）の低下、完全なサービス拒否につながる可能性があります。
 
-To write a high-throughput, more DoS-proof web server, you must ensure that on benign and on malicious input, neither your Event Loop nor your Workers will block.
+高スループットで DoS 耐性の高い Web サーバーを作成するには、悪意のある入力と無害な入力の両方において、イベントループとワーカーがブロックされないことを保証する必要があります。

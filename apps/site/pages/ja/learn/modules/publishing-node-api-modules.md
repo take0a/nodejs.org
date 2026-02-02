@@ -3,35 +3,29 @@ title: How to publish a Node-API package
 layout: learn
 ---
 
-# How to publish a Node-API version of a package alongside a non-Node-API version
+# パッケージのNode-API版を非Node-API版と並行して公開する方法
 
-The following steps are illustrated using the package `iotivity-node`:
+以下の手順は、パッケージ「iotivity-node」を使用して説明しています。
 
-- First, publish the non-Node-API version:
-  - Update the version in `package.json`. For `iotivity-node`, the version
-    becomes `1.2.0-2`.
-  - Go through the release checklist (ensure tests/demos/docs are OK)
+- まず、非Node-API版を公開します。
+  - `package.json` のバージョンを更新します。`iotivity-node` の場合、バージョンは
+  `1.2.0-2` になります。
+  - リリースチェックリストを確認します（テスト/デモ/ドキュメントが問題ないことを確認）。
   - `npm publish`
-- Then, publish the Node-API version:
-  - Update the version in `package.json`. In the case of `iotivity-node`,
-    the version becomes `1.2.0-3`. For versioning, we recommend following
-    the pre-release version scheme as described by
-    [semver.org](https://semver.org/#spec-item-9) e.g. `1.2.0-napi`.
-  - Go through the release checklist (ensure tests/demos/docs are OK)
+- 次に、Node-API バージョンを公開します。
+  - `package.json` のバージョンを更新します。`iotivity-node` の場合、
+  バージョンは `1.2.0-3` になります。バージョン管理については、
+  [semver.org](https://semver.org/#spec-item-9) に記載されているプレリリース版のバージョンスキームに従うことをお勧めします（例：`1.2.0-napi`）。
+  - リリースチェックリストを確認します（テスト、デモ、ドキュメントに問題がないことを確認します）。
   - `npm publish --tag n-api`
 
-In this example, tagging the release with `n-api` has ensured that, although
-version 1.2.0-3 is later than the non-Node-API published version (1.2.0-2), it
-will not be installed if someone chooses to install `iotivity-node` by simply
-running `npm install iotivity-node`. This will install the non-Node-API version
-by default. The user will have to run `npm install iotivity-node@n-api` to
-receive the Node-API version. For more information on using tags with npm check
-out ["Using dist-tags"][].
+この例では、リリースに `n-api` というタグを付けることで、
+バージョン 1.2.0-3 は Node-API 非対応の公開バージョン（1.2.0-2）よりも新しいバージョンですが、
+`npm install iotivity-node` を実行して `iotivity-node` をインストールしようとしても、インストールされません。これにより、デフォルトで非Node-APIバージョンがインストールされます。Node-APIバージョンを取得するには、ユーザーは「npm install iotivity-node@n-api」を実行する必要があります。npmでのタグの使用に関する詳細は、["dist-tagsの使用"][] を参照してください。
 
-## How to introduce a dependency on a Node-API version of a package
+## パッケージの Node-API バージョンへの依存関係を導入する方法
 
-To add the Node-API version of `iotivity-node` as a dependency, the `package.json`
-will look like this:
+`iotivity-node` の Node-API バージョンを依存関係として追加するには、`package.json` は次のようになります。
 
 ```json
 "dependencies": {
@@ -39,14 +33,7 @@ will look like this:
 }
 ```
 
-> As explained in
-> ["Using dist-tags"][], unlike regular versions, tagged versions cannot be
-> addressed by version ranges such as `"^2.0.0"` inside `package.json`. The
-> reason for this is that the tag refers to exactly one version. So, if the
-> package maintainer chooses to tag a later version of the package using the
-> same tag, `npm update` will receive the later version. This should be acceptable
-> version other than the latest published, the `package.json` dependency will
-> have to refer to the exact version like the following:
+> ["dist-tagsの使用"][] で説明したように、通常のバージョンとは異なり、タグ付きバージョンは `package.json` 内で `"^2.0.0"` のようなバージョン範囲で指定できません。これは、タグが1つのバージョンのみを参照するためです。そのため、パッケージメンテナーが同じタグを使用してパッケージの後のバージョンをタグ付けする場合、`npm update` は後のバージョンを受け取ります。これは最新の公開バージョン以外の許容バージョンである必要があります。`package.json` 依存関係は、次のように正確なバージョンを参照する必要があります。
 
 ```json
 "dependencies": {
@@ -54,4 +41,4 @@ will look like this:
 }
 ```
 
-["Using dist-tags"]: https://docs.npmjs.com/getting-started/using-tags
+["dist-tagsの使用"]: https://docs.npmjs.com/getting-started/using-tags
